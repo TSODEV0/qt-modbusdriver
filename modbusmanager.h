@@ -19,7 +19,9 @@ enum class ModbusDataType {
     Coil,
     DiscreteInput,
     Float32,
-    Double64
+    Double64,
+    Long32,
+    Long64
 };
 
 // Operation modes for Modbus communication
@@ -104,12 +106,16 @@ public:
     void writeHoldingRegister(int address, quint16 value);
     void writeHoldingRegisterFloat32(int address, float value);
     void writeHoldingRegisterDouble64(int address, double value);
+    void writeHoldingRegisterLong32(int address, qint32 value);
+    void writeHoldingRegisterLong64(int address, qint64 value);
     void writeCoil(int address, bool value);
     
     // Multiple write operations
     void writeHoldingRegisters(int startAddress, const QVector<quint16> &values);
     void writeHoldingRegistersFloat32(int startAddress, const QVector<float> &values);
     void writeHoldingRegistersDouble64(int startAddress, const QVector<double> &values);
+    void writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values);
+    void writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values);
     void writeCoils(int startAddress, const QVector<bool> &values);
     
     // IEEE 754 utility functions
@@ -125,8 +131,12 @@ public:
     // Data conversion utilities
     static float registersToFloat32(quint16 reg1, quint16 reg2);
     static double registersToDouble64(quint16 reg1, quint16 reg2, quint16 reg3, quint16 reg4);
+    static qint32 registersToLong32(quint16 reg1, quint16 reg2);
+    static qint64 registersToLong64(quint16 reg1, quint16 reg2, quint16 reg3, quint16 reg4);
     static QPair<quint16, quint16> float32ToRegisters(float value);
     static QVector<quint16> double64ToRegisters(double value);
+    static QPair<quint16, quint16> long32ToRegisters(qint32 value);
+    static QVector<quint16> long64ToRegisters(qint64 value);
     
 signals:
     void readCompleted(const ModbusReadResult &result);

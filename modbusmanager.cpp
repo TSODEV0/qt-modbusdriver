@@ -55,24 +55,32 @@ bool ModbusManager::isConnected() const
 void ModbusManager::readHoldingRegister(int address, ModbusDataType dataType)
 {
     int registerCount = (dataType == ModbusDataType::Float32) ? 2 : 
-                       (dataType == ModbusDataType::Double64) ? 4 : 1;
+                       (dataType == ModbusDataType::Double64) ? 4 :
+                       (dataType == ModbusDataType::Long32) ? 2 :
+                       (dataType == ModbusDataType::Long64) ? 4 : 1;
+    // Use address directly (Modbus addresses are 0-based)
     readHoldingRegisters(address, registerCount, dataType);
 }
 
 void ModbusManager::readInputRegister(int address, ModbusDataType dataType)
 {
     int registerCount = (dataType == ModbusDataType::Float32) ? 2 : 
-                       (dataType == ModbusDataType::Double64) ? 4 : 1;
+                       (dataType == ModbusDataType::Double64) ? 4 :
+                       (dataType == ModbusDataType::Long32) ? 2 :
+                       (dataType == ModbusDataType::Long64) ? 4 : 1;
+    // Use address directly (Modbus addresses are 0-based)
     readInputRegisters(address, registerCount, dataType);
 }
 
 void ModbusManager::readCoil(int address)
 {
+    // Use address directly (Modbus addresses are 0-based)
     readCoils(address, 1);
 }
 
 void ModbusManager::readDiscreteInput(int address)
 {
+    // Use address directly (Modbus addresses are 0-based)
     readDiscreteInputs(address, 1);
 }
 
@@ -84,6 +92,13 @@ void ModbusManager::readHoldingRegisters(int startAddress, int count, ModbusData
         return;
     }
     
+    // Check register count limit
+    if (count > 125) {
+        emit errorOccurred(QString("Register count (%1) exceeds maximum limit of 125 registers").arg(count));
+        return;
+    }
+    
+    // Use address directly (Modbus addresses are 0-based)
     QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, startAddress, count);
     
     if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
@@ -104,6 +119,13 @@ void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataTy
         return;
     }
     
+    // Check register count limit
+    if (count > 125) {
+        emit errorOccurred(QString("Register count (%1) exceeds maximum limit of 125 registers").arg(count));
+        return;
+    }
+    
+    // Use address directly (Modbus addresses are 0-based)
     QModbusDataUnit readUnit(QModbusDataUnit::InputRegisters, startAddress, count);
     
     if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
@@ -124,6 +146,12 @@ void ModbusManager::readCoils(int startAddress, int count)
         return;
     }
     
+    // Check coil count limit
+    if (count > 125) {
+        emit errorOccurred(QString("Coil count (%1) exceeds maximum limit of 125 coils").arg(count));
+        return;
+    }
+    
     QModbusDataUnit readUnit(QModbusDataUnit::Coils, startAddress, count);
     
     if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
@@ -141,6 +169,12 @@ void ModbusManager::readDiscreteInputs(int startAddress, int count)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
+        return;
+    }
+    
+    // Check discrete input count limit
+    if (count > 125) {
+        emit errorOccurred(QString("Discrete input count (%1) exceeds maximum limit of 125 inputs").arg(count));
         return;
     }
     
@@ -175,6 +209,18 @@ void ModbusManager::writeHoldingRegisterDouble64(int address, double value)
     writeHoldingRegisters(address, registers);
 }
 
+void ModbusManager::writeHoldingRegisterLong32(int address, qint32 value)
+{
+    auto registers = long32ToRegisters(value);
+    writeHoldingRegisters(address, QVector<quint16>() << registers.first << registers.second);
+}
+
+void ModbusManager::writeHoldingRegisterLong64(int address, qint64 value)
+{
+    auto registers = long64ToRegisters(value);
+    writeHoldingRegisters(address, registers);
+}
+
 void ModbusManager::writeCoil(int address, bool value)
 {
     writeCoils(address, QVector<bool>() << value);
@@ -185,6 +231,12 @@ void ModbusManager::writeHoldingRegisters(int startAddress, const QVector<quint1
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
+        return;
+    }
+    
+    // Check register count limit
+    if (values.size() > 125) {
+        emit errorOccurred(QString("Register count (%1) exceeds maximum limit of 125 registers").arg(values.size()));
         return;
     }
     
@@ -223,10 +275,36 @@ void ModbusManager::writeHoldingRegistersDouble64(int startAddress, const QVecto
     writeHoldingRegisters(startAddress, registers);
 }
 
+void ModbusManager::writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values)
+{
+    QVector<quint16> registers;
+    for (const qint32 &value : values) {
+        auto regs = long32ToRegisters(value);
+        registers << regs.first << regs.second;
+    }
+    writeHoldingRegisters(startAddress, registers);
+}
+
+void ModbusManager::writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values)
+{
+    QVector<quint16> registers;
+    for (const qint64 &value : values) {
+        auto regs = long64ToRegisters(value);
+        registers += regs;
+    }
+    writeHoldingRegisters(startAddress, registers);
+}
+
 void ModbusManager::writeCoils(int startAddress, const QVector<bool> &values)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
+        return;
+    }
+    
+    // Check coil count limit
+    if (values.size() > 125) {
+        emit errorOccurred(QString("Coil count (%1) exceeds maximum limit of 125 coils").arg(values.size()));
         return;
     }
     
@@ -316,6 +394,31 @@ double ModbusManager::registersToDouble64(quint16 reg1, quint16 reg2, quint16 re
     return converter.d;
 }
 
+qint32 ModbusManager::registersToLong32(quint16 reg1, quint16 reg2)
+{
+    union {
+        qint32 l;
+        quint32 i;
+    } converter;
+    
+    converter.i = (static_cast<quint32>(reg1) << 16) | reg2;
+    return converter.l;
+}
+
+qint64 ModbusManager::registersToLong64(quint16 reg1, quint16 reg2, quint16 reg3, quint16 reg4)
+{
+    union {
+        qint64 l;
+        quint64 i;
+    } converter;
+    
+    converter.i = (static_cast<quint64>(reg1) << 48) | 
+                  (static_cast<quint64>(reg2) << 32) |
+                  (static_cast<quint64>(reg3) << 16) | 
+                  static_cast<quint64>(reg4);
+    return converter.l;
+}
+
 QPair<quint16, quint16> ModbusManager::float32ToRegisters(float value)
 {
     union {
@@ -341,6 +444,37 @@ QVector<quint16> ModbusManager::double64ToRegisters(double value)
     
     QVector<quint16> registers(4);
     registers[0] = static_cast<quint16>(converter.i >> 48);
+    registers[1] = static_cast<quint16>((converter.i >> 32) & 0xFFFF);
+    registers[2] = static_cast<quint16>((converter.i >> 16) & 0xFFFF);
+    registers[3] = static_cast<quint16>(converter.i & 0xFFFF);
+    
+    return registers;
+}
+
+QPair<quint16, quint16> ModbusManager::long32ToRegisters(qint32 value)
+{
+    union {
+        qint32 l;
+        quint32 i;
+    } converter;
+    
+    converter.l = value;
+    quint16 reg1 = static_cast<quint16>((converter.i >> 16) & 0xFFFF);
+    quint16 reg2 = static_cast<quint16>(converter.i & 0xFFFF);
+    
+    return qMakePair(reg1, reg2);
+}
+
+QVector<quint16> ModbusManager::long64ToRegisters(qint64 value)
+{
+    union {
+        qint64 l;
+        quint64 i;
+    } converter;
+    
+    converter.l = value;
+    QVector<quint16> registers(4);
+    registers[0] = static_cast<quint16>((converter.i >> 48) & 0xFFFF);
     registers[1] = static_cast<quint16>((converter.i >> 32) & 0xFFFF);
     registers[2] = static_cast<quint16>((converter.i >> 16) & 0xFFFF);
     registers[3] = static_cast<quint16>(converter.i & 0xFFFF);
@@ -503,6 +637,25 @@ QVariantMap ModbusManager::convertRawData(const QVector<quint16> &rawData, Modbu
                     double value = registersToDouble64(rawData[i], rawData[i + 1], 
                                                       rawData[i + 2], rawData[i + 3]);
                     convertedData[QString("double64_%1").arg(i / 4)] = value;
+                }
+            }
+            break;
+            
+        case ModbusDataType::Long32:
+            for (int i = 0; i < rawData.size(); i += 2) {
+                if (i + 1 < rawData.size()) {
+                    qint32 value = registersToLong32(rawData[i], rawData[i + 1]);
+                    convertedData[QString("long32_%1").arg(i / 2)] = value;
+                }
+            }
+            break;
+            
+        case ModbusDataType::Long64:
+            for (int i = 0; i < rawData.size(); i += 4) {
+                if (i + 3 < rawData.size()) {
+                    qint64 value = registersToLong64(rawData[i], rawData[i + 1], 
+                                                    rawData[i + 2], rawData[i + 3]);
+                    convertedData[QString("long64_%1").arg(i / 4)] = value;
                 }
             }
             break;

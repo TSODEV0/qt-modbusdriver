@@ -47,6 +47,10 @@ private slots:
     void readMultipleCoils();
     void readFloat32();
     void readDouble64();
+    void readLong32();
+    void readLong64();
+    void readFloat32Array();
+    void readDouble64Array();
     
     // Write operations
     void writeSingleRegister();
@@ -55,6 +59,8 @@ private slots:
     void writeMultipleCoils();
     void writeFloat32();
     void writeDouble64();
+    void writeLong32();
+    void writeLong64();
     
     void clearLog();
     void updateConnectionStatus();
@@ -88,12 +94,18 @@ private:
     QPushButton *m_readMultipleCoilsButton;
     QPushButton *m_readFloat32Button;
     QPushButton *m_readDouble64Button;
+    QPushButton *m_readLong32Button;
+    QPushButton *m_readLong64Button;
+    QPushButton *m_readFloat32ArrayButton;
+    QPushButton *m_readDouble64ArrayButton;
     
     // Write operation widgets
     QSpinBox *m_writeAddressSpinBox;
     QSpinBox *m_writeValueSpinBox;
     QDoubleSpinBox *m_writeFloatSpinBox;
     QDoubleSpinBox *m_writeDoubleSpinBox;
+    QSpinBox *m_writeLong32SpinBox;
+    QLineEdit *m_writeLong64Edit;
     QCheckBox *m_writeCoilCheckBox;
     QLineEdit *m_writeMultipleEdit;
     QPushButton *m_writeSingleButton;
@@ -102,6 +114,8 @@ private:
     QPushButton *m_writeMultipleCoilsButton;
     QPushButton *m_writeFloat32Button;
     QPushButton *m_writeDouble64Button;
+    QPushButton *m_writeLong32Button;
+    QPushButton *m_writeLong64Button;
     
     // Log widget
     QTextEdit *m_logTextEdit;

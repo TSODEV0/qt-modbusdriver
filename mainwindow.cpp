@@ -163,7 +163,7 @@ void MainWindow::setupReadGroup(QWidget *readWidget)
     
     readLayout->addWidget(new QLabel("Data Type:"), 1, 0);
     m_readDataTypeCombo = new QComboBox();
-    m_readDataTypeCombo->addItems({"Holding Register", "Input Register", "Coil", "Discrete Input", "Float32", "Double64"});
+    m_readDataTypeCombo->addItems({"Holding Register", "Input Register", "Coil", "Discrete Input", "Float32", "Double64", "Long32", "Long64"});
     readLayout->addWidget(m_readDataTypeCombo, 1, 1, 1, 3);
     
     // Read buttons
@@ -173,6 +173,10 @@ void MainWindow::setupReadGroup(QWidget *readWidget)
     m_readMultipleCoilsButton = new QPushButton("Read Multiple Coils");
     m_readFloat32Button = new QPushButton("Read Float32");
     m_readDouble64Button = new QPushButton("Read Double64");
+    m_readLong32Button = new QPushButton("Read Long32");
+    m_readLong64Button = new QPushButton("Read Long64");
+    m_readFloat32ArrayButton = new QPushButton("Read Float32 Array");
+    m_readDouble64ArrayButton = new QPushButton("Read Double64 Array");
     
     readLayout->addWidget(m_readSingleButton, 2, 0, 1, 2);
     readLayout->addWidget(m_readMultipleButton, 2, 2, 1, 2);
@@ -180,6 +184,10 @@ void MainWindow::setupReadGroup(QWidget *readWidget)
     readLayout->addWidget(m_readMultipleCoilsButton, 3, 2, 1, 2);
     readLayout->addWidget(m_readFloat32Button, 4, 0, 1, 2);
     readLayout->addWidget(m_readDouble64Button, 4, 2, 1, 2);
+    readLayout->addWidget(m_readLong32Button, 5, 0, 1, 2);
+    readLayout->addWidget(m_readLong64Button, 5, 2, 1, 2);
+    readLayout->addWidget(m_readFloat32ArrayButton, 6, 0, 1, 2);
+    readLayout->addWidget(m_readDouble64ArrayButton, 6, 2, 1, 2);
     
     // Connect signals
     connect(m_readSingleButton, &QPushButton::clicked, this, &MainWindow::readSingleRegister);
@@ -188,6 +196,10 @@ void MainWindow::setupReadGroup(QWidget *readWidget)
     connect(m_readMultipleCoilsButton, &QPushButton::clicked, this, &MainWindow::readMultipleCoils);
     connect(m_readFloat32Button, &QPushButton::clicked, this, &MainWindow::readFloat32);
     connect(m_readDouble64Button, &QPushButton::clicked, this, &MainWindow::readDouble64);
+    connect(m_readLong32Button, &QPushButton::clicked, this, &MainWindow::readLong32);
+    connect(m_readLong64Button, &QPushButton::clicked, this, &MainWindow::readLong64);
+    connect(m_readFloat32ArrayButton, &QPushButton::clicked, this, &MainWindow::readFloat32Array);
+    connect(m_readDouble64ArrayButton, &QPushButton::clicked, this, &MainWindow::readDouble64Array);
     
     layout->addWidget(readGroup);
     layout->addStretch();
@@ -231,13 +243,23 @@ void MainWindow::setupWriteGroup(QWidget *writeWidget)
     m_writeDoubleSpinBox->setValue(0.0);
     writeLayout->addWidget(m_writeDoubleSpinBox, 3, 1);
     
-    writeLayout->addWidget(new QLabel("Coil Value:"), 4, 0);
-    m_writeCoilCheckBox = new QCheckBox("True/False");
-    writeLayout->addWidget(m_writeCoilCheckBox, 4, 1);
+    writeLayout->addWidget(new QLabel("Long32 Value:"), 4, 0);
+    m_writeLong32SpinBox = new QSpinBox();
+    m_writeLong32SpinBox->setRange(-2147483648, 2147483647);
+    m_writeLong32SpinBox->setValue(0);
+    writeLayout->addWidget(m_writeLong32SpinBox, 4, 1);
     
-    writeLayout->addWidget(new QLabel("Multiple Values (comma-separated):"), 5, 0);
+    writeLayout->addWidget(new QLabel("Long64 Value:"), 5, 0);
+    m_writeLong64Edit = new QLineEdit("0");
+    writeLayout->addWidget(m_writeLong64Edit, 5, 1);
+    
+    writeLayout->addWidget(new QLabel("Coil Value:"), 6, 0);
+    m_writeCoilCheckBox = new QCheckBox("True/False");
+    writeLayout->addWidget(m_writeCoilCheckBox, 6, 1);
+    
+    writeLayout->addWidget(new QLabel("Multiple Values (comma-separated):"), 7, 0);
     m_writeMultipleEdit = new QLineEdit("1,2,3,4,5");
-    writeLayout->addWidget(m_writeMultipleEdit, 5, 1);
+    writeLayout->addWidget(m_writeMultipleEdit, 7, 1);
     
     // Write buttons
     m_writeSingleButton = new QPushButton("Write Single Register");
@@ -246,13 +268,17 @@ void MainWindow::setupWriteGroup(QWidget *writeWidget)
     m_writeMultipleCoilsButton = new QPushButton("Write Multiple Coils");
     m_writeFloat32Button = new QPushButton("Write Float32");
     m_writeDouble64Button = new QPushButton("Write Double64");
+    m_writeLong32Button = new QPushButton("Write Long32");
+    m_writeLong64Button = new QPushButton("Write Long64");
     
-    writeLayout->addWidget(m_writeSingleButton, 6, 0, 1, 2);
-    writeLayout->addWidget(m_writeMultipleButton, 7, 0, 1, 2);
-    writeLayout->addWidget(m_writeCoilButton, 8, 0, 1, 2);
-    writeLayout->addWidget(m_writeMultipleCoilsButton, 9, 0, 1, 2);
-    writeLayout->addWidget(m_writeFloat32Button, 10, 0, 1, 2);
-    writeLayout->addWidget(m_writeDouble64Button, 11, 0, 1, 2);
+    writeLayout->addWidget(m_writeSingleButton, 8, 0, 1, 2);
+    writeLayout->addWidget(m_writeMultipleButton, 9, 0, 1, 2);
+    writeLayout->addWidget(m_writeCoilButton, 10, 0, 1, 2);
+    writeLayout->addWidget(m_writeMultipleCoilsButton, 11, 0, 1, 2);
+    writeLayout->addWidget(m_writeFloat32Button, 12, 0, 1, 2);
+    writeLayout->addWidget(m_writeDouble64Button, 13, 0, 1, 2);
+    writeLayout->addWidget(m_writeLong32Button, 14, 0, 1, 2);
+    writeLayout->addWidget(m_writeLong64Button, 15, 0, 1, 2);
     
     // Connect signals
     connect(m_writeSingleButton, &QPushButton::clicked, this, &MainWindow::writeSingleRegister);
@@ -261,6 +287,8 @@ void MainWindow::setupWriteGroup(QWidget *writeWidget)
     connect(m_writeMultipleCoilsButton, &QPushButton::clicked, this, &MainWindow::writeMultipleCoils);
     connect(m_writeFloat32Button, &QPushButton::clicked, this, &MainWindow::writeFloat32);
     connect(m_writeDouble64Button, &QPushButton::clicked, this, &MainWindow::writeDouble64);
+    connect(m_writeLong32Button, &QPushButton::clicked, this, &MainWindow::writeLong32);
+    connect(m_writeLong64Button, &QPushButton::clicked, this, &MainWindow::writeLong64);
     
     layout->addWidget(writeGroup);
     layout->addStretch();
@@ -413,6 +441,38 @@ void MainWindow::readDouble64()
     m_modbusManager->readHoldingRegister(address, ModbusDataType::Double64);
 }
 
+void MainWindow::readLong32()
+{
+    int address = m_readAddressSpinBox->value();
+    logMessage(QString("Reading Long32 at address %1").arg(address));
+    m_modbusManager->readHoldingRegister(address, ModbusDataType::Long32);
+}
+
+void MainWindow::readLong64()
+{
+    int address = m_readAddressSpinBox->value();
+    logMessage(QString("Reading Long64 at address %1").arg(address));
+    m_modbusManager->readHoldingRegister(address, ModbusDataType::Long64);
+}
+
+void MainWindow::readFloat32Array()
+{
+    int address = m_readAddressSpinBox->value();
+    int count = m_readCountSpinBox->value();
+    int registerCount = count * 2; // Float32 uses 2 registers per value
+    logMessage(QString("Reading %1 Float32 values (%2 registers) starting at address %3").arg(count).arg(registerCount).arg(address));
+    m_modbusManager->readHoldingRegisters(address, registerCount, ModbusDataType::Float32);
+}
+
+void MainWindow::readDouble64Array()
+{
+    int address = m_readAddressSpinBox->value();
+    int count = m_readCountSpinBox->value();
+    int registerCount = count * 4; // Double64 uses 4 registers per value
+    logMessage(QString("Reading %1 Double64 values (%2 registers) starting at address %3").arg(count).arg(registerCount).arg(address));
+    m_modbusManager->readHoldingRegisters(address, registerCount, ModbusDataType::Double64);
+}
+
 // Write operation slots
 void MainWindow::writeSingleRegister()
 {
@@ -499,6 +559,30 @@ void MainWindow::writeDouble64()
     
     logMessage(QString("Writing Double64 value %1 to address %2").arg(value).arg(address));
     m_modbusManager->writeHoldingRegisterDouble64(address, value);
+}
+
+void MainWindow::writeLong32()
+{
+    int address = m_writeAddressSpinBox->value();
+    qint32 value = static_cast<qint32>(m_writeLong32SpinBox->value());
+    
+    logMessage(QString("Writing Long32 value %1 to address %2").arg(value).arg(address));
+    m_modbusManager->writeHoldingRegisterLong32(address, value);
+}
+
+void MainWindow::writeLong64()
+{
+    int address = m_writeAddressSpinBox->value();
+    bool ok;
+    qint64 value = m_writeLong64Edit->text().toLongLong(&ok);
+    
+    if (!ok) {
+        logMessage("Error: Invalid Long64 value format");
+        return;
+    }
+    
+    logMessage(QString("Writing Long64 value %1 to address %2").arg(value).arg(address));
+    m_modbusManager->writeHoldingRegisterLong64(address, value);
 }
 
 void MainWindow::clearLog()
