@@ -460,6 +460,12 @@ void MainWindow::readFloat32Array()
     int address = m_readAddressSpinBox->value();
     int count = m_readCountSpinBox->value();
     int registerCount = count * 2; // Float32 uses 2 registers per value
+    
+    if (registerCount > 125) {
+        logMessage(QString("Error: Cannot read %1 Float32 values (%2 registers) - exceeds maximum limit of 125 registers").arg(count).arg(registerCount));
+        return;
+    }
+    
     logMessage(QString("Reading %1 Float32 values (%2 registers) starting at address %3").arg(count).arg(registerCount).arg(address));
     m_modbusManager->readHoldingRegisters(address, registerCount, ModbusDataType::Float32);
 }
@@ -469,6 +475,12 @@ void MainWindow::readDouble64Array()
     int address = m_readAddressSpinBox->value();
     int count = m_readCountSpinBox->value();
     int registerCount = count * 4; // Double64 uses 4 registers per value
+    
+    if (registerCount > 125) {
+        logMessage(QString("Error: Cannot read %1 Double64 values (%2 registers) - exceeds maximum limit of 125 registers").arg(count).arg(registerCount));
+        return;
+    }
+    
     logMessage(QString("Reading %1 Double64 values (%2 registers) starting at address %3").arg(count).arg(registerCount).arg(address));
     m_modbusManager->readHoldingRegisters(address, registerCount, ModbusDataType::Double64);
 }
