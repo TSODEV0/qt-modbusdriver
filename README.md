@@ -340,4 +340,4 @@ Contributions are welcome! Please ensure:
 
 ## Support
 
-For issues, questions, or contributions, please refer to the project documentation or create an issue in the project repository.
+For issues, questions, or contributions, please refer to the project documentation or create an issue in the project repository.# qt-modbusdriver
