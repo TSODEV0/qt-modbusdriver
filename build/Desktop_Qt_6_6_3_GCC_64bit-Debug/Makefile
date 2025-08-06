@@ -221,6 +221,7 @@ DIST          = /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/spec_pre.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/qt_config.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++/qmake.conf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/spec_post.prf \
+		../../.qmake.stash \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/exclusive_builds.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/toolchain.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/default_pre.prf \
@@ -417,6 +418,7 @@ Makefile: ../../modbusdriver.pro /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/qt_config.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++/qmake.conf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/exclusive_builds.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/toolchain.prf \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/default_pre.prf \
@@ -605,6 +607,7 @@ Makefile: ../../modbusdriver.pro /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/qt_config.prf:
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++/qmake.conf:
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/spec_post.prf:
+.qmake.stash:
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/exclusive_builds.prf:
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/toolchain.prf:
 /home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/features/default_pre.prf:
@@ -1560,15 +1563,6 @@ mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qvector.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/QMap \
 		ui_mainwindow.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QMessageBox \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qmessagebox.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qdialog.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qdialogbuttonbox.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QSplitter \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qsplitter.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QApplication \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qapplication.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication.h \
@@ -1589,7 +1583,22 @@ mainwindow.o: ../../mainwindow.cpp ../../mainwindow.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qpromise.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtGui/qguiapplication.h \
 		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtGui/qinputmethod.h \
-		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtGui/qguiapplication_platform.h
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtGui/qguiapplication_platform.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QMenuBar \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qmenubar.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qmenu.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QStatusBar \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qstatusbar.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QWidget \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QMessageBox \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qmessagebox.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qdialog.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qdialogbuttonbox.h \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/QSplitter \
+		/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtWidgets/qsplitter.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o mainwindow.o ../../mainwindow.cpp
 
 modbusmanager.o: ../../modbusmanager.cpp ../../modbusmanager.h \
