@@ -85,17 +85,27 @@ public:
     ServiceStatistics getStatistics() const;
     void resetStatistics();
     
+    // Modbus write operations
+    void writeHoldingRegister(const QString &host, int port, int address, quint16 value);
+    void writeHoldingRegisterFloat32(const QString &host, int port, int address, float value);
+    void writeHoldingRegisterDouble64(const QString &host, int port, int address, double value);
+    void writeHoldingRegisterLong32(const QString &host, int port, int address, qint32 value);
+    void writeHoldingRegisterLong64(const QString &host, int port, int address, qint64 value);
+    void writeCoil(const QString &host, int port, int address, bool value);
+    
 signals:
     void serviceStarted();
     void serviceStopped();
     void dataPointAcquired(const AcquiredDataPoint &dataPoint);
     void dataPointSentToInflux(const QString &pointName, bool success);
+    void writeCompleted(const QString &operation, bool success, const QString &error = QString());
     void errorOccurred(const QString &error);
     void statisticsUpdated(const ServiceStatistics &stats);
     
 private slots:
     void onPollTimer();
     void onModbusReadCompleted(const ModbusReadResult &result);
+    void onModbusWriteCompleted(const ModbusWriteResult &result);
     void onModbusConnectionStateChanged(bool connected);
     void onModbusError(const QString &error);
     // Socket connection methods removed (using direct Unix socket calls)

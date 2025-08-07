@@ -20,6 +20,8 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     connect(m_pollTimer, &QTimer::timeout, this, &ScadaCoreService::onPollTimer);
     connect(m_modbusManager, &ModbusManager::readCompleted, 
             this, &ScadaCoreService::onModbusReadCompleted);
+    connect(m_modbusManager, &ModbusManager::writeCompleted, 
+            this, &ScadaCoreService::onModbusWriteCompleted);
     connect(m_modbusManager, &ModbusManager::connectionStateChanged,
             this, &ScadaCoreService::onModbusConnectionStateChanged);
     connect(m_modbusManager, &ModbusManager::errorOccurred,
@@ -165,6 +167,73 @@ void ScadaCoreService::resetStatistics()
     m_responseTimers.clear();
 }
 
+// Modbus write operations
+void ScadaCoreService::writeHoldingRegister(const QString &host, int port, int address, quint16 value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteHoldingRegister[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing holding register:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeHoldingRegister(address, value);
+}
+
+void ScadaCoreService::writeHoldingRegisterFloat32(const QString &host, int port, int address, float value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteHoldingRegisterFloat32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing holding register Float32:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeHoldingRegisterFloat32(address, value);
+}
+
+void ScadaCoreService::writeHoldingRegisterDouble64(const QString &host, int port, int address, double value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteHoldingRegisterDouble64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing holding register Double64:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeHoldingRegisterDouble64(address, value);
+}
+
+void ScadaCoreService::writeHoldingRegisterLong32(const QString &host, int port, int address, qint32 value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteHoldingRegisterLong32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing holding register Long32:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeHoldingRegisterLong32(address, value);
+}
+
+void ScadaCoreService::writeHoldingRegisterLong64(const QString &host, int port, int address, qint64 value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteHoldingRegisterLong64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing holding register Long64:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeHoldingRegisterLong64(address, value);
+}
+
+void ScadaCoreService::writeCoil(const QString &host, int port, int address, bool value)
+{
+    if (!connectToModbusHost(host, port)) {
+        emit writeCompleted(QString("WriteCoil[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+        return;
+    }
+    
+    qDebug() << "Writing coil:" << host << ":" << port << "address" << address << "value" << value;
+    m_modbusManager->writeCoil(address, value);
+}
+
 void ScadaCoreService::onPollTimer()
 {
     if (!m_serviceRunning || m_dataPoints.isEmpty()) {
@@ -200,16 +269,12 @@ void ScadaCoreService::processNextDataPoint()
         return;
     }
     
-    // Connect to Modbus host if needed
-    QString hostKey = QString("%1:%2").arg(point.host).arg(point.port);
-    if (m_currentHost != hostKey) {
-        if (!connectToModbusHost(point.host, point.port)) {
-            emit errorOccurred(QString("Failed to connect to Modbus host: %1:%2")
-                             .arg(point.host).arg(point.port));
-            m_currentPointIndex++;
-            return;
-        }
-        m_currentHost = hostKey;
+    // Connect to Modbus host (will reuse existing connection if same host)
+    if (!connectToModbusHost(point.host, point.port)) {
+        emit errorOccurred(QString("Failed to connect to Modbus host: %1:%2")
+                         .arg(point.host).arg(point.port));
+        m_currentPointIndex++;
+        return;
     }
     
     // Start data acquisition
@@ -329,6 +394,19 @@ void ScadaCoreService::onModbusError(const QString &error)
     emit errorOccurred(QString("Modbus error: %1").arg(error));
 }
 
+void ScadaCoreService::onModbusWriteCompleted(const ModbusWriteResult &result)
+{
+    QString operation = QString("Write@%1[%2]").arg(result.startAddress).arg(result.registerCount);
+    
+    if (result.success) {
+        qDebug() << "✅ Modbus write completed successfully:" << operation;
+        emit writeCompleted(operation, true);
+    } else {
+        qWarning() << "❌ Modbus write failed:" << operation << "Error:" << result.errorString;
+        emit writeCompleted(operation, false, result.errorString);
+    }
+}
+
 bool ScadaCoreService::writeToTelegrafSocket(const QString& socketPath, const QByteArray& message)
 {
     if (!QFileInfo::exists(socketPath)) {
@@ -424,13 +502,36 @@ bool ScadaCoreService::sendDataToInflux(const AcquiredDataPoint &dataPoint)
 
 bool ScadaCoreService::connectToModbusHost(const QString &host, int port)
 {
-    if (m_modbusManager->isConnected()) {
+    QString hostKey = QString("%1:%2").arg(host).arg(port);
+    
+    // Check if we're already connected to the same host
+    if (m_modbusManager->isConnected() && m_currentHost == hostKey) {
+        qDebug() << "Already connected to" << hostKey << "- reusing connection";
+        return true;
+    }
+    
+    // Only disconnect if we're connected to a different host
+    if (m_modbusManager->isConnected() && m_currentHost != hostKey) {
+        qDebug() << "Switching from" << m_currentHost << "to" << hostKey;
         m_modbusManager->disconnectFromServer();
         // Give some time for disconnection
         QThread::msleep(100);
+        m_currentHost.clear();
     }
     
-    return m_modbusManager->connectToServer(host, port);
+    // Connect to the new host
+    qDebug() << "Connecting to Modbus host:" << hostKey;
+    bool connected = m_modbusManager->connectToServer(host, port);
+    
+    if (connected) {
+        m_currentHost = hostKey;
+        qDebug() << "Successfully connected to" << hostKey;
+    } else {
+        qWarning() << "Failed to connect to" << hostKey;
+        m_currentHost.clear();
+    }
+    
+    return connected;
 }
 
 void ScadaCoreService::updateStatistics(bool success, qint64 responseTime)

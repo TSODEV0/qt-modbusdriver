@@ -1143,6 +1143,7 @@ build/moc/scada_service_test.moc: scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusDataUnit \
 		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusReply \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include scada_service_test.cpp -o build/moc/scada_service_test.moc
@@ -1330,7 +1331,8 @@ build/obj/scada_service_test.o: scada_service_test.cpp ../../../Qt/6.6.3/gcc_64/
 		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusDataUnit \
 		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusReply \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
-		build/moc/scada_service_test.moc
+		build/moc/scada_service_test.moc \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/scada_service_test.o scada_service_test.cpp
 
 build/obj/scada_core_service.o: scada_core_service.cpp scada_core_service.h \

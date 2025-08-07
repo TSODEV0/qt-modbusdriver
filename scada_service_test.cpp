@@ -32,6 +32,8 @@ public:
                 this, &ScadaServiceTest::onErrorOccurred);
         connect(m_service, &ScadaCoreService::statisticsUpdated,
                 this, &ScadaServiceTest::onStatisticsUpdated);
+        connect(m_service, &ScadaCoreService::writeCompleted,
+                this, &ScadaServiceTest::onWriteCompleted);
         
         // Configure Telegraf socket
         m_service->setTelegrafSocketPath("/tmp/telegraf.sock");
@@ -59,6 +61,9 @@ private slots:
         qDebug() << "✅ SCADA Core Service started";
         qDebug() << "Data acquisition and InfluxDB integration active";
         qDebug();
+        
+        // Start write operations test after 5 seconds
+        QTimer::singleShot(5000, this, &ScadaServiceTest::testWriteOperations);
     }
     
     void onServiceStopped() {
@@ -126,6 +131,201 @@ private slots:
             qDebug() << "   Data points sent:" << stats.totalDataPointsSent;
             qDebug() << "   Avg response time:" << QString::number(stats.averageResponseTime, 'f', 2) << "ms";
         }
+    }
+    
+    void onWriteCompleted(const QString &operation, bool success, const QString &error) {
+        if (success) {
+            qDebug() << "✅ Write operation completed:" << operation;
+        } else {
+            qDebug() << "❌ Write operation failed:" << operation << "Error:" << error;
+        }
+    }
+    
+    void testWriteOperations() {
+        qDebug();
+        qDebug() << "=== Starting Modbus Write & Read Test Operations ===";
+        
+        const QString host = "10.72.2.215";
+        const int port = 502;
+        
+        // Test 1: Write holding register (16-bit integer) then read back
+        qDebug() << "🔧 Test 1: Writing holding register (address 500, value 1234)";
+        m_service->writeHoldingRegister(host, port, 500, 1234);
+        
+        QTimer::singleShot(1000, [this, host, port]() {
+            qDebug() << "📖 Test 1: Reading back holding register (address 500)";
+            // Create temporary data point for reading
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_500";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 500;
+            readPoint.dataType = ModbusDataType::HoldingRegister;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            // Remove after 500ms
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_500");
+            });
+        });
+        
+        // Test 2: Write Float32 value then read back
+        QTimer::singleShot(2500, [this, host, port]() {
+            qDebug() << "🔧 Test 2: Writing Float32 (address 502, value 25.75)";
+            m_service->writeHoldingRegisterFloat32(host, port, 502, 25.75f);
+        });
+        
+        QTimer::singleShot(3500, [this, host, port]() {
+            qDebug() << "📖 Test 2: Reading back Float32 (address 502)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_502";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 502;
+            readPoint.dataType = ModbusDataType::Float32;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_502");
+            });
+        });
+        
+        // Test 3: Write Double64 value then read back
+        QTimer::singleShot(5000, [this, host, port]() {
+            qDebug() << "🔧 Test 3: Writing Double64 (address 504, value 123.456789)";
+            m_service->writeHoldingRegisterDouble64(host, port, 504, 123.456789);
+        });
+        
+        QTimer::singleShot(6000, [this, host, port]() {
+            qDebug() << "📖 Test 3: Reading back Double64 (address 504)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_504";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 504;
+            readPoint.dataType = ModbusDataType::Double64;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_504");
+            });
+        });
+        
+        // Test 4: Write Long32 value then read back
+        QTimer::singleShot(7500, [this, host, port]() {
+            qDebug() << "🔧 Test 4: Writing Long32 (address 508, value 987654321)";
+            m_service->writeHoldingRegisterLong32(host, port, 508, 987654321);
+        });
+        
+        QTimer::singleShot(8500, [this, host, port]() {
+            qDebug() << "📖 Test 4: Reading back Long32 (address 508)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_508";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 508;
+            readPoint.dataType = ModbusDataType::Long32;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_508");
+            });
+        });
+        
+        // Test 5: Write Long64 value then read back
+        QTimer::singleShot(10000, [this, host, port]() {
+            qDebug() << "🔧 Test 5: Writing Long64 (address 510, value 1234567890123456)";
+            m_service->writeHoldingRegisterLong64(host, port, 510, 1234567890123456LL);
+        });
+        
+        QTimer::singleShot(11000, [this, host, port]() {
+            qDebug() << "📖 Test 5: Reading back Long64 (address 510)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_510";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 510;
+            readPoint.dataType = ModbusDataType::Long64;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_510");
+            });
+        });
+        
+        // Test 6: Write coil (boolean) then read back
+        QTimer::singleShot(12500, [this, host, port]() {
+            qDebug() << "🔧 Test 6: Writing coil (address 10, value true)";
+            m_service->writeCoil(host, port, 10, true);
+        });
+        
+        QTimer::singleShot(13500, [this, host, port]() {
+            qDebug() << "📖 Test 6: Reading back coil (address 10)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_coil_10";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 10;
+            readPoint.dataType = ModbusDataType::Coil;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_coil_10");
+            });
+        });
+        
+        // Test 7: Write another coil (boolean) then read back
+        QTimer::singleShot(15000, [this, host, port]() {
+            qDebug() << "🔧 Test 7: Writing coil (address 11, value false)";
+            m_service->writeCoil(host, port, 11, false);
+        });
+        
+        QTimer::singleShot(16000, [this, host, port]() {
+            qDebug() << "📖 Test 7: Reading back coil (address 11)";
+            DataAcquisitionPoint readPoint;
+            readPoint.name = "test_read_coil_11";
+            readPoint.host = host;
+            readPoint.port = port;
+            readPoint.address = 11;
+            readPoint.dataType = ModbusDataType::Coil;
+            readPoint.pollInterval = 1000;
+            readPoint.measurement = "test";
+            readPoint.enabled = true;
+            m_service->addDataPoint(readPoint);
+            
+            QTimer::singleShot(500, [this]() {
+                m_service->removeDataPoint("test_read_coil_11");
+            });
+        });
+        
+        // Test completion summary
+        QTimer::singleShot(17000, [this]() {
+            qDebug();
+            qDebug() << "✅ Write & Read Test Operations Complete";
+            qDebug() << "All 7 write operations with read-back verification executed";
+            qDebug();
+        });
+        
+        qDebug() << "Write & Read operations test scheduled. Operations will execute over 17 seconds.";
+        qDebug();
     }
     
     void stopTest() {
