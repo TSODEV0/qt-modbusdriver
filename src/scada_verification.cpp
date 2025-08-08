@@ -5,8 +5,7 @@
  * fundamental SCADA system capabilities and compliance.
  */
 
-#include "modbusmanager.h"
-#include "mainwindow.h"
+#include "../include/modbusmanager.h"
 #include <QCoreApplication>
 #include <QTimer>
 #include <QDebug>

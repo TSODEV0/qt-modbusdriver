@@ -1,4 +1,4 @@
-#include "modbusmanager.h"
+#include "../include/modbusmanager.h"
 #include <QDebug>
 #include <QDateTime>
 #include <QDataStream>

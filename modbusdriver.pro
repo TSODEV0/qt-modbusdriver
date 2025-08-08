@@ -1,26 +1,64 @@
-QT       += core gui serialbus network
+# ModbusDriver - SCADA Modbus Communication System
+# Qt Project Configuration File
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+TEMPLATE = app
+TARGET = ModbusDriver
 
+# Qt modules
+QT += core gui widgets serialbus network sql
+
+# C++ standard
 CONFIG += c++17
 
-# You can make your code fail to compile if it uses deprecated APIs.
-# In order to do so, uncomment the following line.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+# Compiler flags
+CONFIG += warn_on
+CONFIG += debug_and_release
 
+# Disable deprecated APIs
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000
+
+# Include paths
+INCLUDEPATH += include
+INCLUDEPATH += src
+
+# Source files
 SOURCES += \
-    main.cpp \
-    mainwindow.cpp \
-    modbusmanager.cpp
+    src/main.cpp \
+    src/mainwindow.cpp \
+    src/modbusmanager.cpp \
+    src/scada_core_service.cpp
 
+# Header files
 HEADERS += \
-    mainwindow.h \
-    modbusmanager.h
+    include/mainwindow.h \
+    include/modbusmanager.h \
+    include/scada_core_service.h
 
+# UI forms
 FORMS += \
-    mainwindow.ui
+    ui/mainwindow.ui
 
-# Default rules for deployment.
+# Build directories
+CONFIG(debug, debug|release) {
+    DESTDIR = build-debug
+    OBJECTS_DIR = build-debug/obj
+    MOC_DIR = build-debug/moc
+    UI_DIR = build-debug/ui
+    RCC_DIR = build-debug/rcc
+}
+
+CONFIG(release, debug|release) {
+    DESTDIR = build-release
+    OBJECTS_DIR = build-release/obj
+    MOC_DIR = build-release/moc
+    UI_DIR = build-release/ui
+    RCC_DIR = build-release/rcc
+}
+
+# Installation paths
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+# Additional clean targets
+CLEAN_FILES += build-debug/* build-release/*

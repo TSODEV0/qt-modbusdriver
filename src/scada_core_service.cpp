@@ -1,4 +1,4 @@
-#include "scada_core_service.h"
+#include "../include/scada_core_service.h"
 #include <QDebug>
 #include <QJsonArray>
 #include <QThread>

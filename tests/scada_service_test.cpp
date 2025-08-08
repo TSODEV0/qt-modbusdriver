@@ -2,7 +2,7 @@
 #include <QDebug>
 #include <QTimer>
 #include <QThread>
-#include "scada_core_service.h"
+#include "../include/scada_core_service.h"
 
 class ScadaServiceTest : public QObject
 {

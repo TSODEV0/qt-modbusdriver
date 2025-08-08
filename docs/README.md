@@ -1,6 +1,96 @@
-# Modbus Driver - IEEE 754 Compliant
+# Enhanced Optimized Modbus System
 
-A comprehensive Qt C++ application implementing Modbus communication with full IEEE 754 standard compliance for floating-point operations. This project demonstrates various Modbus operation modes including single/multiple read/write operations for different data types.
+A high-performance, PostgreSQL-integrated Modbus TCP client system with advanced features including dynamic configuration management, optimized block polling, asynchronous write handling, and intelligent caching.
+
+## Features
+
+### Core Capabilities
+- **Dynamic Address Management**: Load tag definitions from PostgreSQL database instead of hard-coding
+- **Optimized Block Polling**: Automatically group consecutive register addresses into efficient blocks (max 125 registers)
+- **Asynchronous Write Handling**: Thread-safe write queue with priority support
+- **Worker Threads per Device**: Dedicated thread for each Modbus device
+- **Extensible Data Types**: Support for INT16, UINT16, INT32, UINT32, INT64, UINT64, FLOAT32, DOUBLE64, BOOL
+- **Database Integration**: Full PostgreSQL integration with intelligent caching
+- **Performance Monitoring**: Real-time statistics and performance reporting
+
+### Advanced Features
+- **Adaptive Polling**: Dynamic polling interval adjustment based on data change frequency
+- **Intelligent Caching**: Multi-level caching with automatic cleanup and preloading
+- **Configuration Hot-Reload**: Runtime configuration changes without system restart
+- **Diagnostic Mode**: Comprehensive logging and debugging capabilities
+- **Health Monitoring**: Automatic device health checks and recovery
+- **Block Optimization**: Automatic register block optimization for maximum efficiency
+
+## Architecture
+
+### Core Components
+
+1. **EnhancedOptimizedModbusManager**: Main system coordinator
+   - Manages multiple Modbus devices
+   - Handles configuration and system lifecycle
+   - Provides unified API for all operations
+
+2. **EnhancedDatabaseConfigManager**: Database integration layer
+   - PostgreSQL connection management
+   - Configuration loading and caching
+   - Schema management and validation
+
+3. **EnhancedModbusWorker**: Device-specific worker threads
+   - Handles Modbus communication for individual devices
+   - Implements optimized polling and write operations
+   - Manages connection state and error recovery
+
+### Database Schema
+
+The system uses the following PostgreSQL tables:
+
+- **devices**: Device configuration (host, port, timeouts, etc.)
+- **tags**: Individual tag definitions with data types and addresses
+- **register_blocks**: Optimized register blocks for efficient polling
+- **block_tags**: Mapping between tags and register blocks
+- **system_config**: Runtime system configuration parameters
+
+## Installation
+
+### Prerequisites
+
+- Qt 6.0 or later
+- PostgreSQL 12 or later
+- CMake 3.16 or later
+- C++17 compatible compiler
+
+### Dependencies
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install qt6-base-dev qt6-serialbus-dev libpq-dev postgresql-client
+
+# CentOS/RHEL
+sudo yum install qt6-qtbase-devel qt6-qtserialbus-devel postgresql-devel
+```
+
+### Build Instructions
+
+1. Clone or extract the source code
+2. Create build directory:
+   ```bash
+   mkdir build && cd build
+   ```
+
+3. Configure with CMake:
+   ```bash
+   cmake ..
+   ```
+
+4. Build the project:
+   ```bash
+   make -j$(nproc)
+   ```
+
+5. Install (optional):
+   ```bash
+   sudo make install
+   ```
 
 ## Features
 
