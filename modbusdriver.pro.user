@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 14.0.1, 2025-08-06T11:23:12. -->
+<!-- Written by QtCreator 14.0.1, 2025-08-13T09:26:02. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -253,7 +253,7 @@
     <value type="bool" key="RunConfiguration.UseCppDebuggerAuto">true</value>
     <value type="bool" key="RunConfiguration.UseLibrarySearchPath">true</value>
     <value type="bool" key="RunConfiguration.UseQmlDebuggerAuto">true</value>
-    <value type="QString" key="RunConfiguration.WorkingDirectory.default">/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/Desktop_Qt_6_6_3_GCC_64bit-Debug</value>
+    <value type="QString" key="RunConfiguration.WorkingDirectory.default">/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/Desktop_Qt_6_6_3_GCC_64bit-Debug/build-debug</value>
    </valuemap>
    <value type="qlonglong" key="ProjectExplorer.Target.RunConfigurationCount">1</value>
   </valuemap>

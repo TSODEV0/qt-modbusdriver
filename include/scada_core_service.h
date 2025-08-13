@@ -132,13 +132,17 @@ private:
     QMap<QString, qint64> m_responseTimers; // Track response times
     
     // Helper methods
-    bool writeToInflux(const QString& measurement, const QString& device, const QVariant& value);
+    bool writeToInflux(const QString& measurement, const QString& device, const QVariant& value, const QString& description = QString());
+    bool writeToInfluxEnhanced(const AcquiredDataPoint &dataPoint);
     bool writeToTelegrafSocket(const QString& socketPath, const QByteArray& message);
     bool sendDataToInflux(const AcquiredDataPoint &dataPoint);
     void processNextDataPoint();
+    void processDataPoint(const DataAcquisitionPoint &point, qint64 currentTime);
     bool connectToModbusHost(const QString &host, int port);
     void updateStatistics(bool success, qint64 responseTime = 0);
     QJsonObject dataPointToJson(const AcquiredDataPoint &dataPoint);
+    void handleBlockReadResult(const ModbusReadResult &result, const DataAcquisitionPoint &blockPoint);
+    bool isPointCoveredByBlock(const DataAcquisitionPoint &point);
 };
 
 #endif // SCADA_CORE_SERVICE_H

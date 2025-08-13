@@ -1,4 +1,4 @@
-QT += core serialbus network
+QT += core serialbus network sql
 QT -= gui
 
 CONFIG += c++17 console
@@ -9,14 +9,16 @@ TEMPLATE = app
 
 # Source files
 SOURCES += \
-    scada_service_test.cpp \
-    scada_core_service.cpp \
-    modbusmanager.cpp
+    src/scada_service_test.cpp \
+    src/modbusmanager.cpp \
+    src/scada_core_service.cpp \
+    src/database_manager.cpp
 
 # Header files
 HEADERS += \
-    scada_core_service.h \
-    modbusmanager.h
+    include/modbusmanager.h \
+    include/scada_core_service.h \
+    include/database_manager.h
 
 # Compiler flags
 CXXFLAGS += -std=c++17

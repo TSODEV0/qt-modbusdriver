@@ -7,8 +7,24 @@
 ModbusManager::ModbusManager(QObject *parent)
     : QObject(parent)
     , m_modbusClient(nullptr)
+    , m_requestTimer(nullptr)
+    , m_timeoutTimer(nullptr)
+    , m_requestInProgress(false)
+    , m_currentReply(nullptr)
+    , m_currentRequestTime(0)
+    , m_requestTimeout(5000)  // 5 seconds default timeout
+    , m_requestInterval(100)  // 100ms between requests
 {
     m_modbusClient = new QModbusTcpClient(this);
+    
+    // Initialize timers
+    m_requestTimer = new QTimer(this);
+    m_requestTimer->setSingleShot(true);
+    connect(m_requestTimer, &QTimer::timeout, this, &ModbusManager::processNextRequest);
+    
+    m_timeoutTimer = new QTimer(this);
+    m_timeoutTimer->setSingleShot(true);
+    connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
     
     connect(m_modbusClient, &QModbusClient::stateChanged,
             this, &ModbusManager::onStateChanged);
@@ -98,18 +114,15 @@ void ModbusManager::readHoldingRegisters(int startAddress, int count, ModbusData
         return;
     }
     
-    // Use address directly (Modbus addresses are 0-based)
-    QModbusDataUnit readUnit(QModbusDataUnit::HoldingRegisters, startAddress, count);
+    // Create request and add to queue
+    ModbusRequest request;
+    request.type = ModbusRequest::ReadHoldingRegisters;
+    request.startAddress = startAddress;
+    request.count = count;
+    request.dataType = dataType;
+    request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
-    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
-            m_pendingReads[reply] = dataType;
-            m_replyAddressMap[reply] = qMakePair(startAddress, count);
-        } else {
-            delete reply;
-        }
-    }
+    queueRequest(request);
 }
 
 void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataType dataType)
@@ -125,18 +138,15 @@ void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataTy
         return;
     }
     
-    // Use address directly (Modbus addresses are 0-based)
-    QModbusDataUnit readUnit(QModbusDataUnit::InputRegisters, startAddress, count);
+    // Create request and add to queue
+    ModbusRequest request;
+    request.type = ModbusRequest::ReadInputRegisters;
+    request.startAddress = startAddress;
+    request.count = count;
+    request.dataType = dataType;
+    request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
-    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
-            m_pendingReads[reply] = dataType;
-            m_replyAddressMap[reply] = qMakePair(startAddress, count);
-        } else {
-            delete reply;
-        }
-    }
+    queueRequest(request);
 }
 
 void ModbusManager::readCoils(int startAddress, int count)
@@ -152,17 +162,15 @@ void ModbusManager::readCoils(int startAddress, int count)
         return;
     }
     
-    QModbusDataUnit readUnit(QModbusDataUnit::Coils, startAddress, count);
+    // Create request and add to queue
+    ModbusRequest request;
+    request.type = ModbusRequest::ReadCoils;
+    request.startAddress = startAddress;
+    request.count = count;
+    request.dataType = ModbusDataType::Coil;
+    request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
-    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
-            m_pendingReads[reply] = ModbusDataType::Coil;
-            m_replyAddressMap[reply] = qMakePair(startAddress, count);
-        } else {
-            delete reply;
-        }
-    }
+    queueRequest(request);
 }
 
 void ModbusManager::readDiscreteInputs(int startAddress, int count)
@@ -178,17 +186,15 @@ void ModbusManager::readDiscreteInputs(int startAddress, int count)
         return;
     }
     
-    QModbusDataUnit readUnit(QModbusDataUnit::DiscreteInputs, startAddress, count);
+    // Create request and add to queue
+    ModbusRequest request;
+    request.type = ModbusRequest::ReadDiscreteInputs;
+    request.startAddress = startAddress;
+    request.count = count;
+    request.dataType = ModbusDataType::DiscreteInput;
+    request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
-    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
-        if (!reply->isFinished()) {
-            connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
-            m_pendingReads[reply] = ModbusDataType::DiscreteInput;
-            m_replyAddressMap[reply] = qMakePair(startAddress, count);
-        } else {
-            delete reply;
-        }
-    }
+    queueRequest(request);
 }
 
 // Single write operations
@@ -482,12 +488,118 @@ QVector<quint16> ModbusManager::long64ToRegisters(qint64 value)
     return registers;
 }
 
+// Queue management methods
+void ModbusManager::queueRequest(const ModbusRequest &request)
+{
+    m_requestQueue.enqueue(request);
+    
+    // Start processing if no request is in progress
+    if (!m_requestInProgress && !m_requestTimer->isActive()) {
+        m_requestTimer->start(0); // Process immediately
+    }
+}
+
+void ModbusManager::processNextRequest()
+{
+    if (m_requestQueue.isEmpty() || m_requestInProgress) {
+        return;
+    }
+    
+    ModbusRequest request = m_requestQueue.dequeue();
+    executeRequest(request);
+}
+
+void ModbusManager::executeRequest(const ModbusRequest &request)
+{
+    if (!isConnected()) {
+        emit errorOccurred("Not connected to Modbus server");
+        // Schedule next request
+        if (!m_requestQueue.isEmpty()) {
+            m_requestTimer->start(m_requestInterval);
+        }
+        return;
+    }
+    
+    m_requestInProgress = true;
+    m_currentRequestTime = QDateTime::currentMSecsSinceEpoch();
+    
+    QModbusDataUnit readUnit;
+    
+    switch (request.type) {
+        case ModbusRequest::ReadHoldingRegisters:
+            readUnit = QModbusDataUnit(QModbusDataUnit::HoldingRegisters, request.startAddress, request.count);
+            break;
+        case ModbusRequest::ReadInputRegisters:
+            readUnit = QModbusDataUnit(QModbusDataUnit::InputRegisters, request.startAddress, request.count);
+            break;
+        case ModbusRequest::ReadCoils:
+            readUnit = QModbusDataUnit(QModbusDataUnit::Coils, request.startAddress, request.count);
+            break;
+        case ModbusRequest::ReadDiscreteInputs:
+            readUnit = QModbusDataUnit(QModbusDataUnit::DiscreteInputs, request.startAddress, request.count);
+            break;
+    }
+    
+    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
+        if (!reply->isFinished()) {
+            m_currentReply = reply;
+            connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
+            m_pendingReads[reply] = request.dataType;
+            m_replyAddressMap[reply] = qMakePair(request.startAddress, request.count);
+            
+            // Start timeout timer
+            m_timeoutTimer->start(m_requestTimeout);
+        } else {
+            delete reply;
+            completeCurrentRequest();
+        }
+    } else {
+        completeCurrentRequest();
+    }
+}
+
+void ModbusManager::completeCurrentRequest()
+{
+    m_requestInProgress = false;
+    m_currentReply = nullptr;
+    m_timeoutTimer->stop();
+    
+    // Schedule next request
+    if (!m_requestQueue.isEmpty()) {
+        m_requestTimer->start(m_requestInterval);
+    }
+}
+
+void ModbusManager::handleRequestTimeout()
+{
+    if (m_currentReply) {
+        m_currentReply->deleteLater();
+        m_pendingReads.remove(m_currentReply);
+        m_replyAddressMap.remove(m_currentReply);
+        
+        qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - m_currentRequestTime;
+        emit errorOccurred(QString("Modbus request timeout after %1ms").arg(elapsed));
+    }
+    
+    completeCurrentRequest();
+}
+
 // Private slots
+void ModbusManager::onRequestTimeout()
+{
+    handleRequestTimeout();
+}
+
 void ModbusManager::onReadReady()
 {
     auto reply = qobject_cast<QModbusReply *>(sender());
     if (!reply)
         return;
+    
+    // Stop timeout timer since we got a response
+    if (reply == m_currentReply) {
+        m_timeoutTimer->stop();
+    }
         
     ModbusDataType dataType = m_pendingReads.value(reply, ModbusDataType::HoldingRegister);
     ModbusReadResult result = processReadReply(reply, dataType);
@@ -495,6 +607,11 @@ void ModbusManager::onReadReady()
     m_pendingReads.remove(reply);
     m_replyAddressMap.remove(reply);
     reply->deleteLater();
+    
+    // Complete current request and process next one
+    if (reply == m_currentReply) {
+        completeCurrentRequest();
+    }
     
     emit readCompleted(result);
 }

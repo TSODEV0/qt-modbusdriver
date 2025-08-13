@@ -9,6 +9,7 @@
 #include <QVariant>
 #include <QVector>
 #include <QMap>
+#include <QQueue>
 #include <cmath>
 #include <limits>
 
@@ -75,6 +76,29 @@ struct ModbusWriteResult {
     
     ModbusWriteResult() : success(false), errorType(QModbusDevice::NoError),
                          startAddress(0), registerCount(0), timestamp(0) {}
+};
+
+// Request queue structure for proper sequencing
+struct ModbusRequest {
+    enum RequestType {
+        ReadHoldingRegisters,
+        ReadInputRegisters,
+        ReadCoils,
+        ReadDiscreteInputs,
+        WriteHoldingRegisters,
+        WriteCoils
+    };
+    
+    RequestType type;
+    int startAddress;
+    int count;
+    ModbusDataType dataType;
+    QVector<quint16> writeData;
+    QVector<bool> writeBoolData;
+    qint64 requestTime;
+    
+    ModbusRequest() : type(ReadHoldingRegisters), startAddress(0), count(1), 
+                     dataType(ModbusDataType::HoldingRegister), requestTime(0) {}
 };
 
 class ModbusManager : public QObject
@@ -149,17 +173,35 @@ private slots:
     void onWriteReady();
     void onStateChanged(QModbusDevice::State state);
     void onErrorOccurred(QModbusDevice::Error error);
+    void processNextRequest();
+    void onRequestTimeout();
     
 private:
     QModbusTcpClient *m_modbusClient;
     QMap<QModbusReply*, ModbusDataType> m_pendingReads;
     QMap<QModbusReply*, QPair<int, int>> m_replyAddressMap; // startAddress, count
     
-    // Helper functions
+    // Request queue management
+    QQueue<ModbusRequest> m_requestQueue;
+    QTimer *m_requestTimer;
+    QTimer *m_timeoutTimer;
+    bool m_requestInProgress;
+    QModbusReply *m_currentReply;
+    qint64 m_currentRequestTime;
+    int m_requestTimeout; // milliseconds
+    int m_requestInterval; // milliseconds between requests
+    
+    // Helper methods for data processing
     ModbusReadResult processReadReply(QModbusReply *reply, ModbusDataType dataType);
     ModbusWriteResult processWriteReply(QModbusReply *reply, int startAddress, int count);
     void validateIEEE754Data(ModbusReadResult &result);
     QVariantMap convertRawData(const QVector<quint16> &rawData, ModbusDataType dataType);
+    
+    // Request queue management
+    void queueRequest(const ModbusRequest &request);
+    void executeRequest(const ModbusRequest &request);
+    void completeCurrentRequest();
+    void handleRequestTimeout();
 };
 
 #endif // MODBUSMANAGER_H
