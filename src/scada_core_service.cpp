@@ -3,7 +3,9 @@
 #include <QJsonArray>
 #include <QThread>
 #include <QMetaType>
+#include <QCoreApplication>
 #include <cstring>
+#include <algorithm>
 
 ScadaCoreService::ScadaCoreService(QObject *parent)
     : QObject(parent)
@@ -16,6 +18,11 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     // Initialize components
     m_pollTimer = new QTimer(this);
     m_modbusManager = new ModbusManager(this);
+    
+    // Load configuration for ModbusManager
+    if (!m_modbusManager->loadConfigurationFromFile()) {
+        qWarning() << "Failed to load ModbusManager configuration, using defaults";
+    }
     
     // Connect signals
     connect(m_pollTimer, &QTimer::timeout, this, &ScadaCoreService::onPollTimer);
@@ -254,8 +261,11 @@ void ScadaCoreService::processNextDataPoint()
         return;
     }
     
-    // First pass: Look for ready block points to prioritize
+    // First pass: Look for ready block points to prioritize by data type
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    // Collect ready block points and sort by priority
+    QVector<QPair<int, int>> readyBlockIndices; // priority, index
     
     for (int i = 0; i < m_dataPoints.size(); i++) {
         const DataAcquisitionPoint &blockPoint = m_dataPoints[i];
@@ -268,41 +278,94 @@ void ScadaCoreService::processNextDataPoint()
         // Check if block is ready for polling
         qint64 lastPollTime = m_lastPollTimes.value(blockPoint.name, 0);
         if (currentTime - lastPollTime >= blockPoint.pollInterval) {
-            // Process this block point
-            processDataPoint(blockPoint, currentTime);
-            return;
+            // Get priority from block tags (lower number = higher priority)
+            int priority = blockPoint.tags.value("data_type_priority", "99").toInt();
+            readyBlockIndices.append(qMakePair(priority, i));
         }
     }
     
-    // Second pass: Process individual points (with coverage check)
-    const DataAcquisitionPoint &point = m_dataPoints[m_currentPointIndex];
-    
-    // Check if this point is enabled and ready for polling
-    if (!point.enabled) {
-        m_currentPointIndex++;
+    // Sort by priority (INT16=1, FLOAT32=2, DOUBLE64=3)
+    if (!readyBlockIndices.isEmpty()) {
+        std::sort(readyBlockIndices.begin(), readyBlockIndices.end());
+        
+        // Process ALL ready blocks in priority order to ensure lower priority blocks get processed
+        for (const auto &pair : readyBlockIndices) {
+            int blockIndex = pair.second;
+            const DataAcquisitionPoint &prioritizedBlock = m_dataPoints[blockIndex];
+            
+            qDebug() << "Processing prioritized block:" << prioritizedBlock.name 
+                     << "Data type:" << prioritizedBlock.tags.value("block_data_type", "UNKNOWN")
+                     << "Priority:" << prioritizedBlock.tags.value("data_type_priority", "99");
+            
+            processDataPoint(prioritizedBlock, currentTime);
+        }
         return;
     }
     
-    // Skip individual points if they are covered by an optimized block
-    if (!point.tags.contains("block_type")) {
-        // This is an individual point - check if it's covered by a block
+    // Second pass: Process individual points with priority ordering
+    // Collect ready individual points and sort by data type priority
+    QVector<QPair<int, int>> readyIndividualIndices; // priority, index
+    
+    for (int i = 0; i < m_dataPoints.size(); i++) {
+        const DataAcquisitionPoint &point = m_dataPoints[i];
+        
+        // Skip if not enabled or is a block
+        if (!point.enabled || point.tags.contains("block_type")) {
+            continue;
+        }
+        
+        // Skip individual points if they are covered by an optimized block
         if (isPointCoveredByBlock(point)) {
-            qDebug() << "Skipping individual point" << point.name << "- covered by optimized block";
-            m_currentPointIndex++;
-            return;
+            continue;
+        }
+        
+        // Check if point is ready for polling
+        qint64 lastPollTime = m_lastPollTimes.value(point.name, 0);
+        if (currentTime - lastPollTime >= point.pollInterval) {
+            // Determine priority based on data type
+            int priority = 99; // Default low priority
+            switch (point.dataType) {
+                case ModbusDataType::HoldingRegister:
+                    priority = 1; // INT16 - highest priority
+                    break;
+                case ModbusDataType::Float32:
+                case ModbusDataType::Long32:
+                    priority = 2; // FLOAT32/LONG32 - second priority
+                    break;
+                case ModbusDataType::Double64:
+                case ModbusDataType::Long64:
+                    priority = 3; // DOUBLE64/LONG64 - third priority
+                    break;
+                case ModbusDataType::InputRegister:
+                case ModbusDataType::Coil:
+                case ModbusDataType::DiscreteInput:
+                    priority = 1; // Other types - high priority
+                    break;
+            }
+            readyIndividualIndices.append(qMakePair(priority, i));
         }
     }
     
-    qint64 lastPollTime = m_lastPollTimes.value(point.name, 0);
-    
-    if (currentTime - lastPollTime < point.pollInterval) {
-        m_currentPointIndex++;
+    // Sort by priority and process the highest priority individual point
+    if (!readyIndividualIndices.isEmpty()) {
+        std::sort(readyIndividualIndices.begin(), readyIndividualIndices.end());
+        
+        int pointIndex = readyIndividualIndices.first().second;
+        const DataAcquisitionPoint &prioritizedPoint = m_dataPoints[pointIndex];
+        
+        qDebug() << "Processing prioritized individual point:" << prioritizedPoint.name 
+                 << "Data type:" << static_cast<int>(prioritizedPoint.dataType)
+                 << "Priority:" << readyIndividualIndices.first().first;
+        
+        processDataPoint(prioritizedPoint, currentTime);
         return;
     }
     
-    // Process this individual point
-    processDataPoint(point, currentTime);
+    // Fallback: process next point in sequence if no prioritized points are ready
     m_currentPointIndex++;
+    if (m_currentPointIndex >= m_dataPoints.size()) {
+        m_currentPointIndex = 0;
+    }
 }
 
 void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint64 currentTime)
@@ -324,7 +387,10 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
     m_lastPollTimes[point.name] = currentTime;
     m_responseTimers[point.name] = currentTime;
     
-    qDebug() << "Polling data point:" << point.name << "at address" << point.address;
+    // Extract unit ID from tags (default to 1 if not specified)
+    int unitId = point.tags.value("unit_id", "1").toInt();
+    
+    qDebug() << "Polling data point:" << point.name << "at address" << point.address << "Unit ID:" << unitId;
     
     // Check if this is an optimized block read with combined conditions
     if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
@@ -334,34 +400,34 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         QString dataType = point.tags.value("data_type", "");
         
         qDebug() << "Performing block read - Address:" << point.address << "Size:" << blockSize
-                 << "Register Type:" << registerType << "Data Type:" << dataType;
+                 << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
         
         // Use combined condition: register_type + data_type for precise Modbus operation selection
         if (registerType == "HOLDING_REGISTER") {
             // Handle holding register types based on data_type
             if (dataType == "Int16" || point.dataType == ModbusDataType::HoldingRegister) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister, unitId);
             } else if (dataType == "Float32" || point.dataType == ModbusDataType::Float32) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Float32);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Float32, unitId);
             } else if (dataType == "Double64" || point.dataType == ModbusDataType::Double64) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Double64);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Double64, unitId);
             } else if (dataType == "Long32" || point.dataType == ModbusDataType::Long32) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long32);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long32, unitId);
             } else if (dataType == "Long64" || point.dataType == ModbusDataType::Long64) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long64);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long64, unitId);
             } else {
                 // Default to HoldingRegister for unknown data types
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister, unitId);
             }
         } else if (registerType == "INPUT_REGISTER") {
             // Handle input register types
-            m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType);
+            m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType, unitId);
         } else if (registerType == "COIL") {
             // Handle coil types
-            m_modbusManager->readCoils(point.address, blockSize);
+            m_modbusManager->readCoils(point.address, blockSize, unitId);
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
-            m_modbusManager->readDiscreteInputs(point.address, blockSize);
+            m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
             switch (point.dataType) {
@@ -370,16 +436,16 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             case ModbusDataType::Double64:
             case ModbusDataType::Long32:
             case ModbusDataType::Long64:
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, point.dataType);
+                m_modbusManager->readHoldingRegisters(point.address, blockSize, point.dataType, unitId);
                 break;
             case ModbusDataType::InputRegister:
-                m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType);
+                m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType, unitId);
                 break;
             case ModbusDataType::Coil:
-                m_modbusManager->readCoils(point.address, blockSize);
+                m_modbusManager->readCoils(point.address, blockSize, unitId);
                 break;
             case ModbusDataType::DiscreteInput:
-                m_modbusManager->readDiscreteInputs(point.address, blockSize);
+                m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
                 break;
             }
         }
@@ -389,34 +455,34 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         QString dataType = point.tags.value("data_type", "");
         
         qDebug() << "Performing individual read - Address:" << point.address
-                 << "Register Type:" << registerType << "Data Type:" << dataType;
+                 << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
         
         // Use combined condition: register_type + data_type for precise Modbus operation selection
         if (registerType == "HOLDING_REGISTER") {
             // Handle holding register types based on data_type
             if (dataType == "Int16" || point.dataType == ModbusDataType::HoldingRegister) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister, unitId);
             } else if (dataType == "Float32" || point.dataType == ModbusDataType::Float32) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Float32);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Float32, unitId);
             } else if (dataType == "Double64" || point.dataType == ModbusDataType::Double64) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Double64);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Double64, unitId);
             } else if (dataType == "Long32" || point.dataType == ModbusDataType::Long32) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long32);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long32, unitId);
             } else if (dataType == "Long64" || point.dataType == ModbusDataType::Long64) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long64);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long64, unitId);
             } else {
                 // Default to HoldingRegister for unknown data types
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister);
+                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister, unitId);
             }
         } else if (registerType == "INPUT_REGISTER") {
             // Handle input register types
-            m_modbusManager->readInputRegister(point.address, point.dataType);
+            m_modbusManager->readInputRegister(point.address, point.dataType, unitId);
         } else if (registerType == "COIL") {
             // Handle coil types
-            m_modbusManager->readCoil(point.address);
+            m_modbusManager->readCoil(point.address, unitId);
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
-            m_modbusManager->readDiscreteInput(point.address);
+            m_modbusManager->readDiscreteInput(point.address, unitId);
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
             switch (point.dataType) {
@@ -425,16 +491,16 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             case ModbusDataType::Double64:
             case ModbusDataType::Long32:
             case ModbusDataType::Long64:
-                m_modbusManager->readHoldingRegister(point.address, point.dataType);
+                m_modbusManager->readHoldingRegister(point.address, point.dataType, unitId);
                 break;
             case ModbusDataType::InputRegister:
-                m_modbusManager->readInputRegister(point.address, point.dataType);
+                m_modbusManager->readInputRegister(point.address, point.dataType, unitId);
                 break;
             case ModbusDataType::Coil:
-                m_modbusManager->readCoil(point.address);
+                m_modbusManager->readCoil(point.address, unitId);
                 break;
             case ModbusDataType::DiscreteInput:
-                m_modbusManager->readDiscreteInput(point.address);
+                m_modbusManager->readDiscreteInput(point.address, unitId);
                 break;
             }
         }
@@ -719,14 +785,34 @@ bool ScadaCoreService::connectToModbusHost(const QString &host, int port)
     
     // Connect to the new host
     qDebug() << "Connecting to Modbus host:" << hostKey;
-    bool connected = m_modbusManager->connectToServer(host, port);
+    bool connectionStarted = m_modbusManager->connectToServer(host, port);
     
+    if (!connectionStarted) {
+        qWarning() << "Failed to start connection to" << hostKey;
+        m_currentHost.clear();
+        return false;
+    }
+    
+    // Wait for connection to be established (with timeout)
+    int waitTime = 0;
+    const int maxWaitTime = 15000; // Use ConnectionResilience timeout (15 seconds default)
+    const int checkInterval = 100; // 100ms
+    
+    while (waitTime < maxWaitTime && !m_modbusManager->isConnected()) {
+        QThread::msleep(checkInterval);
+        waitTime += checkInterval;
+        QCoreApplication::processEvents(); // Process Qt events
+    }
+    
+    bool connected = m_modbusManager->isConnected();
     if (connected) {
         m_currentHost = hostKey;
         qDebug() << "Successfully connected to" << hostKey;
     } else {
-        qWarning() << "Failed to connect to" << hostKey;
+        qWarning() << "Failed to connect to" << hostKey << "(timeout after" << waitTime << "ms)";
         m_currentHost.clear();
+        // Ensure we disconnect if connection attempt failed
+        m_modbusManager->disconnectFromServer();
     }
     
     return connected;
@@ -817,10 +903,54 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
         int dataTypeInt = originalDataTypes[pointIndex].toInt();
         ModbusDataType dataType = static_cast<ModbusDataType>(dataTypeInt);
         
-        // Calculate offset from start address
+        // Calculate offset from start address based on actual register address difference
         int offset = originalAddress - startAddress;
-        if (offset < 0 || offset >= result.rawData.size()) {
-            qWarning() << "Address offset out of range:" << offset << "for address" << originalAddress;
+        
+        qDebug() << "Processing point" << pointIndex << ":"
+                 << "Name:" << originalNames[pointIndex]
+                 << "Address:" << originalAddress
+                 << "Start Address:" << startAddress
+                 << "Calculated Offset:" << offset
+                 << "Data Type:" << dataTypeInt
+                 << "Raw data at offset:" << (offset < result.rawData.size() ? QString::number(result.rawData[offset]) : "OUT_OF_BOUNDS");
+        
+        // Helper function to convert enum integer data type to register count
+        auto getRegisterCount = [](const QString& dataTypeStr) -> int {
+            bool ok;
+            int dataTypeInt = dataTypeStr.toInt(&ok);
+            if (!ok) return 1;
+            
+            ModbusDataType dataType = static_cast<ModbusDataType>(dataTypeInt);
+            switch (dataType) {
+                case ModbusDataType::Float32:
+                case ModbusDataType::Long32:
+                    return 2;
+                case ModbusDataType::Double64:
+                case ModbusDataType::Long64:
+                    return 4;
+                default:
+                    return 1; // Int16, HoldingRegister, InputRegister, Coil, DiscreteInput
+            }
+        };
+        
+        // Validate offset bounds
+        int registersNeeded = 1;
+        switch (dataType) {
+            case ModbusDataType::Float32:
+            case ModbusDataType::Long32:
+                registersNeeded = 2;
+                break;
+            case ModbusDataType::Double64:
+            case ModbusDataType::Long64:
+                registersNeeded = 4;
+                break;
+            default:
+                registersNeeded = 1;
+                break;
+        }
+        
+        if (offset < 0 || (offset + registersNeeded - 1) >= result.rawData.size()) {
+            qWarning() << "Address offset out of range:" << offset << "(needs" << registersNeeded << "registers) for address" << originalAddress << "in block of size" << result.rawData.size();
             continue;
         }
         
@@ -899,21 +1029,54 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
             if (offset + 1 < result.rawData.size()) {
                 quint16 high = result.rawData[offset];
                 quint16 low = result.rawData[offset + 1];
-                quint32 combined = (static_cast<quint32>(low) << 16) | high;
+                quint32 combined = (static_cast<quint32>(high) << 16) | low;
                 float floatValue;
                 memcpy(&floatValue, &combined, sizeof(float));
                 dataPoint.value = floatValue;
+                
+#ifdef FLOAT32_DECODE_DEBUG
+                qDebug() << "Float32 decode for" << originalNames[pointIndex] << ":"
+                         << "High register [" << offset << "]:" << QString::number(high, 16)
+                         << "Low register [" << (offset + 1) << "]:" << QString::number(low, 16)
+                         << "Combined hex:" << QString::number(combined, 16)
+                         << "Float value:" << floatValue;
+#endif
+            } else {
+                qWarning() << "Float32 decode failed for" << originalNames[pointIndex] 
+                          << "- insufficient data. Offset:" << offset 
+                          << "Data size:" << result.rawData.size();
             }
             break;
         case ModbusDataType::Double64:
             if (offset + 3 < result.rawData.size()) {
-                quint64 combined = (static_cast<quint64>(result.rawData[offset]) << 48) |
-                                 (static_cast<quint64>(result.rawData[offset + 1]) << 32) |
-                                 (static_cast<quint64>(result.rawData[offset + 2]) << 16) |
-                                 result.rawData[offset + 3];
+                quint16 reg0 = result.rawData[offset];
+                quint16 reg1 = result.rawData[offset + 1];
+                quint16 reg2 = result.rawData[offset + 2];
+                quint16 reg3 = result.rawData[offset + 3];
+                
+                quint64 combined = (static_cast<quint64>(reg0) << 48) |
+                                 (static_cast<quint64>(reg1) << 32) |
+                                 (static_cast<quint64>(reg2) << 16) |
+                                 reg3;
                 double doubleValue;
                 memcpy(&doubleValue, &combined, sizeof(double));
                 dataPoint.value = doubleValue;
+                
+#ifdef MODBUS_DEBUG_ENABLED
+                qDebug() << "Double64 decode for" << originalNames[pointIndex] << ":"
+                         << "Registers [" << offset << "-" << (offset+3) << "]:" 
+                         << "[" << reg0 << ", " << reg1 << ", " << reg2 << ", " << reg3 << "]"
+                         << "Hex: [0x" << QString::number(reg0, 16).toUpper()
+                         << ", 0x" << QString::number(reg1, 16).toUpper()
+                         << ", 0x" << QString::number(reg2, 16).toUpper()
+                         << ", 0x" << QString::number(reg3, 16).toUpper() << "]"
+                         << "Combined: 0x" << QString::number(combined, 16).toUpper()
+                         << "Double value:" << doubleValue;
+#endif
+            } else {
+                qWarning() << "Double64 decode failed for" << originalNames[pointIndex] 
+                          << "- insufficient data. Offset:" << offset 
+                          << "Data size:" << result.rawData.size();
             }
             break;
         case ModbusDataType::Long32:

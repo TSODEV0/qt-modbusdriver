@@ -91,7 +91,7 @@ private slots:
         }
         
         // Run for 60 seconds then stop
-        QTimer::singleShot(60000, this, &ScadaServiceTest::stopTest);
+       // QTimer::singleShot(300000, this, &ScadaServiceTest::stopTest);
     }
     
     void onDatabaseError(const QString &error) {

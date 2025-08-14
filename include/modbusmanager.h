@@ -10,6 +10,7 @@
 #include <QVector>
 #include <QMap>
 #include <QQueue>
+#include <QSettings>
 #include <cmath>
 #include <limits>
 
@@ -92,12 +93,13 @@ struct ModbusRequest {
     RequestType type;
     int startAddress;
     int count;
+    int unitId;
     ModbusDataType dataType;
     QVector<quint16> writeData;
     QVector<bool> writeBoolData;
     qint64 requestTime;
     
-    ModbusRequest() : type(ReadHoldingRegisters), startAddress(0), count(1), 
+    ModbusRequest() : type(ReadHoldingRegisters), startAddress(0), count(1), unitId(1),
                      dataType(ModbusDataType::HoldingRegister), requestTime(0) {}
 };
 
@@ -109,38 +111,41 @@ public:
     explicit ModbusManager(QObject *parent = nullptr);
     ~ModbusManager();
     
+    // Configuration loading
+    bool loadConfigurationFromFile(const QString &configPath = "/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/config/config.ini");
+    
     // Connection management
     bool connectToServer(const QString &host, int port = 502);
     void disconnectFromServer();
     bool isConnected() const;
     
-    // Single read operations
-    void readHoldingRegister(int address, ModbusDataType dataType = ModbusDataType::HoldingRegister);
-    void readInputRegister(int address, ModbusDataType dataType = ModbusDataType::InputRegister);
-    void readCoil(int address);
-    void readDiscreteInput(int address);
+    // Single register/coil operations
+    void readHoldingRegister(int address, ModbusDataType dataType = ModbusDataType::HoldingRegister, int unitId = 1);
+    void readInputRegister(int address, ModbusDataType dataType = ModbusDataType::InputRegister, int unitId = 1);
+    void readCoil(int address, int unitId = 1);
+    void readDiscreteInput(int address, int unitId = 1);
     
-    // Multiple read operations
-    void readHoldingRegisters(int startAddress, int count, ModbusDataType dataType = ModbusDataType::HoldingRegister);
-    void readInputRegisters(int startAddress, int count, ModbusDataType dataType = ModbusDataType::InputRegister);
-    void readCoils(int startAddress, int count);
-    void readDiscreteInputs(int startAddress, int count);
+    // Multiple register/coil operations
+    void readHoldingRegisters(int startAddress, int count, ModbusDataType dataType = ModbusDataType::HoldingRegister, int unitId = 1);
+    void readInputRegisters(int startAddress, int count, ModbusDataType dataType = ModbusDataType::InputRegister, int unitId = 1);
+    void readCoils(int startAddress, int count, int unitId = 1);
+    void readDiscreteInputs(int startAddress, int count, int unitId = 1);
     
-    // Single write operations
-    void writeHoldingRegister(int address, quint16 value);
-    void writeHoldingRegisterFloat32(int address, float value);
-    void writeHoldingRegisterDouble64(int address, double value);
-    void writeHoldingRegisterLong32(int address, qint32 value);
-    void writeHoldingRegisterLong64(int address, qint64 value);
-    void writeCoil(int address, bool value);
+    // Single register/coil write operations
+    void writeHoldingRegister(int address, quint16 value, int unitId = 1);
+    void writeHoldingRegisterFloat32(int address, float value, int unitId = 1);
+    void writeHoldingRegisterDouble64(int address, double value, int unitId = 1);
+    void writeHoldingRegisterLong32(int address, qint32 value, int unitId = 1);
+    void writeHoldingRegisterLong64(int address, qint64 value, int unitId = 1);
+    void writeCoil(int address, bool value, int unitId = 1);
     
-    // Multiple write operations
-    void writeHoldingRegisters(int startAddress, const QVector<quint16> &values);
-    void writeHoldingRegistersFloat32(int startAddress, const QVector<float> &values);
-    void writeHoldingRegistersDouble64(int startAddress, const QVector<double> &values);
-    void writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values);
-    void writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values);
-    void writeCoils(int startAddress, const QVector<bool> &values);
+    // Multiple register/coil write operations
+    void writeHoldingRegisters(int startAddress, const QVector<quint16> &values, int unitId = 1);
+    void writeHoldingRegistersFloat32(int startAddress, const QVector<float> &values, int unitId = 1);
+    void writeHoldingRegistersDouble64(int startAddress, const QVector<double> &values, int unitId = 1);
+    void writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values, int unitId = 1);
+    void writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values, int unitId = 1);
+    void writeCoils(int startAddress, const QVector<bool> &values, int unitId = 1);
     
     // IEEE 754 utility functions
     static bool isFloat32Valid(float value);
@@ -181,6 +186,18 @@ private:
     QMap<QModbusReply*, ModbusDataType> m_pendingReads;
     QMap<QModbusReply*, QPair<int, int>> m_replyAddressMap; // startAddress, count
     
+    // Configuration settings
+    QSettings *m_settings;
+    
+    // Connection resilience parameters from config.ini
+    bool m_autoAdjust;
+    int m_heartbeatInterval;
+    int m_retryDelay;
+    int m_maxRetries;
+    int m_requestTimeout;
+    int m_connectionTimeout;
+    QString m_networkType;
+    
     // Request queue management
     QQueue<ModbusRequest> m_requestQueue;
     QTimer *m_requestTimer;
@@ -188,7 +205,6 @@ private:
     bool m_requestInProgress;
     QModbusReply *m_currentReply;
     qint64 m_currentRequestTime;
-    int m_requestTimeout; // milliseconds
     int m_requestInterval; // milliseconds between requests
     
     // Helper methods for data processing

@@ -237,37 +237,71 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
 {
     QVector<DataAcquisitionPoint> optimizedPoints;
     
-    // Group data points by device (host:port) and register type
-    QMap<QString, QVector<DataAcquisitionPoint>> deviceRegisterGroups;
+    // Group data points by device (host:port), register type, and data type for prioritization
+    QMap<QString, QVector<DataAcquisitionPoint>> deviceRegisterDataTypeGroups;
     
     for (const DataAcquisitionPoint &point : dataPoints) {
         QString registerTypeStr;
+        QString dataTypeStr;
+        int priority = 0;
+        
         switch (point.dataType) {
             case ModbusDataType::HoldingRegister:
+                registerTypeStr = "HOLDING";
+                dataTypeStr = "INT16";
+                priority = 1; // Highest priority
+                break;
             case ModbusDataType::Float32:
+                registerTypeStr = "HOLDING";
+                dataTypeStr = "FLOAT32";
+                priority = 2; // Second priority
+                break;
             case ModbusDataType::Double64:
+                registerTypeStr = "HOLDING";
+                dataTypeStr = "DOUBLE64";
+                priority = 3; // Third priority
+                break;
             case ModbusDataType::Long32:
+                registerTypeStr = "HOLDING";
+                dataTypeStr = "LONG32";
+                priority = 2; // Same as FLOAT32
+                break;
             case ModbusDataType::Long64:
                 registerTypeStr = "HOLDING";
+                dataTypeStr = "LONG64";
+                priority = 3; // Same as DOUBLE64
                 break;
             case ModbusDataType::InputRegister:
                 registerTypeStr = "INPUT";
+                dataTypeStr = "INPUT";
+                priority = 1;
                 break;
             case ModbusDataType::Coil:
                 registerTypeStr = "COIL";
+                dataTypeStr = "COIL";
+                priority = 1;
                 break;
             case ModbusDataType::DiscreteInput:
                 registerTypeStr = "DISCRETE";
+                dataTypeStr = "DISCRETE";
+                priority = 1;
                 break;
         }
         
-        QString deviceRegisterKey = QString("%1:%2_%3").arg(point.host).arg(point.port).arg(registerTypeStr);
-        deviceRegisterGroups[deviceRegisterKey].append(point);
+        // Create key with priority prefix for sorting: device_register_datatype_priority
+        QString deviceRegisterDataTypeKey = QString("%1:%2_%3_%4_%5")
+            .arg(point.host).arg(point.port).arg(registerTypeStr).arg(dataTypeStr).arg(priority, 2, 10, QChar('0'));
+        deviceRegisterDataTypeGroups[deviceRegisterDataTypeKey].append(point);
     }
     
-    // Process each device-register type group
-    for (auto it = deviceRegisterGroups.begin(); it != deviceRegisterGroups.end(); ++it) {
-        QVector<DataAcquisitionPoint> devicePoints = it.value();
+    // Process each device-register-datatype group in priority order
+    QStringList sortedKeys = deviceRegisterDataTypeGroups.keys();
+    std::sort(sortedKeys.begin(), sortedKeys.end()); // This will sort by priority due to key format
+    
+    for (const QString &key : sortedKeys) {
+        QVector<DataAcquisitionPoint> devicePoints = deviceRegisterDataTypeGroups[key];
+        
+        qDebug() << "Processing data type group:" << key << "with" << devicePoints.size() << "points";
         
         // Sort points by register address
         std::sort(devicePoints.begin(), devicePoints.end(), 
@@ -325,6 +359,16 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
                 optimizedBlock.tags["block_end_address"] = QString::number(endAddress);
                 optimizedBlock.tags["block_type"] = "optimized_read";
                 optimizedBlock.tags["original_points"] = QString::number(j - i);
+                
+                // Add priority information for polling order
+                QString keyParts = key.split('_').last();
+                optimizedBlock.tags["data_type_priority"] = keyParts;
+                
+                // Extract data type from key for block identification
+                QStringList keyComponents = key.split('_');
+                if (keyComponents.size() >= 3) {
+                    optimizedBlock.tags["block_data_type"] = keyComponents[keyComponents.size()-2];
+                }
                 
                 // Store original point addresses and metadata for data extraction
                 QStringList originalAddresses;

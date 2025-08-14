@@ -814,6 +814,8 @@ build/moc/moc_modbusmanager.cpp: include/modbusmanager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMap \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/modbusmanager.h -o build/moc/moc_modbusmanager.cpp
@@ -972,6 +974,8 @@ build/moc/moc_scada_core_service.cpp: include/scada_core_service.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/scada_core_service.h -o build/moc/moc_scada_core_service.cpp
@@ -1330,6 +1334,8 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		include/database_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlDatabase \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqldatabase.h \
@@ -1341,8 +1347,6 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QString \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
@@ -1535,6 +1539,8 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		include/database_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlDatabase \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqldatabase.h \
@@ -1546,8 +1552,6 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QString \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		build/moc/scada_service_test.moc \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/scada_service_test.o src/scada_service_test.cpp
@@ -1685,13 +1689,20 @@ build/obj/modbusmanager.o: src/modbusmanager.cpp include/modbusmanager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMap \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qlocale.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDataStream \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QByteArray
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QByteArray \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QFileInfo \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfileinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfile.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfiledevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimezone.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/modbusmanager.o src/modbusmanager.cpp
 
 build/obj/scada_core_service.o: src/scada_core_service.cpp include/scada_core_service.h \
@@ -1848,6 +1859,8 @@ build/obj/scada_core_service.o: src/scada_core_service.cpp include/scada_core_se
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonArray \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonarray.h \
@@ -1855,7 +1868,23 @@ build/obj/scada_core_service.o: src/scada_core_service.cpp include/scada_core_se
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qthread.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qdeadlinetimer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qelapsedtimer.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QCoreApplication \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qeventloop.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qnativeinterface.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication_platform.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfuture.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfutureinterface.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmutex.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtsan_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qresultstore.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfuture_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthreadpool.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrunnable.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qexception.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qpromise.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/scada_core_service.o src/scada_core_service.cpp
 
 build/obj/database_manager.o: src/database_manager.cpp include/database_manager.h \

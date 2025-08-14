@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <QDataStream>
 #include <QByteArray>
+#include <QFileInfo>
 
 ModbusManager::ModbusManager(QObject *parent)
     : QObject(parent)
@@ -12,7 +13,14 @@ ModbusManager::ModbusManager(QObject *parent)
     , m_requestInProgress(false)
     , m_currentReply(nullptr)
     , m_currentRequestTime(0)
-    , m_requestTimeout(5000)  // 5 seconds default timeout
+    , m_settings(nullptr)
+    , m_autoAdjust(true)
+    , m_heartbeatInterval(30000)
+    , m_retryDelay(3000)
+    , m_maxRetries(8)
+    , m_requestTimeout(12000)
+    , m_connectionTimeout(15000)
+    , m_networkType("cellular_4g")
     , m_requestInterval(100)  // 100ms between requests
 {
     m_modbusClient = new QModbusTcpClient(this);
@@ -37,6 +45,46 @@ ModbusManager::~ModbusManager()
     if (m_modbusClient) {
         m_modbusClient->disconnectDevice();
     }
+    if (m_settings) {
+        delete m_settings;
+    }
+}
+
+bool ModbusManager::loadConfigurationFromFile(const QString &configPath)
+{
+    if (m_settings) {
+        delete m_settings;
+    }
+    
+    QFileInfo configFile(configPath);
+    if (!configFile.exists()) {
+        qDebug() << "❌ Config file not found:" << configPath;
+        return false;
+    }
+    
+    m_settings = new QSettings(configPath, QSettings::IniFormat, this);
+    
+    // Load ConnectionResilience configuration
+    m_settings->beginGroup("ConnectionResilience");
+    m_autoAdjust = m_settings->value("auto_adjust", true).toBool();
+    m_heartbeatInterval = m_settings->value("heartbeat_interval", 30000).toInt();
+    m_retryDelay = m_settings->value("retry_delay", 3000).toInt();
+    m_maxRetries = m_settings->value("max_retries", 8).toInt();
+    m_requestTimeout = m_settings->value("request_timeout", 12000).toInt();
+    m_connectionTimeout = m_settings->value("connection_timeout", 15000).toInt();
+    m_networkType = m_settings->value("network_type", "cellular_4g").toString();
+    m_settings->endGroup();
+    
+    qDebug() << "✅ ModbusManager configuration loaded from:" << configPath;
+    qDebug() << "   Auto Adjust:" << m_autoAdjust;
+    qDebug() << "   Heartbeat Interval:" << m_heartbeatInterval << "ms";
+    qDebug() << "   Retry Delay:" << m_retryDelay << "ms";
+    qDebug() << "   Max Retries:" << m_maxRetries;
+    qDebug() << "   Request Timeout:" << m_requestTimeout << "ms";
+    qDebug() << "   Connection Timeout:" << m_connectionTimeout << "ms";
+    qDebug() << "   Network Type:" << m_networkType;
+    
+    return true;
 }
 
 bool ModbusManager::connectToServer(const QString &host, int port)
@@ -49,8 +97,11 @@ bool ModbusManager::connectToServer(const QString &host, int port)
         
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, host);
-    m_modbusClient->setTimeout(3000);
-    m_modbusClient->setNumberOfRetries(3);
+    m_modbusClient->setTimeout(m_connectionTimeout);  // Use config value
+    m_modbusClient->setNumberOfRetries(m_maxRetries); // Use config value
+    
+    qDebug() << "🔗 Connecting to Modbus server" << host << ":" << port;
+    qDebug() << "   Using timeout:" << m_connectionTimeout << "ms, retries:" << m_maxRetries;
     
     return m_modbusClient->connectDevice();
 }
@@ -68,40 +119,40 @@ bool ModbusManager::isConnected() const
 }
 
 // Single read operations
-void ModbusManager::readHoldingRegister(int address, ModbusDataType dataType)
+void ModbusManager::readHoldingRegister(int address, ModbusDataType dataType, int unitId)
 {
     int registerCount = (dataType == ModbusDataType::Float32) ? 2 : 
                        (dataType == ModbusDataType::Double64) ? 4 :
                        (dataType == ModbusDataType::Long32) ? 2 :
                        (dataType == ModbusDataType::Long64) ? 4 : 1;
     // Use address directly (Modbus addresses are 0-based)
-    readHoldingRegisters(address, registerCount, dataType);
+    readHoldingRegisters(address, registerCount, dataType, unitId);
 }
 
-void ModbusManager::readInputRegister(int address, ModbusDataType dataType)
+void ModbusManager::readInputRegister(int address, ModbusDataType dataType, int unitId)
 {
     int registerCount = (dataType == ModbusDataType::Float32) ? 2 : 
                        (dataType == ModbusDataType::Double64) ? 4 :
                        (dataType == ModbusDataType::Long32) ? 2 :
                        (dataType == ModbusDataType::Long64) ? 4 : 1;
     // Use address directly (Modbus addresses are 0-based)
-    readInputRegisters(address, registerCount, dataType);
+    readInputRegisters(address, registerCount, dataType, unitId);
 }
 
-void ModbusManager::readCoil(int address)
+void ModbusManager::readCoil(int address, int unitId)
 {
     // Use address directly (Modbus addresses are 0-based)
-    readCoils(address, 1);
+    readCoils(address, 1, unitId);
 }
 
-void ModbusManager::readDiscreteInput(int address)
+void ModbusManager::readDiscreteInput(int address, int unitId)
 {
     // Use address directly (Modbus addresses are 0-based)
-    readDiscreteInputs(address, 1);
+    readDiscreteInputs(address, 1, unitId);
 }
 
 // Multiple read operations
-void ModbusManager::readHoldingRegisters(int startAddress, int count, ModbusDataType dataType)
+void ModbusManager::readHoldingRegisters(int startAddress, int count, ModbusDataType dataType, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -119,13 +170,14 @@ void ModbusManager::readHoldingRegisters(int startAddress, int count, ModbusData
     request.type = ModbusRequest::ReadHoldingRegisters;
     request.startAddress = startAddress;
     request.count = count;
+    request.unitId = unitId;
     request.dataType = dataType;
     request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
     queueRequest(request);
 }
 
-void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataType dataType)
+void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataType dataType, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -143,13 +195,14 @@ void ModbusManager::readInputRegisters(int startAddress, int count, ModbusDataTy
     request.type = ModbusRequest::ReadInputRegisters;
     request.startAddress = startAddress;
     request.count = count;
+    request.unitId = unitId;
     request.dataType = dataType;
     request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
     queueRequest(request);
 }
 
-void ModbusManager::readCoils(int startAddress, int count)
+void ModbusManager::readCoils(int startAddress, int count, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -167,13 +220,14 @@ void ModbusManager::readCoils(int startAddress, int count)
     request.type = ModbusRequest::ReadCoils;
     request.startAddress = startAddress;
     request.count = count;
+    request.unitId = unitId;
     request.dataType = ModbusDataType::Coil;
     request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
     queueRequest(request);
 }
 
-void ModbusManager::readDiscreteInputs(int startAddress, int count)
+void ModbusManager::readDiscreteInputs(int startAddress, int count, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -191,6 +245,7 @@ void ModbusManager::readDiscreteInputs(int startAddress, int count)
     request.type = ModbusRequest::ReadDiscreteInputs;
     request.startAddress = startAddress;
     request.count = count;
+    request.unitId = unitId;
     request.dataType = ModbusDataType::DiscreteInput;
     request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
@@ -198,42 +253,42 @@ void ModbusManager::readDiscreteInputs(int startAddress, int count)
 }
 
 // Single write operations
-void ModbusManager::writeHoldingRegister(int address, quint16 value)
+void ModbusManager::writeHoldingRegister(int address, quint16 value, int unitId)
 {
-    writeHoldingRegisters(address, QVector<quint16>() << value);
+    writeHoldingRegisters(address, QVector<quint16>() << value, unitId);
 }
 
-void ModbusManager::writeHoldingRegisterFloat32(int address, float value)
+void ModbusManager::writeHoldingRegisterFloat32(int address, float value, int unitId)
 {
     auto registers = float32ToRegisters(value);
-    writeHoldingRegisters(address, QVector<quint16>() << registers.first << registers.second);
+    writeHoldingRegisters(address, QVector<quint16>() << registers.first << registers.second, unitId);
 }
 
-void ModbusManager::writeHoldingRegisterDouble64(int address, double value)
+void ModbusManager::writeHoldingRegisterDouble64(int address, double value, int unitId)
 {
     auto registers = double64ToRegisters(value);
-    writeHoldingRegisters(address, registers);
+    writeHoldingRegisters(address, registers, unitId);
 }
 
-void ModbusManager::writeHoldingRegisterLong32(int address, qint32 value)
+void ModbusManager::writeHoldingRegisterLong32(int address, qint32 value, int unitId)
 {
     auto registers = long32ToRegisters(value);
-    writeHoldingRegisters(address, QVector<quint16>() << registers.first << registers.second);
+    writeHoldingRegisters(address, QVector<quint16>() << registers.first << registers.second, unitId);
 }
 
-void ModbusManager::writeHoldingRegisterLong64(int address, qint64 value)
+void ModbusManager::writeHoldingRegisterLong64(int address, qint64 value, int unitId)
 {
     auto registers = long64ToRegisters(value);
-    writeHoldingRegisters(address, registers);
+    writeHoldingRegisters(address, registers, unitId);
 }
 
-void ModbusManager::writeCoil(int address, bool value)
+void ModbusManager::writeCoil(int address, bool value, int unitId)
 {
-    writeCoils(address, QVector<bool>() << value);
+    writeCoils(address, QVector<bool>() << value, unitId);
 }
 
 // Multiple write operations
-void ModbusManager::writeHoldingRegisters(int startAddress, const QVector<quint16> &values)
+void ModbusManager::writeHoldingRegisters(int startAddress, const QVector<quint16> &values, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -251,7 +306,7 @@ void ModbusManager::writeHoldingRegisters(int startAddress, const QVector<quint1
         writeUnit.setValue(i, values[i]);
     }
     
-    if (auto *reply = m_modbusClient->sendWriteRequest(writeUnit, 1)) {
+    if (auto *reply = m_modbusClient->sendWriteRequest(writeUnit, unitId)) {
         if (!reply->isFinished()) {
             connect(reply, &QModbusReply::finished, this, &ModbusManager::onWriteReady);
             m_replyAddressMap[reply] = qMakePair(startAddress, values.size());
@@ -261,47 +316,47 @@ void ModbusManager::writeHoldingRegisters(int startAddress, const QVector<quint1
     }
 }
 
-void ModbusManager::writeHoldingRegistersFloat32(int startAddress, const QVector<float> &values)
+void ModbusManager::writeHoldingRegistersFloat32(int startAddress, const QVector<float> &values, int unitId)
 {
     QVector<quint16> registers;
     for (const float &value : values) {
         auto regs = float32ToRegisters(value);
         registers << regs.first << regs.second;
     }
-    writeHoldingRegisters(startAddress, registers);
+    writeHoldingRegisters(startAddress, registers, unitId);
 }
 
-void ModbusManager::writeHoldingRegistersDouble64(int startAddress, const QVector<double> &values)
+void ModbusManager::writeHoldingRegistersDouble64(int startAddress, const QVector<double> &values, int unitId)
 {
     QVector<quint16> registers;
     for (const double &value : values) {
         auto regs = double64ToRegisters(value);
         registers += regs;
     }
-    writeHoldingRegisters(startAddress, registers);
+    writeHoldingRegisters(startAddress, registers, unitId);
 }
 
-void ModbusManager::writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values)
+void ModbusManager::writeHoldingRegistersLong32(int startAddress, const QVector<qint32> &values, int unitId)
 {
     QVector<quint16> registers;
     for (const qint32 &value : values) {
         auto regs = long32ToRegisters(value);
         registers << regs.first << regs.second;
     }
-    writeHoldingRegisters(startAddress, registers);
+    writeHoldingRegisters(startAddress, registers, unitId);
 }
 
-void ModbusManager::writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values)
+void ModbusManager::writeHoldingRegistersLong64(int startAddress, const QVector<qint64> &values, int unitId)
 {
     QVector<quint16> registers;
     for (const qint64 &value : values) {
         auto regs = long64ToRegisters(value);
         registers += regs;
     }
-    writeHoldingRegisters(startAddress, registers);
+    writeHoldingRegisters(startAddress, registers, unitId);
 }
 
-void ModbusManager::writeCoils(int startAddress, const QVector<bool> &values)
+void ModbusManager::writeCoils(int startAddress, const QVector<bool> &values, int unitId)
 {
     if (!isConnected()) {
         emit errorOccurred("Not connected to Modbus server");
@@ -540,7 +595,7 @@ void ModbusManager::executeRequest(const ModbusRequest &request)
             break;
     }
     
-    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, 1)) {
+    if (auto *reply = m_modbusClient->sendReadRequest(readUnit, request.unitId)) {
         if (!reply->isFinished()) {
             m_currentReply = reply;
             connect(reply, &QModbusReply::finished, this, &ModbusManager::onReadReady);
