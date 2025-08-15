@@ -321,7 +321,10 @@ void ScadaCoreService::processNextDataPoint()
         
         // Check if point is ready for polling
         qint64 lastPollTime = m_lastPollTimes.value(point.name, 0);
-        if (currentTime - lastPollTime >= point.pollInterval) {
+        qint64 timeSinceLastPoll = currentTime - lastPollTime;
+        bool isReady = timeSinceLastPoll >= point.pollInterval;
+        
+        if (isReady) {
             // Determine priority based on data type
             int priority = 99; // Default low priority
             switch (point.dataType) {
@@ -350,12 +353,27 @@ void ScadaCoreService::processNextDataPoint()
     if (!readyIndividualIndices.isEmpty()) {
         std::sort(readyIndividualIndices.begin(), readyIndividualIndices.end());
         
-        int pointIndex = readyIndividualIndices.first().second;
+        // Find all points with the highest priority
+        int highestPriority = readyIndividualIndices.first().first;
+        QVector<QPair<int, int>> highestPriorityPoints;
+        
+        for (const auto &pair : readyIndividualIndices) {
+            if (pair.first == highestPriority) {
+                highestPriorityPoints.append(pair);
+            } else {
+                break; // Since sorted, no more highest priority points
+            }
+        }
+        
+        // Use round-robin selection for points with same priority
+        static int roundRobinIndex = 0;
+        int selectedIndex = roundRobinIndex % highestPriorityPoints.size();
+        roundRobinIndex = (roundRobinIndex + 1) % highestPriorityPoints.size();
+        
+        int pointIndex = highestPriorityPoints[selectedIndex].second;
         const DataAcquisitionPoint &prioritizedPoint = m_dataPoints[pointIndex];
         
-        qDebug() << "Processing prioritized individual point:" << prioritizedPoint.name 
-                 << "Data type:" << static_cast<int>(prioritizedPoint.dataType)
-                 << "Priority:" << readyIndividualIndices.first().first;
+        qDebug() << "Processing individual point:" << prioritizedPoint.name;
         
         processDataPoint(prioritizedPoint, currentTime);
         return;
@@ -557,6 +575,12 @@ void ScadaCoreService::onModbusReadCompleted(const ModbusReadResult &result)
     dataPoint.tags = targetPoint->tags;
     dataPoint.isValid = result.success;
     
+    // Add address tag for InfluxDB mapping (individual points)
+    dataPoint.tags["address"] = QString::number(targetPoint->address);
+    
+    // Validate and ensure all required InfluxDB tags are present
+    validateAndSetInfluxTags(dataPoint, *targetPoint);
+    
     if (result.success) {
         // Extract value based on data type
         if (!result.processedData.isEmpty()) {
@@ -586,7 +610,6 @@ void ScadaCoreService::onModbusReadCompleted(const ModbusReadResult &result)
     // Send to InfluxDB via Telegraf
     if (dataPoint.isValid) {
         bool sent = sendDataToInflux(dataPoint);
-        emit dataPointSentToInflux(dataPoint.pointName, sent);
         
         if (sent) {
             m_statistics.totalDataPointsSent++;
@@ -1111,12 +1134,22 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
         qDebug() << "   Timestamp:" << QDateTime::fromMSecsSinceEpoch(dataPoint.timestamp).toString("yyyy-MM-dd hh:mm:ss.zzz");
         qDebug() << "   ----------------------------------------";
         
+        // Create a temporary source point for validation
+        DataAcquisitionPoint tempSourcePoint;
+        tempSourcePoint.address = originalAddress;
+        tempSourcePoint.host = blockPoint.host;
+        tempSourcePoint.dataType = static_cast<ModbusDataType>(dataTypeInt);
+        tempSourcePoint.name = originalNames[pointIndex];
+        tempSourcePoint.tags = blockPoint.tags;
+        
+        // Validate and ensure all required InfluxDB tags are present
+        validateAndSetInfluxTags(dataPoint, tempSourcePoint);
+        
         // Emit signal and send to InfluxDB
         emit dataPointAcquired(dataPoint);
         
         if (dataPoint.isValid) {
             bool sent = sendDataToInflux(dataPoint);
-            emit dataPointSentToInflux(dataPoint.pointName, sent);
             
             if (sent) {
                 m_statistics.totalDataPointsSent++;
@@ -1183,4 +1216,76 @@ bool ScadaCoreService::isPointCoveredByBlock(const DataAcquisitionPoint &point)
     }
     
     return false;
+}
+
+void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, const DataAcquisitionPoint &sourcePoint)
+{
+    // Ensure address tag is always set (critical for InfluxDB mapping)
+    if (!dataPoint.tags.contains("address") || dataPoint.tags["address"].isEmpty()) {
+        dataPoint.tags["address"] = QString::number(sourcePoint.address);
+        qDebug() << "WARNING: Missing address tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // Ensure device_name tag is set
+    if (!dataPoint.tags.contains("device_name") || dataPoint.tags["device_name"].isEmpty()) {
+        dataPoint.tags["device_name"] = sourcePoint.host;
+        qDebug() << "WARNING: Missing device_name tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // Ensure data_type tag is set
+    if (!dataPoint.tags.contains("data_type") || dataPoint.tags["data_type"].isEmpty()) {
+        QString dataTypeStr;
+        switch (sourcePoint.dataType) {
+            case ModbusDataType::HoldingRegister:
+                dataTypeStr = "holding_register";
+                break;
+            case ModbusDataType::InputRegister:
+                dataTypeStr = "input_register";
+                break;
+            case ModbusDataType::Coil:
+                dataTypeStr = "coil";
+                break;
+            case ModbusDataType::DiscreteInput:
+                dataTypeStr = "discrete_input";
+                break;
+            case ModbusDataType::Float32:
+                dataTypeStr = "float32";
+                break;
+            case ModbusDataType::Double64:
+                dataTypeStr = "double64";
+                break;
+            case ModbusDataType::Long32:
+                dataTypeStr = "long32";
+                break;
+            case ModbusDataType::Long64:
+                dataTypeStr = "long64";
+                break;
+            default:
+                dataTypeStr = "unknown";
+                break;
+        }
+        dataPoint.tags["data_type"] = dataTypeStr;
+        qDebug() << "WARNING: Missing data_type tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // Ensure description tag is set (use point name as fallback)
+    if (!dataPoint.tags.contains("description") || dataPoint.tags["description"].isEmpty()) {
+        dataPoint.tags["description"] = sourcePoint.name.isEmpty() ? dataPoint.pointName : sourcePoint.name;
+        qDebug() << "WARNING: Missing description tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // Copy any additional tags from source point
+    for (auto it = sourcePoint.tags.constBegin(); it != sourcePoint.tags.constEnd(); ++it) {
+        if (!dataPoint.tags.contains(it.key()) || dataPoint.tags[it.key()].isEmpty()) {
+            dataPoint.tags[it.key()] = it.value();
+        }
+    }
+    
+    // Validate that critical tags are not empty after setting
+    QStringList criticalTags = {"address", "device_name", "data_type", "description"};
+    for (const QString &tag : criticalTags) {
+        if (!dataPoint.tags.contains(tag) || dataPoint.tags[tag].isEmpty()) {
+            qWarning() << "CRITICAL: Tag validation failed for" << tag << "in point:" << dataPoint.pointName;
+        }
+    }
 }

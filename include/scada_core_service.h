@@ -143,6 +143,7 @@ private:
     QJsonObject dataPointToJson(const AcquiredDataPoint &dataPoint);
     void handleBlockReadResult(const ModbusReadResult &result, const DataAcquisitionPoint &blockPoint);
     bool isPointCoveredByBlock(const DataAcquisitionPoint &point);
+    void validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, const DataAcquisitionPoint &sourcePoint);
 };
 
 #endif // SCADA_CORE_SERVICE_H
