@@ -105,29 +105,31 @@ private slots:
     void onWriteCompleted(const ModbusWriteResult &result);
 
 private:
-    // Core components
-    ModbusManager *m_modbusManager = nullptr;
-    
-    // Timers
-    QTimer *m_heartbeatTimer;
-    QTimer *m_retryTimer;
-    QTimer *m_qualityTimer;
-    
-    // Configuration parameters
+    // Configuration parameters (initialized first in constructor)
     int m_connectionTimeout;    // Connection establishment timeout
     int m_requestTimeout;       // Individual request timeout
     int m_maxRetries;          // Maximum retry attempts
     int m_retryDelay;          // Delay between retry attempts
     int m_heartbeatInterval;   // Heartbeat check interval
     
+    // Connection quality assessment (initialized next)
+    ConnectionQuality m_connectionQuality;
+    int m_consecutiveFailures;
+    bool m_isMonitoring;
+    
+    // Core components
+    ModbusManager *m_modbusManager = nullptr;
+    
+    // Timers (initialized last in constructor)
+    QTimer *m_heartbeatTimer;
+    QTimer *m_retryTimer;
+    QTimer *m_qualityTimer;
+    
     // Connection monitoring
     QString m_targetHost;
     int m_targetPort;
-    bool m_isMonitoring;
     
-    // Connection quality assessment
-    ConnectionQuality m_connectionQuality;
-    int m_consecutiveFailures;
+    // Response time tracking
     QQueue<qint64> m_responseTimes;
     qint64 m_averageResponseTime = 0;
     qint64 m_heartbeatStartTime = 0;

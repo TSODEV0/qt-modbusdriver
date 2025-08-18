@@ -20,7 +20,7 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     m_modbusManager = new ModbusManager(this);
     
     // Load configuration for ModbusManager
-    if (!m_modbusManager->loadConfigurationFromFile()) {
+    if (!m_modbusManager->loadConfigurationFromFile("config/modbus_config.ini")) {
         qWarning() << "Failed to load ModbusManager configuration, using defaults";
     }
     
@@ -342,7 +342,8 @@ void ScadaCoreService::processNextDataPoint()
                 case ModbusDataType::InputRegister:
                 case ModbusDataType::Coil:
                 case ModbusDataType::DiscreteInput:
-                    priority = 1; // Other types - high priority
+                case ModbusDataType::BOOL:
+                    priority = 1; // Other types and BOOL - high priority
                     break;
             }
             readyIndividualIndices.append(qMakePair(priority, i));
@@ -446,6 +447,9 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
             m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
+        } else if (registerType == "STATUS") {
+            // Handle STATUS register type for block reads - map to DiscreteInput for BOOL data types
+            m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
             switch (point.dataType) {
@@ -463,6 +467,8 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
                 m_modbusManager->readCoils(point.address, blockSize, unitId);
                 break;
             case ModbusDataType::DiscreteInput:
+            case ModbusDataType::BOOL:
+                // Default BOOL to DiscreteInput for block reads
                 m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
                 break;
             }
@@ -501,6 +507,16 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
             m_modbusManager->readDiscreteInput(point.address, unitId);
+        } else if (registerType == "STATUS") {
+            // Handle STATUS register type - map to appropriate Modbus operation based on data type
+            if (dataType == "Bool" || point.dataType == ModbusDataType::BOOL || point.dataType == ModbusDataType::Coil) {
+                m_modbusManager->readCoil(point.address, unitId);
+            } else if (point.dataType == ModbusDataType::DiscreteInput) {
+                m_modbusManager->readDiscreteInput(point.address, unitId);
+            } else {
+                // Default STATUS+BOOL to DiscreteInput
+                m_modbusManager->readDiscreteInput(point.address, unitId);
+            }
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
             switch (point.dataType) {
@@ -518,6 +534,10 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
                 m_modbusManager->readCoil(point.address, unitId);
                 break;
             case ModbusDataType::DiscreteInput:
+                m_modbusManager->readDiscreteInput(point.address, unitId);
+                break;
+            case ModbusDataType::BOOL:
+                // Default BOOL to DiscreteInput when no register_type specified
                 m_modbusManager->readDiscreteInput(point.address, unitId);
                 break;
             }
@@ -588,6 +608,22 @@ void ScadaCoreService::onModbusReadCompleted(const ModbusReadResult &result)
             dataPoint.value = result.processedData[key];
         } else if (!result.rawData.isEmpty()) {
             dataPoint.value = result.rawData.first();
+        }
+        
+        // Additional BOOL-specific validation for individual points
+        if (targetPoint->dataType == ModbusDataType::BOOL) {
+            // Validate BOOL conversion for individual points
+            if (!dataPoint.value.canConvert<bool>()) {
+                qWarning() << "BOOL conversion failed for individual point" << targetPoint->name
+                          << "- QVariant cannot convert to bool. Using default false.";
+                dataPoint.value = false;
+                dataPoint.isValid = false;
+                dataPoint.errorMessage = "BOOL conversion failed: QVariant cannot convert to bool";
+            } else {
+                // Log successful BOOL conversion
+                qDebug() << "BOOL conversion successful for" << targetPoint->name
+                         << "- value:" << dataPoint.value.toBool();
+            }
         }
         
         m_statistics.successfulReads++;
@@ -843,6 +879,13 @@ bool ScadaCoreService::connectToModbusHost(const QString &host, int port)
 
 void ScadaCoreService::updateStatistics(bool success, qint64 responseTime)
 {
+    // Update success/failure counters
+    if (success) {
+        m_statistics.successfulReads++;
+    } else {
+        m_statistics.failedReads++;
+    }
+    
     if (responseTime > 0) {
         // Update average response time
         qint64 totalOps = m_statistics.successfulReads + m_statistics.failedReads;
@@ -937,24 +980,7 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
                  << "Data Type:" << dataTypeInt
                  << "Raw data at offset:" << (offset < result.rawData.size() ? QString::number(result.rawData[offset]) : "OUT_OF_BOUNDS");
         
-        // Helper function to convert enum integer data type to register count
-        auto getRegisterCount = [](const QString& dataTypeStr) -> int {
-            bool ok;
-            int dataTypeInt = dataTypeStr.toInt(&ok);
-            if (!ok) return 1;
-            
-            ModbusDataType dataType = static_cast<ModbusDataType>(dataTypeInt);
-            switch (dataType) {
-                case ModbusDataType::Float32:
-                case ModbusDataType::Long32:
-                    return 2;
-                case ModbusDataType::Double64:
-                case ModbusDataType::Long64:
-                    return 4;
-                default:
-                    return 1; // Int16, HoldingRegister, InputRegister, Coil, DiscreteInput
-            }
-        };
+        // Register count validation for different data types
         
         // Validate offset bounds
         int registersNeeded = 1;
@@ -1041,6 +1067,9 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
             case ModbusDataType::Long64:
                 dataTypeStr = "Long64";
                 break;
+            case ModbusDataType::BOOL:
+                dataTypeStr = "Bool";
+                break;
             default:
                 dataTypeStr = "Int16";
         }
@@ -1115,6 +1144,46 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
                                 (static_cast<qint64>(result.rawData[offset + 2]) << 16) |
                                 result.rawData[offset + 3];
                 dataPoint.value = combined;
+            }
+            break;
+        case ModbusDataType::BOOL:
+            // Handle BOOL data type with comprehensive error handling
+            if (offset < result.rawData.size()) {
+                quint16 rawValue = result.rawData[offset];
+                
+                // Validate raw value range for BOOL conversion
+                if (rawValue > 1) {
+                    qWarning() << "BOOL conversion warning for" << originalNames[pointIndex] 
+                              << "- raw value" << rawValue << "exceeds typical boolean range (0-1)."
+                              << "Converting non-zero to true.";
+                }
+                
+                // Convert to boolean: 0 = false, non-zero = true
+                bool boolValue = (rawValue != 0);
+                dataPoint.value = boolValue;
+                
+                // Validate QVariant conversion success
+                if (!dataPoint.value.canConvert<bool>()) {
+                    qWarning() << "BOOL QVariant conversion failed for" << originalNames[pointIndex]
+                              << "- unable to convert to boolean type. Using default false.";
+                    dataPoint.value = false;
+                    dataPoint.isValid = false;
+                    dataPoint.errorMessage = QString("BOOL conversion failed: QVariant cannot convert to bool");
+                }
+                
+#ifdef MODBUS_DEBUG_ENABLED
+                qDebug() << "BOOL decode for" << originalNames[pointIndex] << ":"
+                         << "Raw value:" << rawValue
+                         << "Boolean value:" << boolValue
+                         << "Conversion valid:" << dataPoint.value.canConvert<bool>();
+#endif
+            } else {
+                qWarning() << "BOOL decode failed for" << originalNames[pointIndex] 
+                          << "- insufficient data. Offset:" << offset 
+                          << "Data size:" << result.rawData.size();
+                dataPoint.value = false; // Default to false on error
+                dataPoint.isValid = false;
+                dataPoint.errorMessage = QString("BOOL decode failed: insufficient data at offset %1").arg(offset);
             }
             break;
         default:
@@ -1203,6 +1272,7 @@ bool ScadaCoreService::isPointCoveredByBlock(const DataAcquisitionPoint &point)
             pointRegisterType = "COIL";
             break;
         case ModbusDataType::DiscreteInput:
+        case ModbusDataType::BOOL:
             pointRegisterType = "DISCRETE_INPUT";
             break;
         }
@@ -1237,31 +1307,34 @@ void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, co
         QString dataTypeStr;
         switch (sourcePoint.dataType) {
             case ModbusDataType::HoldingRegister:
-                dataTypeStr = "holding_register";
+                dataTypeStr = "INT16";
                 break;
             case ModbusDataType::InputRegister:
-                dataTypeStr = "input_register";
+                dataTypeStr = "INPUT_REGISTER";
                 break;
             case ModbusDataType::Coil:
-                dataTypeStr = "coil";
+                dataTypeStr = "COIL";
                 break;
             case ModbusDataType::DiscreteInput:
-                dataTypeStr = "discrete_input";
+                dataTypeStr = "DISCRETE_INPUT";
+                break;
+            case ModbusDataType::BOOL:
+                dataTypeStr = "BOOL";
                 break;
             case ModbusDataType::Float32:
-                dataTypeStr = "float32";
+                dataTypeStr = "FLOAT32";
                 break;
             case ModbusDataType::Double64:
-                dataTypeStr = "double64";
+                dataTypeStr = "DOUBLE64";
                 break;
             case ModbusDataType::Long32:
-                dataTypeStr = "long32";
+                dataTypeStr = "INT32";
                 break;
             case ModbusDataType::Long64:
-                dataTypeStr = "long64";
+                dataTypeStr = "INT64";
                 break;
             default:
-                dataTypeStr = "unknown";
+                dataTypeStr = "UNKNOWN";
                 break;
         }
         dataPoint.tags["data_type"] = dataTypeStr;

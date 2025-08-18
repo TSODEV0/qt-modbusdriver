@@ -374,7 +374,7 @@ void ModbusManager::writeCoils(int startAddress, const QVector<bool> &values, in
         writeUnit.setValue(i, values[i] ? 1 : 0);
     }
     
-    if (auto *reply = m_modbusClient->sendWriteRequest(writeUnit, 1)) {
+    if (auto *reply = m_modbusClient->sendWriteRequest(writeUnit, unitId)) {
         if (!reply->isFinished()) {
             connect(reply, &QModbusReply::finished, this, &ModbusManager::onWriteReady);
             m_replyAddressMap[reply] = qMakePair(startAddress, values.size());
@@ -543,6 +543,47 @@ QVector<quint16> ModbusManager::long64ToRegisters(qint64 value)
     return registers;
 }
 
+// Boolean conversion functions with comprehensive error handling
+bool ModbusManager::registerToBool(quint16 reg)
+{
+    // Simple conversion: non-zero register value = true
+    return reg != 0;
+}
+
+bool ModbusManager::numericToBool(double value)
+{
+    // Handle special IEEE 754 cases
+    if (std::isnan(value)) {
+        qDebug() << "Warning: Converting NaN to boolean, returning false";
+        return false;
+    }
+    
+    if (std::isinf(value)) {
+        qDebug() << "Warning: Converting infinity to boolean, returning" << (value > 0 ? "true" : "false");
+        return value > 0;
+    }
+    
+    if (isDouble64Denormalized(value)) {
+        qDebug() << "Warning: Converting denormalized number to boolean, treating as non-zero";
+        return value != 0.0;
+    }
+    
+    // Convert numeric value to boolean (non-zero = true)
+    return value != 0.0;
+}
+
+quint16 ModbusManager::boolToRegister(bool value)
+{
+    // Standard boolean to register conversion: true=1, false=0
+    return value ? 1 : 0;
+}
+
+double ModbusManager::boolToNumeric(bool value)
+{
+    // Standard boolean to numeric conversion: true=1.0, false=0.0
+    return value ? 1.0 : 0.0;
+}
+
 // Queue management methods
 void ModbusManager::queueRequest(const ModbusRequest &request)
 {
@@ -592,6 +633,12 @@ void ModbusManager::executeRequest(const ModbusRequest &request)
             break;
         case ModbusRequest::ReadDiscreteInputs:
             readUnit = QModbusDataUnit(QModbusDataUnit::DiscreteInputs, request.startAddress, request.count);
+            break;
+        case ModbusRequest::WriteHoldingRegisters:
+            // Write operations will be handled separately
+            break;
+        case ModbusRequest::WriteCoils:
+            // Write operations will be handled separately
             break;
     }
     
@@ -701,7 +748,7 @@ void ModbusManager::onStateChanged(QModbusDevice::State state)
 void ModbusManager::onErrorOccurred(QModbusDevice::Error error)
 {
     QString errorString = m_modbusClient->errorString();
-    qDebug() << "Modbus error:" << errorString;
+    qDebug() << "Modbus error (code" << static_cast<int>(error) << "):" << errorString;
     emit errorOccurred(errorString);
 }
 
@@ -772,6 +819,16 @@ void ModbusManager::validateIEEE754Data(ModbusReadResult &result)
                 if (isDouble64Denormalized(value)) result.hasDenormalized = true;
             }
         }
+    } else if (result.dataType == ModbusDataType::BOOL) {
+        // Validate BOOL data type conversions
+        for (auto it = result.processedData.begin(); it != result.processedData.end(); ++it) {
+            // Check if boolean conversion was successful
+            QVariant value = it.value();
+            if (!value.canConvert<bool>()) {
+                qDebug() << "Warning: BOOL data type conversion failed for key:" << it.key() << "value:" << value;
+                result.hasValidData = false;
+            }
+        }
     }
 }
 
@@ -829,6 +886,13 @@ QVariantMap ModbusManager::convertRawData(const QVector<quint16> &rawData, Modbu
                                                     rawData[i + 2], rawData[i + 3]);
                     convertedData[QString("long64_%1").arg(i / 4)] = value;
                 }
+            }
+            break;
+            
+        case ModbusDataType::BOOL:
+            for (int i = 0; i < rawData.size(); ++i) {
+                bool value = registerToBool(rawData[i]);
+                convertedData[QString("bool_%1").arg(i)] = value;
             }
             break;
     }

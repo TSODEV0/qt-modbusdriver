@@ -207,6 +207,8 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
                 point.dataType = ModbusDataType::Coil;
             } else if (dataTypeStr == "DISCRETE_INPUT" || dataTypeStr == "DiscreteInput") {
                 point.dataType = ModbusDataType::DiscreteInput;
+            } else if (dataTypeStr == "BOOL" || dataTypeStr == "Bool" || dataTypeStr == "Boolean") {
+                point.dataType = ModbusDataType::BOOL;
             } else {
                 point.dataType = ModbusDataType::HoldingRegister; // Default
             }
@@ -469,7 +471,8 @@ bool DatabaseManager::isDataTypeCompatibleForBlock(ModbusDataType type1, ModbusD
     
     // Discrete inputs are separate
     QSet<ModbusDataType> discreteInputTypes = {
-        ModbusDataType::DiscreteInput
+        ModbusDataType::DiscreteInput,
+        ModbusDataType::BOOL
     };
     
     // Check if both types belong to the same register category
@@ -496,6 +499,7 @@ int DatabaseManager::getDataTypeRegisterSize(ModbusDataType dataType) const
         case ModbusDataType::InputRegister:
         case ModbusDataType::Coil:
         case ModbusDataType::DiscreteInput:
+        case ModbusDataType::BOOL:
             return 1; // 1 register (16-bit)
         case ModbusDataType::Float32:
         case ModbusDataType::Long32:
