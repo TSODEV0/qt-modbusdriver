@@ -23,21 +23,33 @@ ModbusManager::ModbusManager(QObject *parent)
     , m_networkType("cellular_4g")
     , m_requestInterval(100)  // 100ms between requests
 {
+    qDebug() << "DEBUG: ModbusManager constructor - Entry point";
+    
+    qDebug() << "DEBUG: Creating QModbusTcpClient...";
     m_modbusClient = new QModbusTcpClient(this);
+    qDebug() << "DEBUG: QModbusTcpClient created successfully";
     
     // Initialize timers
+    qDebug() << "DEBUG: Creating request timer...";
     m_requestTimer = new QTimer(this);
     m_requestTimer->setSingleShot(true);
     connect(m_requestTimer, &QTimer::timeout, this, &ModbusManager::processNextRequest);
+    qDebug() << "DEBUG: Request timer created and connected";
     
+    qDebug() << "DEBUG: Creating timeout timer...";
     m_timeoutTimer = new QTimer(this);
     m_timeoutTimer->setSingleShot(true);
     connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
+    qDebug() << "DEBUG: Timeout timer created and connected";
     
+    qDebug() << "DEBUG: Connecting modbus client signals...";
     connect(m_modbusClient, &QModbusClient::stateChanged,
             this, &ModbusManager::onStateChanged);
     connect(m_modbusClient, &QModbusDevice::errorOccurred,
             this, &ModbusManager::onErrorOccurred);
+    qDebug() << "DEBUG: Modbus client signals connected";
+    
+    qDebug() << "DEBUG: ModbusManager constructor completed successfully";
 }
 
 ModbusManager::~ModbusManager()
@@ -89,21 +101,37 @@ bool ModbusManager::loadConfigurationFromFile(const QString &configPath)
 
 bool ModbusManager::connectToServer(const QString &host, int port)
 {
-    if (!m_modbusClient)
+    qDebug() << "DEBUG: ModbusManager::connectToServer() - Entry point";
+    
+    if (!m_modbusClient) {
+        qDebug() << "DEBUG: m_modbusClient is null!";
         return false;
+    }
+    qDebug() << "DEBUG: m_modbusClient is valid";
         
-    if (m_modbusClient->state() == QModbusDevice::ConnectedState)
+    qDebug() << "DEBUG: Checking connection state...";
+    if (m_modbusClient->state() == QModbusDevice::ConnectedState) {
+        qDebug() << "DEBUG: Already connected";
         return true;
+    }
+    qDebug() << "DEBUG: Not connected, proceeding with connection...";
         
+    qDebug() << "DEBUG: Setting NetworkPortParameter...";
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
+    qDebug() << "DEBUG: Setting NetworkAddressParameter...";
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, host);
+    qDebug() << "DEBUG: Setting timeout...";
     m_modbusClient->setTimeout(m_connectionTimeout);  // Use config value
+    qDebug() << "DEBUG: Setting retries...";
     m_modbusClient->setNumberOfRetries(m_maxRetries); // Use config value
     
     qDebug() << "🔗 Connecting to Modbus server" << host << ":" << port;
     qDebug() << "   Using timeout:" << m_connectionTimeout << "ms, retries:" << m_maxRetries;
     
-    return m_modbusClient->connectDevice();
+    qDebug() << "DEBUG: Calling connectDevice()...";
+    bool result = m_modbusClient->connectDevice();
+    qDebug() << "DEBUG: connectDevice() returned:" << result;
+    return result;
 }
 
 void ModbusManager::disconnectFromServer()
@@ -115,7 +143,19 @@ void ModbusManager::disconnectFromServer()
 
 bool ModbusManager::isConnected() const
 {
-    return m_modbusClient && m_modbusClient->state() == QModbusDevice::ConnectedState;
+    if (!m_modbusClient) {
+        qDebug() << "isConnected() check: m_modbusClient is null";
+        return false;
+    }
+    
+    QModbusDevice::State currentState = m_modbusClient->state();
+    bool connected = (currentState == QModbusDevice::ConnectedState);
+    
+    if (!connected) {
+        qDebug() << "isConnected() check: Current state is" << currentState << "(not ConnectedState)";
+    }
+    
+    return connected;
 }
 
 // Single read operations
@@ -735,14 +775,17 @@ void ModbusManager::onWriteReady()
 
 void ModbusManager::onStateChanged(QModbusDevice::State state)
 {
-    bool connected = (state == QModbusDevice::ConnectedState);
-    emit connectionStateChanged(connected);
-    
-    if (connected) {
+    // Only emit connection state changes for definitive states
+    // Don't emit disconnection during intermediate connecting states
+    if (state == QModbusDevice::ConnectedState) {
+        emit connectionStateChanged(true);
         qDebug() << "Connected to Modbus server";
-    } else {
+    } else if (state == QModbusDevice::UnconnectedState) {
+        emit connectionStateChanged(false);
         qDebug() << "Disconnected from Modbus server";
     }
+    // Don't emit signals for ConnectingState or ClosingState to avoid
+    // premature queue clearing in ModbusWorker
 }
 
 void ModbusManager::onErrorOccurred(QModbusDevice::Error error)

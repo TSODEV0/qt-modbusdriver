@@ -48,6 +48,13 @@ constexpr auto qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS = QtMocHelpers::
     "dataPointSentToInflux",
     "pointName",
     "success",
+    "workerCreated",
+    "deviceId",
+    "workerRemoved",
+    "requestCompleted",
+    "requestId",
+    "requestInterrupted",
+    "reason",
     "writeCompleted",
     "operation",
     "error",
@@ -55,19 +62,29 @@ constexpr auto qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS = QtMocHelpers::
     "statisticsUpdated",
     "ServiceStatistics",
     "stats",
+    "globalStatisticsUpdated",
+    "ModbusWorkerManager::GlobalStatistics",
     "onPollTimer",
-    "onModbusReadCompleted",
+    "onWorkerReadCompleted",
     "ModbusReadResult",
     "result",
-    "onModbusWriteCompleted",
+    "onWorkerWriteCompleted",
     "ModbusWriteResult",
-    "onModbusConnectionStateChanged",
+    "onWorkerConnectionStateChanged",
     "connected",
-    "onModbusError"
+    "onWorkerError",
+    "onWorkerRequestInterrupted",
+    "onWorkerStatisticsUpdated",
+    "ModbusWorker::WorkerStatistics",
+    "onWorkerCreated",
+    "deviceKey",
+    "onWorkerRemoved",
+    "onGlobalStatisticsUpdated",
+    "onSingleThreadReadCompleted"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t {
-    uint offsetsAndSizes[52];
+    uint offsetsAndSizes[86];
     char stringdata0[17];
     char stringdata1[15];
     char stringdata2[1];
@@ -78,22 +95,39 @@ struct qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t {
     char stringdata7[22];
     char stringdata8[10];
     char stringdata9[8];
-    char stringdata10[15];
-    char stringdata11[10];
-    char stringdata12[6];
-    char stringdata13[14];
-    char stringdata14[18];
-    char stringdata15[18];
-    char stringdata16[6];
-    char stringdata17[12];
-    char stringdata18[22];
-    char stringdata19[17];
-    char stringdata20[7];
-    char stringdata21[23];
+    char stringdata10[14];
+    char stringdata11[9];
+    char stringdata12[14];
+    char stringdata13[17];
+    char stringdata14[10];
+    char stringdata15[19];
+    char stringdata16[7];
+    char stringdata17[15];
+    char stringdata18[10];
+    char stringdata19[6];
+    char stringdata20[14];
+    char stringdata21[18];
     char stringdata22[18];
-    char stringdata23[31];
-    char stringdata24[10];
-    char stringdata25[14];
+    char stringdata23[6];
+    char stringdata24[24];
+    char stringdata25[38];
+    char stringdata26[12];
+    char stringdata27[22];
+    char stringdata28[17];
+    char stringdata29[7];
+    char stringdata30[23];
+    char stringdata31[18];
+    char stringdata32[31];
+    char stringdata33[10];
+    char stringdata34[14];
+    char stringdata35[27];
+    char stringdata36[26];
+    char stringdata37[31];
+    char stringdata38[16];
+    char stringdata39[10];
+    char stringdata40[16];
+    char stringdata41[26];
+    char stringdata42[28];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -109,22 +143,39 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t qt_m
         QT_MOC_LITERAL(94, 21),  // "dataPointSentToInflux"
         QT_MOC_LITERAL(116, 9),  // "pointName"
         QT_MOC_LITERAL(126, 7),  // "success"
-        QT_MOC_LITERAL(134, 14),  // "writeCompleted"
-        QT_MOC_LITERAL(149, 9),  // "operation"
-        QT_MOC_LITERAL(159, 5),  // "error"
-        QT_MOC_LITERAL(165, 13),  // "errorOccurred"
-        QT_MOC_LITERAL(179, 17),  // "statisticsUpdated"
-        QT_MOC_LITERAL(197, 17),  // "ServiceStatistics"
-        QT_MOC_LITERAL(215, 5),  // "stats"
-        QT_MOC_LITERAL(221, 11),  // "onPollTimer"
-        QT_MOC_LITERAL(233, 21),  // "onModbusReadCompleted"
-        QT_MOC_LITERAL(255, 16),  // "ModbusReadResult"
-        QT_MOC_LITERAL(272, 6),  // "result"
-        QT_MOC_LITERAL(279, 22),  // "onModbusWriteCompleted"
-        QT_MOC_LITERAL(302, 17),  // "ModbusWriteResult"
-        QT_MOC_LITERAL(320, 30),  // "onModbusConnectionStateChanged"
-        QT_MOC_LITERAL(351, 9),  // "connected"
-        QT_MOC_LITERAL(361, 13)   // "onModbusError"
+        QT_MOC_LITERAL(134, 13),  // "workerCreated"
+        QT_MOC_LITERAL(148, 8),  // "deviceId"
+        QT_MOC_LITERAL(157, 13),  // "workerRemoved"
+        QT_MOC_LITERAL(171, 16),  // "requestCompleted"
+        QT_MOC_LITERAL(188, 9),  // "requestId"
+        QT_MOC_LITERAL(198, 18),  // "requestInterrupted"
+        QT_MOC_LITERAL(217, 6),  // "reason"
+        QT_MOC_LITERAL(224, 14),  // "writeCompleted"
+        QT_MOC_LITERAL(239, 9),  // "operation"
+        QT_MOC_LITERAL(249, 5),  // "error"
+        QT_MOC_LITERAL(255, 13),  // "errorOccurred"
+        QT_MOC_LITERAL(269, 17),  // "statisticsUpdated"
+        QT_MOC_LITERAL(287, 17),  // "ServiceStatistics"
+        QT_MOC_LITERAL(305, 5),  // "stats"
+        QT_MOC_LITERAL(311, 23),  // "globalStatisticsUpdated"
+        QT_MOC_LITERAL(335, 37),  // "ModbusWorkerManager::GlobalSt..."
+        QT_MOC_LITERAL(373, 11),  // "onPollTimer"
+        QT_MOC_LITERAL(385, 21),  // "onWorkerReadCompleted"
+        QT_MOC_LITERAL(407, 16),  // "ModbusReadResult"
+        QT_MOC_LITERAL(424, 6),  // "result"
+        QT_MOC_LITERAL(431, 22),  // "onWorkerWriteCompleted"
+        QT_MOC_LITERAL(454, 17),  // "ModbusWriteResult"
+        QT_MOC_LITERAL(472, 30),  // "onWorkerConnectionStateChanged"
+        QT_MOC_LITERAL(503, 9),  // "connected"
+        QT_MOC_LITERAL(513, 13),  // "onWorkerError"
+        QT_MOC_LITERAL(527, 26),  // "onWorkerRequestInterrupted"
+        QT_MOC_LITERAL(554, 25),  // "onWorkerStatisticsUpdated"
+        QT_MOC_LITERAL(580, 30),  // "ModbusWorker::WorkerStatistics"
+        QT_MOC_LITERAL(611, 15),  // "onWorkerCreated"
+        QT_MOC_LITERAL(627, 9),  // "deviceKey"
+        QT_MOC_LITERAL(637, 15),  // "onWorkerRemoved"
+        QT_MOC_LITERAL(653, 25),  // "onGlobalStatisticsUpdated"
+        QT_MOC_LITERAL(679, 27)   // "onSingleThreadReadCompleted"
     },
     "ScadaCoreService",
     "serviceStarted",
@@ -136,6 +187,13 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t qt_m
     "dataPointSentToInflux",
     "pointName",
     "success",
+    "workerCreated",
+    "deviceId",
+    "workerRemoved",
+    "requestCompleted",
+    "requestId",
+    "requestInterrupted",
+    "reason",
     "writeCompleted",
     "operation",
     "error",
@@ -143,15 +201,25 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSScadaCoreServiceENDCLASS_t qt_m
     "statisticsUpdated",
     "ServiceStatistics",
     "stats",
+    "globalStatisticsUpdated",
+    "ModbusWorkerManager::GlobalStatistics",
     "onPollTimer",
-    "onModbusReadCompleted",
+    "onWorkerReadCompleted",
     "ModbusReadResult",
     "result",
-    "onModbusWriteCompleted",
+    "onWorkerWriteCompleted",
     "ModbusWriteResult",
-    "onModbusConnectionStateChanged",
+    "onWorkerConnectionStateChanged",
     "connected",
-    "onModbusError"
+    "onWorkerError",
+    "onWorkerRequestInterrupted",
+    "onWorkerStatisticsUpdated",
+    "ModbusWorker::WorkerStatistics",
+    "onWorkerCreated",
+    "deviceKey",
+    "onWorkerRemoved",
+    "onGlobalStatisticsUpdated",
+    "onSingleThreadReadCompleted"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -163,46 +231,68 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSScadaCoreServiceENDCLASS[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      13,   14, // methods
+      24,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       8,       // signalCount
+      13,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   92,    2, 0x06,    1 /* Public */,
-       3,    0,   93,    2, 0x06,    2 /* Public */,
-       4,    1,   94,    2, 0x06,    3 /* Public */,
-       7,    2,   97,    2, 0x06,    5 /* Public */,
-      10,    3,  102,    2, 0x06,    8 /* Public */,
-      10,    2,  109,    2, 0x26,   12 /* Public | MethodCloned */,
-      13,    1,  114,    2, 0x06,   15 /* Public */,
-      14,    1,  117,    2, 0x06,   17 /* Public */,
+       1,    0,  158,    2, 0x06,    1 /* Public */,
+       3,    0,  159,    2, 0x06,    2 /* Public */,
+       4,    1,  160,    2, 0x06,    3 /* Public */,
+       7,    2,  163,    2, 0x06,    5 /* Public */,
+      10,    1,  168,    2, 0x06,    8 /* Public */,
+      12,    1,  171,    2, 0x06,   10 /* Public */,
+      13,    2,  174,    2, 0x06,   12 /* Public */,
+      15,    2,  179,    2, 0x06,   15 /* Public */,
+      17,    4,  184,    2, 0x06,   18 /* Public */,
+      17,    3,  193,    2, 0x26,   23 /* Public | MethodCloned */,
+      20,    1,  200,    2, 0x06,   27 /* Public */,
+      21,    1,  203,    2, 0x06,   29 /* Public */,
+      24,    1,  206,    2, 0x06,   31 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      17,    0,  120,    2, 0x08,   19 /* Private */,
-      18,    1,  121,    2, 0x08,   20 /* Private */,
-      21,    1,  124,    2, 0x08,   22 /* Private */,
-      23,    1,  127,    2, 0x08,   24 /* Private */,
-      25,    1,  130,    2, 0x08,   26 /* Private */,
+      26,    0,  209,    2, 0x08,   33 /* Private */,
+      27,    2,  210,    2, 0x08,   34 /* Private */,
+      30,    2,  215,    2, 0x08,   37 /* Private */,
+      32,    2,  220,    2, 0x08,   40 /* Private */,
+      34,    2,  225,    2, 0x08,   43 /* Private */,
+      35,    2,  230,    2, 0x08,   46 /* Private */,
+      36,    2,  235,    2, 0x08,   49 /* Private */,
+      38,    1,  240,    2, 0x08,   52 /* Private */,
+      40,    1,  243,    2, 0x08,   54 /* Private */,
+      41,    1,  246,    2, 0x08,   56 /* Private */,
+      42,    1,  249,    2, 0x08,   58 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 5,    6,
     QMetaType::Void, QMetaType::QString, QMetaType::Bool,    8,    9,
-    QMetaType::Void, QMetaType::QString, QMetaType::Bool, QMetaType::QString,   11,    9,   12,
-    QMetaType::Void, QMetaType::QString, QMetaType::Bool,   11,    9,
-    QMetaType::Void, QMetaType::QString,   12,
-    QMetaType::Void, 0x80000000 | 15,   16,
+    QMetaType::Void, QMetaType::QString,   11,
+    QMetaType::Void, QMetaType::QString,   11,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::Bool,   14,    9,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::QString,   14,   16,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::QString, QMetaType::Bool, QMetaType::QString,   14,   18,    9,   19,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::QString, QMetaType::Bool,   14,   18,    9,
+    QMetaType::Void, QMetaType::QString,   19,
+    QMetaType::Void, 0x80000000 | 22,   23,
+    QMetaType::Void, 0x80000000 | 25,   23,
 
  // slots: parameters
     QMetaType::Void,
-    QMetaType::Void, 0x80000000 | 19,   20,
-    QMetaType::Void, 0x80000000 | 22,   20,
-    QMetaType::Void, QMetaType::Bool,   24,
-    QMetaType::Void, QMetaType::QString,   12,
+    QMetaType::Void, QMetaType::LongLong, 0x80000000 | 28,   14,   29,
+    QMetaType::Void, QMetaType::LongLong, 0x80000000 | 31,   14,   29,
+    QMetaType::Void, QMetaType::QString, QMetaType::Bool,   11,   33,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString,   11,   19,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::QString,   14,   16,
+    QMetaType::Void, QMetaType::QString, 0x80000000 | 37,   11,   23,
+    QMetaType::Void, QMetaType::QString,   39,
+    QMetaType::Void, QMetaType::QString,   39,
+    QMetaType::Void, 0x80000000 | 25,   23,
+    QMetaType::Void, 0x80000000 | 28,   29,
 
        0        // eod
 };
@@ -227,13 +317,29 @@ Q_CONSTINIT const QMetaObject ScadaCoreService::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'workerCreated'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'workerRemoved'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'requestCompleted'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'requestInterrupted'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'writeCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'writeCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         // method 'errorOccurred'
@@ -242,20 +348,47 @@ Q_CONSTINIT const QMetaObject ScadaCoreService::staticMetaObject = { {
         // method 'statisticsUpdated'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const ServiceStatistics &, std::false_type>,
+        // method 'globalStatisticsUpdated'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const ModbusWorkerManager::GlobalStatistics &, std::false_type>,
         // method 'onPollTimer'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'onModbusReadCompleted'
+        // method 'onWorkerReadCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<const ModbusReadResult &, std::false_type>,
-        // method 'onModbusWriteCompleted'
+        // method 'onWorkerWriteCompleted'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<const ModbusWriteResult &, std::false_type>,
-        // method 'onModbusConnectionStateChanged'
+        // method 'onWorkerConnectionStateChanged'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
-        // method 'onModbusError'
+        // method 'onWorkerError'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'onWorkerRequestInterrupted'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'onWorkerStatisticsUpdated'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const ModbusWorker::WorkerStatistics &, std::false_type>,
+        // method 'onWorkerCreated'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'onWorkerRemoved'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'onGlobalStatisticsUpdated'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const ModbusWorkerManager::GlobalStatistics &, std::false_type>,
+        // method 'onSingleThreadReadCompleted'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const ModbusReadResult &, std::false_type>
     >,
     nullptr
 } };
@@ -270,15 +403,26 @@ void ScadaCoreService::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int
         case 1: _t->serviceStopped(); break;
         case 2: _t->dataPointAcquired((*reinterpret_cast< std::add_pointer_t<AcquiredDataPoint>>(_a[1]))); break;
         case 3: _t->dataPointSentToInflux((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2]))); break;
-        case 4: _t->writeCompleted((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3]))); break;
-        case 5: _t->writeCompleted((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2]))); break;
-        case 6: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 7: _t->statisticsUpdated((*reinterpret_cast< std::add_pointer_t<ServiceStatistics>>(_a[1]))); break;
-        case 8: _t->onPollTimer(); break;
-        case 9: _t->onModbusReadCompleted((*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[1]))); break;
-        case 10: _t->onModbusWriteCompleted((*reinterpret_cast< std::add_pointer_t<ModbusWriteResult>>(_a[1]))); break;
-        case 11: _t->onModbusConnectionStateChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 12: _t->onModbusError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 4: _t->workerCreated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 5: _t->workerRemoved((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 6: _t->requestCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2]))); break;
+        case 7: _t->requestInterrupted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 8: _t->writeCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[4]))); break;
+        case 9: _t->writeCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[3]))); break;
+        case 10: _t->errorOccurred((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 11: _t->statisticsUpdated((*reinterpret_cast< std::add_pointer_t<ServiceStatistics>>(_a[1]))); break;
+        case 12: _t->globalStatisticsUpdated((*reinterpret_cast< std::add_pointer_t<ModbusWorkerManager::GlobalStatistics>>(_a[1]))); break;
+        case 13: _t->onPollTimer(); break;
+        case 14: _t->onWorkerReadCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[2]))); break;
+        case 15: _t->onWorkerWriteCompleted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<ModbusWriteResult>>(_a[2]))); break;
+        case 16: _t->onWorkerConnectionStateChanged((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2]))); break;
+        case 17: _t->onWorkerError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 18: _t->onWorkerRequestInterrupted((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 19: _t->onWorkerStatisticsUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<ModbusWorker::WorkerStatistics>>(_a[2]))); break;
+        case 20: _t->onWorkerCreated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 21: _t->onWorkerRemoved((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 22: _t->onGlobalStatisticsUpdated((*reinterpret_cast< std::add_pointer_t<ModbusWorkerManager::GlobalStatistics>>(_a[1]))); break;
+        case 23: _t->onSingleThreadReadCompleted((*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -312,23 +456,58 @@ void ScadaCoreService::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int
             }
         }
         {
-            using _t = void (ScadaCoreService::*)(const QString & , bool , const QString & );
-            if (_t _q_method = &ScadaCoreService::writeCompleted; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            using _t = void (ScadaCoreService::*)(const QString & );
+            if (_t _q_method = &ScadaCoreService::workerCreated; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 4;
                 return;
             }
         }
         {
             using _t = void (ScadaCoreService::*)(const QString & );
-            if (_t _q_method = &ScadaCoreService::errorOccurred; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            if (_t _q_method = &ScadaCoreService::workerRemoved; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 5;
+                return;
+            }
+        }
+        {
+            using _t = void (ScadaCoreService::*)(qint64 , bool );
+            if (_t _q_method = &ScadaCoreService::requestCompleted; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 6;
+                return;
+            }
+        }
+        {
+            using _t = void (ScadaCoreService::*)(qint64 , const QString & );
+            if (_t _q_method = &ScadaCoreService::requestInterrupted; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 7;
+                return;
+            }
+        }
+        {
+            using _t = void (ScadaCoreService::*)(qint64 , const QString & , bool , const QString & );
+            if (_t _q_method = &ScadaCoreService::writeCompleted; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 8;
+                return;
+            }
+        }
+        {
+            using _t = void (ScadaCoreService::*)(const QString & );
+            if (_t _q_method = &ScadaCoreService::errorOccurred; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 10;
                 return;
             }
         }
         {
             using _t = void (ScadaCoreService::*)(const ServiceStatistics & );
             if (_t _q_method = &ScadaCoreService::statisticsUpdated; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 7;
+                *result = 11;
+                return;
+            }
+        }
+        {
+            using _t = void (ScadaCoreService::*)(const ModbusWorkerManager::GlobalStatistics & );
+            if (_t _q_method = &ScadaCoreService::globalStatisticsUpdated; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 12;
                 return;
             }
         }
@@ -354,13 +533,13 @@ int ScadaCoreService::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 24)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 24;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 13)
+        if (_id < 24)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 13;
+        _id -= 24;
     }
     return _id;
 }
@@ -392,23 +571,58 @@ void ScadaCoreService::dataPointSentToInflux(const QString & _t1, bool _t2)
 }
 
 // SIGNAL 4
-void ScadaCoreService::writeCompleted(const QString & _t1, bool _t2, const QString & _t3)
+void ScadaCoreService::workerCreated(const QString & _t1)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 
-// SIGNAL 6
-void ScadaCoreService::errorOccurred(const QString & _t1)
+// SIGNAL 5
+void ScadaCoreService::workerRemoved(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 5, _a);
+}
+
+// SIGNAL 6
+void ScadaCoreService::requestCompleted(qint64 _t1, bool _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 6, _a);
 }
 
 // SIGNAL 7
+void ScadaCoreService::requestInterrupted(qint64 _t1, const QString & _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(this, &staticMetaObject, 7, _a);
+}
+
+// SIGNAL 8
+void ScadaCoreService::writeCompleted(qint64 _t1, const QString & _t2, bool _t3, const QString & _t4)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t4))) };
+    QMetaObject::activate(this, &staticMetaObject, 8, _a);
+}
+
+// SIGNAL 10
+void ScadaCoreService::errorOccurred(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 10, _a);
+}
+
+// SIGNAL 11
 void ScadaCoreService::statisticsUpdated(const ServiceStatistics & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
-    QMetaObject::activate(this, &staticMetaObject, 7, _a);
+    QMetaObject::activate(this, &staticMetaObject, 11, _a);
+}
+
+// SIGNAL 12
+void ScadaCoreService::globalStatisticsUpdated(const ModbusWorkerManager::GlobalStatistics & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 12, _a);
 }
 QT_WARNING_POP

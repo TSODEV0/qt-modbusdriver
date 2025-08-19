@@ -14,7 +14,15 @@
 #include <QSettings>
 #include <QDateTime>
 
-// Modbus data type enumeration
+// Forward declarations
+enum class RequestPriority {
+    Low = 0,
+    Normal = 1,
+    High = 2,
+    Critical = 3
+};
+
+// Modbus data types enumeration
 enum class ModbusDataType {
     HoldingRegister,
     InputRegister,
@@ -47,8 +55,15 @@ struct ModbusRequest {
     QVector<quint16> writeData;
     QVector<bool> writeBoolData;
     
+    // New fields for priority and tracking
+    RequestPriority priority;
+    QString requestId;
+    bool isInterruptible;
+    QString deviceKey;  // host:port identifier
+    
     ModbusRequest() : type(ReadHoldingRegisters), startAddress(0), count(1), 
-                     unitId(1), dataType(ModbusDataType::HoldingRegister), requestTime(0) {}
+                     unitId(1), dataType(ModbusDataType::HoldingRegister), requestTime(0),
+                     priority(RequestPriority::Normal), isInterruptible(true) {}
 };
 
 // Modbus read result structure

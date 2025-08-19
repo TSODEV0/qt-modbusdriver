@@ -1,0 +1,95 @@
+🚀 Starting SCADA Service Test with Configuration File...
+✅ Configuration loaded from: "/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/config/config.ini"
+   Database Host: "localhost"
+   Database Name: "postgres"
+   Database Port: 5432
+✅ Connected to PostgreSQL database: "postgres" on "localhost"
+📋 Loaded device: "STATION_TEST" ( "10.72.2.215" : 502 ) Unit ID: 1 Poll: 3000 ms
+📋 Loaded device: "NPMR_N" ( "10.72.2.4" : 502 ) Unit ID: 119 Poll: 3000 ms
+📋 Loaded device: "AAA" ( "10.72.2.215" : 502 ) Unit ID: 45 Poll: 3000 ms
+📋 Loaded device: "BPL1_R" ( "10.72.2.215" : 502 ) Unit ID: 88 Poll: 3000 ms
+📋 Loaded device: "GPD" ( "10.72.2.215" : 502 ) Unit ID: 91 Poll: 3000 ms
+✅ Loaded 5 Modbus devices from database
+📋 Loaded 5 Modbus devices from database
+ScadaCoreService initialized with multithreaded worker architecture
+📋 Loaded device: "STATION_TEST" ( "10.72.2.215" : 502 ) Unit ID: 1 Poll: 3000 ms
+📋 Loaded device: "NPMR_N" ( "10.72.2.4" : 502 ) Unit ID: 119 Poll: 3000 ms
+📋 Loaded device: "AAA" ( "10.72.2.215" : 502 ) Unit ID: 45 Poll: 3000 ms
+📋 Loaded device: "BPL1_R" ( "10.72.2.215" : 502 ) Unit ID: 88 Poll: 3000 ms
+📋 Loaded device: "GPD" ( "10.72.2.215" : 502 ) Unit ID: 91 Poll: 3000 ms
+✅ Loaded 5 Modbus devices from database
+✅ Generated 178 data acquisition points from database
+📊 Loaded 178 data acquisition points
+Processing data type group: "10.72.2.4:502_HOLDING_DOUBLE64_03" with 48 points
+Created optimized block: "NPMR_N_BLOCK_1064_1127" Address range: 1064 - 1127 Block size: 64 Original points: 16
+Created optimized block: "NPMR_N_BLOCK_1192_1255" Address range: 1192 - 1255 Block size: 64 Original points: 16
+Created optimized block: "NPMR_N_BLOCK_1320_1351" Address range: 1320 - 1351 Block size: 32 Original points: 8
+Created optimized block: "NPMR_N_BLOCK_1360_1391" Address range: 1360 - 1391 Block size: 32 Original points: 8
+Processing data type group: "10.72.2.4:502_HOLDING_FLOAT32_02" with 78 points
+Created optimized block: "NPMR_N_BLOCK_1144_1161" Address range: 1144 - 1161 Block size: 18 Original points: 9
+Created optimized block: "NPMR_N_BLOCK_1272_1289" Address range: 1272 - 1289 Block size: 18 Original points: 9
+Created optimized block: "NPMR_N_BLOCK_1400_1417" Address range: 1400 - 1417 Block size: 18 Original points: 9
+Created optimized block: "NPMR_N_BLOCK_1700_1801" Address range: 1700 - 1801 Block size: 102 Original points: 51
+Processing data type group: "10.72.2.4:502_HOLDING_INT16_01" with 27 points
+Created optimized block: "NPMR_N_BLOCK_1180_1184" Address range: 1180 - 1184 Block size: 5 Original points: 5
+Created optimized block: "NPMR_N_BLOCK_1436_1440" Address range: 1436 - 1440 Block size: 5 Original points: 5
+Created optimized block: "NPMR_N_BLOCK_1810_1814" Address range: 1810 - 1814 Block size: 5 Original points: 5
+Created optimized block: "NPMR_N_BLOCK_2900_2909" Address range: 2900 - 2909 Block size: 10 Original points: 10
+Processing data type group: "10.72.2.4:502___00" with 25 points
+Created optimized block: "NPMR_N_BLOCK_128_132" Address range: 128 - 132 Block size: 5 Original points: 5
+Created optimized block: "NPMR_N_BLOCK_368_369" Address range: 368 - 369 Block size: 2 Original points: 2
+Created optimized block: "NPMR_N_BLOCK_2960_2965" Address range: 2960 - 2965 Block size: 6 Original points: 4
+Created optimized block: "NPMR_N_BLOCK_2976_2991" Address range: 2976 - 2991 Block size: 16 Original points: 12
+Modbus read optimization completed: Original points: 178 Optimized points: 20 Reduction: "88.8%"
+Optimized to 20 read blocks
+Added new data point: "NPMR_N_BLOCK_1064_1127" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1192_1255" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1320_1351" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1360_1391" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1144_1161" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1272_1289" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1400_1417" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1700_1801" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_A1020-OMA-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_A1020-TI-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1180_1184" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1436_1440" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1810_1814" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2900_2909" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_128_132" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_368_369" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2960_2965" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2976_2991" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_SD1020-OMA-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_SD1020-TI-001" at "10.72.2.4" : 502
+SCADA Core Service Test Application with PostgreSQL Integration
+Qt Version: 6.6.3
+Testing database-driven configuration and InfluxDB integration
+=== Enhanced SCADA Core Service Test with Multithreading Support ===
+Testing data acquisition with PostgreSQL configuration, InfluxDB integration, and concurrent operations
+Multithreading enabled: YES
+Max concurrent workers: 4
+Loading configuration from file...
+✅ Configuration loaded from: "/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/config/config.ini"
+   Database Host: "localhost"
+   Database Name: "postgres"
+   Database Port: 5432
+Connecting to PostgreSQL database using configuration...
+✅ Connected to PostgreSQL database: "postgres" on "localhost"
+✅ Database connected successfully
+📋 Loaded device: "STATION_TEST" ( "10.72.2.215" : 502 ) Unit ID: 1 Poll: 3000 ms
+📋 Loaded device: "NPMR_N" ( "10.72.2.4" : 502 ) Unit ID: 119 Poll: 3000 ms
+📋 Loaded device: "AAA" ( "10.72.2.215" : 502 ) Unit ID: 45 Poll: 3000 ms
+📋 Loaded device: "BPL1_R" ( "10.72.2.215" : 502 ) Unit ID: 88 Poll: 3000 ms
+📋 Loaded device: "GPD" ( "10.72.2.215" : 502 ) Unit ID: 91 Poll: 3000 ms
+✅ Loaded 5 Modbus devices from database
+Telegraf socket path set to: "/tmp/telegraf.sock"
+Telegraf socket configured: "/tmp/telegraf.sock"
+✅ Using optimized data points configured in main(): 20 points
+Starting SCADA Core Service with database configuration...
+Starting SCADA Core Service...
+Configured data points: 20
+Telegraf socket path: "/tmp/telegraf.sock"
+📊 Multi-device configuration summary:
+   Device "10.72.2.4:502:119" has 20 data points
+Pre-creating workers for 1 unique devices...

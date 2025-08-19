@@ -36,14 +36,17 @@ SOURCES += \
     src/mainwindow.cpp \
     src/modbusmanager.cpp \
     src/scada_core_service.cpp \
-    src/connection_resilience_manager.cpp
+    src/connection_resilience_manager.cpp \
+    src/modbus_worker.cpp \
+    src/modbus_worker_manager.cpp
 
 # Header files
 HEADERS += \
     include/mainwindow.h \
     include/modbusmanager.h \
     include/scada_core_service.h \
-    include/connection_resilience_manager.h
+    include/connection_resilience_manager.h \
+    include/modbus_worker.h
 
 # UI forms
 FORMS += \

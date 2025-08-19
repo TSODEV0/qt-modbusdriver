@@ -117,7 +117,7 @@ QVector<ModbusDeviceConfig> DatabaseManager::loadModbusDevices()
     QSqlQuery query(m_database);
     QString sql = "SELECT device_id, device_name, ip_address, port, unit_id, protocol_type, pollinterval "
                   "FROM devices "
-                  "WHERE device_id = 2 "
+                  "WHERE protocol_type = 'TCP' AND device_id IN (2, 3) "
                   "ORDER BY device_id";
     
     if (query.exec(sql)) {
@@ -170,8 +170,9 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
                   "       d.device_name, d.ip_address, d.port, d.unit_id, d.protocol_type, d.pollinterval "
                   "FROM public.tags t "
                   "JOIN public.devices d ON t.device_id = d.device_id "
-                  "WHERE t.device_id = 2 "
+                  "WHERE t.device_id IN (2,3) "
                   "ORDER BY t.device_id, t.tag_name";
+                  //"WHERE t.device_id IN (2) "
     
     if (query.exec(sql)) {
         while (query.next()) {
@@ -222,6 +223,7 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
             point.tags["unit_id"] = query.value("unit_id").toString();
             point.tags["protocol_type"] = query.value("protocol_type").toString();
             point.tags["station_name"] = "field_site";
+            point.tags["address"] = QString::number(point.address);  // Add address tag to prevent default "0" in InfluxDB
             
             dataPoints.append(point);
         }

@@ -1,47 +1,78 @@
 #include "../include/scada_core_service.h"
 #include <QDebug>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
+#include <QFile>
 #include <QThread>
 #include <QMetaType>
 #include <QCoreApplication>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QReadWriteLock>
+#include <QWaitCondition>
+#include <QThreadPool>
 #include <cstring>
 #include <algorithm>
 
 ScadaCoreService::ScadaCoreService(QObject *parent)
     : QObject(parent)
     , m_pollTimer(nullptr)
-    , m_modbusManager(nullptr)
+    , m_workerManager(nullptr)
     , m_telegrafSocketPath("/tmp/telegraf.sock")
     , m_serviceRunning(false)
     , m_currentPointIndex(0)
+    , m_dataPointsMutex()
+    , m_statisticsMutex()
+    , m_requestTrackingMutex()
+    , m_threadingMode(ThreadingMode::Auto)
+    , m_useSingleThreadedMode(false)
+    , m_singleThreadModbusManager(nullptr)
+    , m_performanceMonitoringEnabled(false)
+    , m_deploymentConfig()
 {
+    // Register metatypes for thread-safe signal/slot connections
+    qRegisterMetaType<ModbusReadResult>("ModbusReadResult");
+    qRegisterMetaType<ModbusWriteResult>("ModbusWriteResult");
+    qRegisterMetaType<ModbusWorker::WorkerStatistics>("ModbusWorker::WorkerStatistics");
+    qRegisterMetaType<ModbusWorkerManager::GlobalStatistics>("ModbusWorkerManager::GlobalStatistics");
+    qRegisterMetaType<DataAcquisitionPoint>("DataAcquisitionPoint");
+    qRegisterMetaType<AcquiredDataPoint>("AcquiredDataPoint");
+    qRegisterMetaType<RequestPriority>("RequestPriority");
+    
     // Initialize components
     m_pollTimer = new QTimer(this);
-    m_modbusManager = new ModbusManager(this);
+    m_workerManager = new ModbusWorkerManager(this);
     
-    // Load configuration for ModbusManager
-    if (!m_modbusManager->loadConfigurationFromFile("config/modbus_config.ini")) {
-        qWarning() << "Failed to load ModbusManager configuration, using defaults";
-    }
+    // Connect worker manager signals with thread-safe queued connections
+    connect(m_pollTimer, &QTimer::timeout, this, &ScadaCoreService::onPollTimer, Qt::QueuedConnection);
     
-    // Connect signals
-    connect(m_pollTimer, &QTimer::timeout, this, &ScadaCoreService::onPollTimer);
-    connect(m_modbusManager, &ModbusManager::readCompleted, 
-            this, &ScadaCoreService::onModbusReadCompleted);
-    connect(m_modbusManager, &ModbusManager::writeCompleted, 
-            this, &ScadaCoreService::onModbusWriteCompleted);
-    connect(m_modbusManager, &ModbusManager::connectionStateChanged,
-            this, &ScadaCoreService::onModbusConnectionStateChanged);
-    connect(m_modbusManager, &ModbusManager::errorOccurred,
-            this, &ScadaCoreService::onModbusError);
+    // Connect worker signals for request completion
+    connect(m_workerManager, &ModbusWorkerManager::workerCreated,
+            this, &ScadaCoreService::onWorkerCreated, Qt::QueuedConnection);
+    connect(m_workerManager, &ModbusWorkerManager::workerRemoved,
+            this, &ScadaCoreService::workerRemoved, Qt::QueuedConnection);
+    connect(m_workerManager, &ModbusWorkerManager::globalStatisticsUpdated,
+            this, &ScadaCoreService::onGlobalStatisticsUpdated, Qt::QueuedConnection);
+    
+    // Set up thread pool for concurrent data processing
+    QThreadPool::globalInstance()->setMaxThreadCount(qMax(4, QThread::idealThreadCount()));
     
     // Initialize statistics
     resetStatistics();
+    
+    qDebug() << "ScadaCoreService initialized with multithreaded worker architecture";
 }
 
 ScadaCoreService::~ScadaCoreService()
 {
     stopService();
+    
+    if (m_singleThreadModbusManager) {
+        delete m_singleThreadModbusManager;
+        m_singleThreadModbusManager = nullptr;
+    }
 }
 
 bool ScadaCoreService::startService()
@@ -60,6 +91,36 @@ bool ScadaCoreService::startService()
     qDebug() << "Configured data points:" << m_dataPoints.size();
     qDebug() << "Telegraf socket path:" << m_telegrafSocketPath;
     
+    // Log device summary for multi-device visibility
+    QMap<QString, int> devicePointCounts;
+    for (const auto &point : m_dataPoints) {
+        QString unitIdStr = point.tags.value("unit_id", "1");
+        QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitIdStr);
+        devicePointCounts[deviceKey]++;
+    }
+    
+    qDebug() << "📊 Multi-device configuration summary:";
+    for (auto it = devicePointCounts.begin(); it != devicePointCounts.end(); ++it) {
+        qDebug() << "   Device" << it.key() << "has" << it.value() << "data points";
+    }
+    
+    // Determine threading strategy based on device count and configuration
+    int deviceCount = devicePointCounts.size();
+    switch (m_threadingMode) {
+        case ThreadingMode::Auto:
+            m_useSingleThreadedMode = (deviceCount == 1);
+            break;
+        case ThreadingMode::SingleThreaded:
+            m_useSingleThreadedMode = true;
+            break;
+        case ThreadingMode::MultiThreaded:
+            m_useSingleThreadedMode = false;
+            break;
+    }
+    
+    qDebug() << "🔧 Threading Strategy:" << (m_useSingleThreadedMode ? "Single-threaded" : "Multi-threaded")
+             << "(" << deviceCount << "devices," << "mode:" << (int)m_threadingMode << ")";
+    
     // Note: Using direct Unix socket calls for each data transmission
     
     // Initialize service state
@@ -67,11 +128,136 @@ bool ScadaCoreService::startService()
     m_currentPointIndex = 0;
     m_statistics.serviceStartTime = QDateTime::currentMSecsSinceEpoch();
     
-    // Start polling timer (3000ms for stable Modbus connections)
-    m_pollTimer->start(3000);
+    // Initialize based on threading mode
+    if (m_useSingleThreadedMode) {
+        // Single-threaded mode: create one ModbusManager for direct communication
+        qDebug() << "🔧 Initializing single-threaded mode...";
+        
+        if (!m_singleThreadModbusManager) {
+            // Get the first device configuration for single-threaded mode
+            if (!m_dataPoints.isEmpty()) {
+                const auto &firstPoint = m_dataPoints.first();
+                QString unitIdStr = firstPoint.tags.value("unit_id", "1");
+                int unitId = unitIdStr.toInt();
+                
+                m_singleThreadModbusManager = new ModbusManager(this);
+                m_singleThreadModbusManager->connectToServer(firstPoint.host, firstPoint.port);
+                
+                // Connect signals for single-threaded mode
+                connect(m_singleThreadModbusManager, &ModbusManager::readCompleted,
+                        this, [this](const ModbusReadResult &result) {
+                            // Handle read completion in single-threaded mode
+                            this->onSingleThreadReadCompleted(result);
+                        });
+                
+                connect(m_singleThreadModbusManager, &ModbusManager::connectionStateChanged,
+                        this, [this](bool connected) {
+                            qDebug() << "Single-threaded Modbus connection state:" << connected;
+                        });
+                
+                connect(m_singleThreadModbusManager, &ModbusManager::errorOccurred,
+                        this, [this](const QString &error) {
+                            qDebug() << "Single-threaded Modbus error:" << error;
+                            emit errorOccurred(error);
+                        });
+                
+                qDebug() << "✅ Single-threaded ModbusManager created for" << firstPoint.host << ":" << firstPoint.port;
+            }
+        }
+    } else {
+        // Multi-threaded mode: create workers for all configured devices
+        QSet<QString> uniqueDevices;
+        for (const auto &point : m_dataPoints) {
+            QString unitIdStr = point.tags.value("unit_id", "1");
+            int unitId = unitIdStr.toInt();
+            QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitId);
+            uniqueDevices.insert(deviceKey);
+        }
+        
+        qDebug() << "🔧 Pre-creating workers for" << uniqueDevices.size() << "unique devices...";
+        for (const QString &deviceKey : uniqueDevices) {
+            QStringList parts = deviceKey.split(":");
+            if (parts.size() >= 3) {
+                QString host = parts[0];
+                int port = parts[1].toInt();
+                int unitId = parts[2].toInt();
+                
+                qDebug() << "Creating worker for device:" << deviceKey;
+                ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, unitId);
+                if (worker) {
+                    connectWorkerSignals(worker);
+                    qDebug() << "✅ Pre-created worker for device:" << deviceKey;
+                } else {
+                    qDebug() << "❌ Failed to create worker for device:" << deviceKey;
+                }
+            }
+        }
+        
+        qDebug() << "Starting all workers...";
+        // Start all workers for configured devices
+        m_workerManager->startAllWorkers();
+        qDebug() << "✅ All workers started";
+        
+        // Enable load balancing for multi-device scenarios
+        if (uniqueDevices.size() > 1) {
+            m_workerManager->setLoadBalancingEnabled(true);
+            qDebug() << "🔄 Load balancing enabled for" << uniqueDevices.size() << "devices";
+        } else {
+            m_workerManager->setLoadBalancingEnabled(false);
+            qDebug() << "Load balancing disabled for single device";
+        }
+    }
+    
+    // Allow time for connections to establish before starting polling
+    qDebug() << "Allowing 2 seconds for worker connections to establish...";
+    QTimer::singleShot(2000, this, [this]() {
+        // Optimize and start polling timer based on threading mode
+        optimizePollInterval();
+        
+        // Add debug output for timer interval
+        qDebug() << "Poll timer interval before start:" << m_pollTimer->interval() << "ms";
+        m_pollTimer->start();
+        qDebug() << "Poll timer started. Active:" << m_pollTimer->isActive() << "Interval:" << m_pollTimer->interval() << "ms";
+        
+        if (m_useSingleThreadedMode) {
+            qDebug() << "Started optimized single-threaded polling timer";
+        } else {
+            qDebug() << "Started polling timer with" << m_workerManager->getActiveDevices().size() << "active workers";
+            
+            // Add service-level polling backup mechanism for multi-device mode
+            QTimer::singleShot(5000, this, [this]() {
+                qDebug() << "ScadaCoreService - Activating polling backup mechanism for multi-device mode";
+                
+                // Ensure all workers have polling enabled
+                QStringList activeDevices = m_workerManager->getActiveDevices();
+                for (const QString& deviceKey : activeDevices) {
+                    ModbusWorker* worker = m_workerManager->getWorker(deviceKey);
+                    if (worker) {
+                        worker->setPollingEnabled(true);
+                        qDebug() << "ScadaCoreService - Backup polling activation for device:" << deviceKey;
+                    }
+                }
+                
+                // Schedule periodic polling health checks
+                QTimer* healthCheckTimer = new QTimer(this);
+                connect(healthCheckTimer, &QTimer::timeout, this, [this]() {
+                    QStringList devices = m_workerManager->getActiveDevices();
+                    for (const QString& deviceKey : devices) {
+                        ModbusWorker* worker = m_workerManager->getWorker(deviceKey);
+                        if (worker && !worker->isConnected()) {
+                            qDebug() << "ScadaCoreService - Health check: Re-enabling polling for disconnected device:" << deviceKey;
+                            worker->setPollingEnabled(true);
+                        }
+                    }
+                });
+                healthCheckTimer->start(10000); // Check every 10 seconds
+                qDebug() << "ScadaCoreService - Polling health check timer started (10s interval)";
+            });
+        }
+    });
     
     emit serviceStarted();
-    qDebug() << "SCADA Core Service started successfully";
+    qDebug() << "SCADA Core Service started successfully with" << m_workerManager->getActiveDevices().size() << "workers";
     return true;
 }
 
@@ -86,10 +272,23 @@ void ScadaCoreService::stopService()
     m_serviceRunning = false;
     m_pollTimer->stop();
     
-    // Disconnect from Modbus
-    if (m_modbusManager) {
-        m_modbusManager->disconnectFromServer();
+    if (m_useSingleThreadedMode) {
+        // Single-threaded mode cleanup
+        if (m_singleThreadModbusManager) {
+            m_singleThreadModbusManager->disconnectFromServer();
+            qDebug() << "🔧 Single-threaded ModbusManager disconnected";
+        }
+    } else {
+        // Multi-threaded mode cleanup
+        if (m_workerManager) {
+            m_workerManager->stopAllWorkers();
+            qDebug() << "🔧 All workers stopped";
+        }
     }
+    
+    // Clear pending requests
+    m_pendingReadRequests.clear();
+    m_pendingWriteRequests.clear();
     
     // Note: Using direct Unix socket calls, no persistent connection needed
     
@@ -102,8 +301,291 @@ bool ScadaCoreService::isRunning() const
     return m_serviceRunning;
 }
 
+void ScadaCoreService::setThreadingMode(ThreadingMode mode)
+{
+    if (m_serviceRunning) {
+        qWarning() << "Cannot change threading mode while service is running";
+        return;
+    }
+    
+    m_threadingMode = mode;
+    qDebug() << "Threading mode set to:" << (int)mode;
+}
+
+ScadaCoreService::ThreadingMode ScadaCoreService::getThreadingMode() const
+{
+    return m_threadingMode;
+}
+
+bool ScadaCoreService::isSingleThreadedMode() const
+{
+    return m_useSingleThreadedMode;
+}
+
+void ScadaCoreService::optimizePollInterval()
+{
+    if (!m_pollTimer) {
+        return;
+    }
+    
+    int optimalInterval;
+    
+    if (m_useSingleThreadedMode) {
+        // Single-threaded mode: faster polling for better responsiveness
+        // Base interval on number of data points to ensure all points get polled efficiently
+        int dataPointCount = m_dataPoints.size();
+        if (dataPointCount <= 5) {
+            optimalInterval = 100; // Very fast for few points
+        } else if (dataPointCount <= 20) {
+            optimalInterval = 200; // Fast for moderate number of points
+        } else {
+            optimalInterval = 500; // Moderate for many points
+        }
+        
+        qDebug() << "🔧 Single-threaded mode: optimized poll interval to" << optimalInterval << "ms for" << dataPointCount << "data points";
+    } else {
+        // Multi-threaded mode: standard interval since workers handle concurrency
+        optimalInterval = 1000; // Standard 1 second interval
+        qDebug() << "🔧 Multi-threaded mode: using standard poll interval of" << optimalInterval << "ms";
+    }
+    
+    m_pollTimer->setInterval(optimalInterval);
+}
+
+void ScadaCoreService::enableLoadBalancing(bool enabled)
+{
+    if (m_workerManager) {
+        m_workerManager->setLoadBalancingEnabled(enabled);
+        qDebug() << "🔄 Load balancing" << (enabled ? "enabled" : "disabled") << "via SCADA core service";
+    }
+}
+
+bool ScadaCoreService::isLoadBalancingEnabled() const
+{
+    return m_workerManager ? m_workerManager->isLoadBalancingEnabled() : false;
+}
+
+QString ScadaCoreService::getLeastLoadedDevice() const
+{
+    return m_workerManager ? m_workerManager->getLeastLoadedWorker() : QString();
+}
+
+void ScadaCoreService::optimizeWorkerDistribution()
+{
+    if (m_workerManager) {
+        m_workerManager->optimizeWorkerDistribution();
+        qDebug() << "🔧 Worker distribution optimization triggered";
+    }
+}
+
+double ScadaCoreService::getDeviceLoad(const QString &deviceKey) const
+{
+    return m_workerManager ? m_workerManager->getWorkerLoad(deviceKey) : 0.0;
+}
+
+ScadaCoreService::PerformanceMetrics ScadaCoreService::getPerformanceMetrics() const
+{
+    QMutexLocker locker(&m_performanceMetricsMutex);
+    
+    PerformanceMetrics metrics = m_performanceMetrics;
+    
+    // Calculate derived metrics
+    if (metrics.singleThreadedOperations > 0) {
+        metrics.singleThreadedAvgResponseTime = static_cast<double>(metrics.singleThreadedTotalTime) / metrics.singleThreadedOperations;
+        metrics.throughputSingleThreaded = metrics.singleThreadedOperations * 1000.0 / metrics.singleThreadedTotalTime; // ops per second
+    }
+    
+    if (metrics.multiThreadedOperations > 0) {
+        metrics.multiThreadedAvgResponseTime = static_cast<double>(metrics.multiThreadedTotalTime) / metrics.multiThreadedOperations;
+        metrics.throughputMultiThreaded = metrics.multiThreadedOperations * 1000.0 / metrics.multiThreadedTotalTime; // ops per second
+    }
+    
+    // Calculate efficiency ratio
+    if (metrics.throughputSingleThreaded > 0 && metrics.throughputMultiThreaded > 0) {
+        metrics.efficiencyRatio = metrics.throughputMultiThreaded / metrics.throughputSingleThreaded;
+    }
+    
+    return metrics;
+}
+
+void ScadaCoreService::resetPerformanceMetrics()
+{
+    QMutexLocker locker(&m_performanceMetricsMutex);
+    m_performanceMetrics = PerformanceMetrics();
+    m_operationStartTimes.clear();
+    qDebug() << "Performance metrics reset";
+}
+
+QString ScadaCoreService::getPerformanceReport() const
+{
+    PerformanceMetrics metrics = getPerformanceMetrics();
+    
+    QString report;
+    report += "=== SCADA Performance Report ===\n";
+    report += QString("Threading Mode: %1\n").arg(m_useSingleThreadedMode ? "Single-threaded" : "Multi-threaded");
+    report += QString("Performance Monitoring: %1\n\n").arg(m_performanceMonitoringEnabled ? "Enabled" : "Disabled");
+    
+    // Operation counts
+    report += "Operation Counts:\n";
+    report += QString("  Single-threaded: %1\n").arg(metrics.singleThreadedOperations);
+    report += QString("  Multi-threaded: %1\n\n").arg(metrics.multiThreadedOperations);
+    
+    // Response times
+    report += "Average Response Times:\n";
+    report += QString("  Single-threaded: %1 ms\n").arg(metrics.singleThreadedAvgResponseTime, 0, 'f', 2);
+    report += QString("  Multi-threaded: %1 ms\n\n").arg(metrics.multiThreadedAvgResponseTime, 0, 'f', 2);
+    
+    // Throughput
+    report += "Throughput (ops/sec):\n";
+    report += QString("  Single-threaded: %1\n").arg(metrics.throughputSingleThreaded, 0, 'f', 2);
+    report += QString("  Multi-threaded: %1\n").arg(metrics.throughputMultiThreaded, 0, 'f', 2);
+    report += QString("  Efficiency Ratio: %1\n\n").arg(metrics.efficiencyRatio, 0, 'f', 2);
+    
+    // Resource usage
+    report += "Resource Usage:\n";
+    report += QString("  Active Workers: %1 / %2 max\n").arg(metrics.currentActiveWorkers).arg(metrics.maxConcurrentWorkers);
+    report += QString("  CPU Usage: %1%\n").arg(metrics.cpuUsagePercent, 0, 'f', 1);
+    report += QString("  Memory Usage: %1 KB\n\n").arg(metrics.memoryUsageBytes / 1024);
+    
+    // Error rates
+    report += "Error Rates:\n";
+    report += QString("  Single-threaded: %1%\n").arg(metrics.singleThreadedErrorRate * 100, 0, 'f', 2);
+    report += QString("  Multi-threaded: %1%\n").arg(metrics.multiThreadedErrorRate * 100, 0, 'f', 2);
+    
+    return report;
+}
+
+void ScadaCoreService::enablePerformanceMonitoring(bool enabled)
+{
+    QMutexLocker locker(&m_performanceMetricsMutex);
+    m_performanceMonitoringEnabled = enabled;
+    
+    if (enabled) {
+        m_operationTimer.start();
+        qDebug() << "Performance monitoring enabled";
+    } else {
+        qDebug() << "Performance monitoring disabled";
+    }
+}
+
+bool ScadaCoreService::isPerformanceMonitoringEnabled() const
+{
+    QMutexLocker locker(&m_performanceMetricsMutex);
+    return m_performanceMonitoringEnabled;
+}
+
+void ScadaCoreService::setDeploymentConfig(const DeploymentConfig &config)
+{
+    m_deploymentConfig = config;
+    
+    // Apply configuration settings
+    setThreadingMode(config.threadingMode);
+    enableLoadBalancing(config.enableLoadBalancing);
+    enablePerformanceMonitoring(config.enablePerformanceMonitoring);
+    
+    // Note: maxWorkerThreads will be applied when creating new worker manager
+    // Other settings like connectionTimeoutMs and maxRetryAttempts can be used
+    // by individual components as needed
+}
+
+ScadaCoreService::DeploymentConfig ScadaCoreService::getDeploymentConfig() const
+{
+    return m_deploymentConfig;
+}
+
+bool ScadaCoreService::loadConfigFromFile(const QString &filePath)
+{
+    QFile file(filePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        qWarning() << "Failed to open config file:" << filePath;
+        return false;
+    }
+    
+    QByteArray data = file.readAll();
+    QJsonParseError error;
+    QJsonDocument doc = QJsonDocument::fromJson(data, &error);
+    
+    if (error.error != QJsonParseError::NoError) {
+        qWarning() << "Failed to parse config JSON:" << error.errorString();
+        return false;
+    }
+    
+    QJsonObject obj = doc.object();
+    DeploymentConfig config;
+    
+    // Parse threading mode
+    QString threadingModeStr = obj["threadingMode"].toString("Auto");
+    if (threadingModeStr == "SingleThreaded") {
+        config.threadingMode = ThreadingMode::SingleThreaded;
+    } else if (threadingModeStr == "MultiThreaded") {
+        config.threadingMode = ThreadingMode::MultiThreaded;
+    } else {
+        config.threadingMode = ThreadingMode::Auto;
+    }
+    
+    config.maxWorkerThreads = obj["maxWorkerThreads"].toInt(10);
+    config.deviceCountThreshold = obj["deviceCountThreshold"].toInt(1);
+    config.pollIntervalMs = obj["pollIntervalMs"].toInt(1000);
+    config.enableLoadBalancing = obj["enableLoadBalancing"].toBool(true);
+    config.enablePerformanceMonitoring = obj["enablePerformanceMonitoring"].toBool(false);
+    config.connectionTimeoutMs = obj["connectionTimeoutMs"].toInt(5000);
+    config.maxRetryAttempts = obj["maxRetryAttempts"].toInt(3);
+    config.configFilePath = obj["configFilePath"].toString("scada_config.json");
+    
+    setDeploymentConfig(config);
+    return true;
+}
+
+bool ScadaCoreService::saveConfigToFile(const QString &filePath) const
+{
+    QJsonObject obj;
+    
+    // Convert threading mode to string
+    QString threadingModeStr;
+    switch (m_deploymentConfig.threadingMode) {
+        case ThreadingMode::SingleThreaded:
+            threadingModeStr = "SingleThreaded";
+            break;
+        case ThreadingMode::MultiThreaded:
+            threadingModeStr = "MultiThreaded";
+            break;
+        default:
+            threadingModeStr = "Auto";
+            break;
+    }
+    
+    obj["threadingMode"] = threadingModeStr;
+    obj["maxWorkerThreads"] = m_deploymentConfig.maxWorkerThreads;
+    obj["deviceCountThreshold"] = m_deploymentConfig.deviceCountThreshold;
+    obj["pollIntervalMs"] = m_deploymentConfig.pollIntervalMs;
+    obj["enableLoadBalancing"] = m_deploymentConfig.enableLoadBalancing;
+    obj["enablePerformanceMonitoring"] = m_deploymentConfig.enablePerformanceMonitoring;
+    obj["connectionTimeoutMs"] = m_deploymentConfig.connectionTimeoutMs;
+    obj["maxRetryAttempts"] = m_deploymentConfig.maxRetryAttempts;
+    obj["configFilePath"] = m_deploymentConfig.configFilePath;
+    
+    QJsonDocument doc(obj);
+    
+    QFile file(filePath);
+    if (!file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Failed to open config file for writing:" << filePath;
+        return false;
+    }
+    
+    file.write(doc.toJson());
+    return true;
+}
+
+void ScadaCoreService::resetConfigToDefaults()
+{
+    m_deploymentConfig = DeploymentConfig();
+    setDeploymentConfig(m_deploymentConfig);
+}
+
 void ScadaCoreService::addDataPoint(const DataAcquisitionPoint &point)
 {
+    QMutexLocker locker(&m_dataPointsMutex);
+    
     // Check if point already exists
     for (int i = 0; i < m_dataPoints.size(); ++i) {
         if (m_dataPoints[i].name == point.name) {
@@ -120,6 +602,8 @@ void ScadaCoreService::addDataPoint(const DataAcquisitionPoint &point)
 
 void ScadaCoreService::removeDataPoint(const QString &pointName)
 {
+    QMutexLocker locker(&m_dataPointsMutex);
+    
     for (int i = 0; i < m_dataPoints.size(); ++i) {
         if (m_dataPoints[i].name == pointName) {
             m_dataPoints.removeAt(i);
@@ -132,6 +616,8 @@ void ScadaCoreService::removeDataPoint(const QString &pointName)
 
 void ScadaCoreService::updateDataPoint(const QString &pointName, const DataAcquisitionPoint &point)
 {
+    QMutexLocker locker(&m_dataPointsMutex);
+    
     for (int i = 0; i < m_dataPoints.size(); ++i) {
         if (m_dataPoints[i].name == pointName) {
             m_dataPoints[i] = point;
@@ -143,11 +629,14 @@ void ScadaCoreService::updateDataPoint(const QString &pointName, const DataAcqui
 
 QVector<DataAcquisitionPoint> ScadaCoreService::getDataPoints() const
 {
+    QMutexLocker locker(&m_dataPointsMutex);
     return m_dataPoints;
 }
 
 void ScadaCoreService::clearDataPoints()
 {
+    QMutexLocker locker(&m_dataPointsMutex);
+    
     m_dataPoints.clear();
     m_lastPollTimes.clear();
     qDebug() << "Cleared all data points";
@@ -175,79 +664,292 @@ void ScadaCoreService::resetStatistics()
     m_responseTimers.clear();
 }
 
-// Modbus write operations
-void ScadaCoreService::writeHoldingRegister(const QString &host, int port, int address, quint16 value)
+// Modbus write operations with priority support
+qint64 ScadaCoreService::writeHoldingRegister(const QString &host, int port, int address, quint16 value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteHoldingRegister[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
-        return;
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteHoldingRegister[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
     }
     
-    qDebug() << "Writing holding register:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeHoldingRegister(address, value);
+    // Create Modbus request
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteHoldingRegisters;
+    request.startAddress = address;
+    request.count = 1;
+    request.writeData = QVector<quint16>() << value;
+    request.dataType = ModbusDataType::HoldingRegister;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    
+    // Track the request with thread safety
+    {
+        QMutexLocker locker(&m_requestTrackingMutex);
+        m_pendingWriteRequests[requestId] = QString("WriteHoldingRegister[%1:%2@%3]").arg(host).arg(port).arg(address);
+    }
+    
+    // Connect worker signals if not already connected
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued holding register write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
 }
 
-void ScadaCoreService::writeHoldingRegisterFloat32(const QString &host, int port, int address, float value)
+qint64 ScadaCoreService::writeHoldingRegisterFloat32(const QString &host, int port, int address, float value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteHoldingRegisterFloat32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
-        return;
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteHoldingRegisterFloat32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
     }
     
-    qDebug() << "Writing holding register Float32:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeHoldingRegisterFloat32(address, value);
+    // Convert float to two 16-bit registers
+    union { float f; quint32 i; } converter;
+    converter.f = value;
+    QVector<quint16> data;
+    data << static_cast<quint16>(converter.i & 0xFFFF);
+    data << static_cast<quint16>((converter.i >> 16) & 0xFFFF);
+    
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteHoldingRegisters;
+    request.startAddress = address;
+    request.count = 2;
+    request.writeData = data;
+    request.dataType = ModbusDataType::Float32;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    m_pendingWriteRequests[requestId] = QString("WriteHoldingRegisterFloat32[%1:%2@%3]").arg(host).arg(port).arg(address);
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued Float32 register write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
 }
 
-void ScadaCoreService::writeHoldingRegisterDouble64(const QString &host, int port, int address, double value)
+qint64 ScadaCoreService::writeHoldingRegisterDouble64(const QString &host, int port, int address, double value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteHoldingRegisterDouble64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
-        return;
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteHoldingRegisterDouble64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
     }
     
-    qDebug() << "Writing holding register Double64:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeHoldingRegisterDouble64(address, value);
+    // Convert double to four 16-bit registers
+    union { double d; quint64 i; } converter;
+    converter.d = value;
+    QVector<quint16> data;
+    data << static_cast<quint16>(converter.i & 0xFFFF);
+    data << static_cast<quint16>((converter.i >> 16) & 0xFFFF);
+    data << static_cast<quint16>((converter.i >> 32) & 0xFFFF);
+    data << static_cast<quint16>((converter.i >> 48) & 0xFFFF);
+    
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteHoldingRegisters;
+    request.startAddress = address;
+    request.count = 4;
+    request.writeData = data;
+    request.dataType = ModbusDataType::Double64;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    m_pendingWriteRequests[requestId] = QString("WriteHoldingRegisterDouble64[%1:%2@%3]").arg(host).arg(port).arg(address);
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued Double64 register write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
 }
 
-void ScadaCoreService::writeHoldingRegisterLong32(const QString &host, int port, int address, qint32 value)
+qint64 ScadaCoreService::writeHoldingRegisterLong32(const QString &host, int port, int address, qint32 value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteHoldingRegisterLong32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
-        return;
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteHoldingRegisterLong32[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
     }
     
-    qDebug() << "Writing holding register Long32:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeHoldingRegisterLong32(address, value);
+    // Convert int32 to two 16-bit registers
+    QVector<quint16> data;
+    data << static_cast<quint16>(value & 0xFFFF);
+    data << static_cast<quint16>((value >> 16) & 0xFFFF);
+    
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteHoldingRegisters;
+    request.startAddress = address;
+    request.count = 2;
+    request.writeData = data;
+    request.dataType = ModbusDataType::Long32;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    m_pendingWriteRequests[requestId] = QString("WriteHoldingRegisterLong32[%1:%2@%3]").arg(host).arg(port).arg(address);
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued Long32 register write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
 }
 
-void ScadaCoreService::writeHoldingRegisterLong64(const QString &host, int port, int address, qint64 value)
+qint64 ScadaCoreService::writeHoldingRegisterLong64(const QString &host, int port, int address, qint64 value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteHoldingRegisterLong64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
-        return;
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteHoldingRegisterLong64[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
     }
     
-    qDebug() << "Writing holding register Long64:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeHoldingRegisterLong64(address, value);
+    // Convert int64 to four 16-bit registers
+    QVector<quint16> data;
+    data << static_cast<quint16>(value & 0xFFFF);
+    data << static_cast<quint16>((value >> 16) & 0xFFFF);
+    data << static_cast<quint16>((value >> 32) & 0xFFFF);
+    data << static_cast<quint16>((value >> 48) & 0xFFFF);
+    
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteHoldingRegisters;
+    request.startAddress = address;
+    request.count = 4;
+    request.writeData = data;
+    request.dataType = ModbusDataType::Long64;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    m_pendingWriteRequests[requestId] = QString("WriteHoldingRegisterLong64[%1:%2@%3]").arg(host).arg(port).arg(address);
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued Long64 register write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
 }
 
-void ScadaCoreService::writeCoil(const QString &host, int port, int address, bool value)
+qint64 ScadaCoreService::writeCoil(const QString &host, int port, int address, bool value, RequestPriority priority)
 {
-    if (!connectToModbusHost(host, port)) {
-        emit writeCompleted(QString("WriteCoil[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to connect to Modbus host");
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, 1);
+    if (!worker) {
+        emit writeCompleted(0, QString("WriteCoil[%1:%2@%3]").arg(host).arg(port).arg(address), false, "Failed to create worker");
+        return 0;
+    }
+    
+    // Create Modbus request
+    ModbusRequest request;
+    request.type = ModbusRequest::WriteCoils;
+    request.startAddress = address;
+    request.count = 1;
+    request.writeBoolData = QVector<bool>() << value;
+    request.dataType = ModbusDataType::Coil;
+    request.unitId = 1;
+    
+    qint64 requestId = worker->queueWriteRequest(request, priority, true);
+    
+    // Track the request
+    m_pendingWriteRequests[requestId] = QString("WriteCoil[%1:%2@%3]").arg(host).arg(port).arg(address);
+    
+    // Connect worker signals if not already connected
+    connectWorkerSignals(worker);
+    
+    qDebug() << "Queued coil write:" << host << ":" << port << "address" << address << "value" << value << "priority" << static_cast<int>(priority) << "requestId" << requestId;
+    return requestId;
+}
+
+// Batch write operations
+QVector<qint64> ScadaCoreService::writeHoldingRegistersBatch(const QString &host, int port, const QVector<QPair<int, quint16>> &addressValuePairs, RequestPriority priority)
+{
+    QVector<qint64> requestIds;
+    for (const auto &pair : addressValuePairs) {
+        qint64 requestId = writeHoldingRegister(host, port, pair.first, pair.second, priority);
+        requestIds.append(requestId);
+    }
+    return requestIds;
+}
+
+QVector<qint64> ScadaCoreService::writeCoilsBatch(const QString &host, int port, const QVector<QPair<int, bool>> &addressValuePairs, RequestPriority priority)
+{
+    QVector<qint64> requestIds;
+    for (const auto &pair : addressValuePairs) {
+        qint64 requestId = writeCoil(host, port, pair.first, pair.second, priority);
+        requestIds.append(requestId);
+    }
+    return requestIds;
+}
+
+// Worker management methods
+QStringList ScadaCoreService::getActiveDevices() const
+{
+    if (!m_workerManager) {
+        return QStringList();
+    }
+    
+    QStringList devices;
+    QMetaObject::invokeMethod(m_workerManager, "getActiveDevices",
+                              Qt::BlockingQueuedConnection,
+                              Q_RETURN_ARG(QStringList, devices));
+    return devices;
+}
+
+ModbusWorkerManager::GlobalStatistics ScadaCoreService::getGlobalStatistics() const
+{
+    if (!m_workerManager) {
+        return ModbusWorkerManager::GlobalStatistics();
+    }
+    
+    ModbusWorkerManager::GlobalStatistics stats;
+    QMetaObject::invokeMethod(m_workerManager, "getGlobalStatistics",
+                              Qt::BlockingQueuedConnection,
+                              Q_RETURN_ARG(ModbusWorkerManager::GlobalStatistics, stats));
+    return stats;
+}
+
+void ScadaCoreService::setWorkerPollInterval(const QString &deviceKey, int intervalMs)
+{
+    if (!m_workerManager) {
         return;
     }
     
-    qDebug() << "Writing coil:" << host << ":" << port << "address" << address << "value" << value;
-    m_modbusManager->writeCoil(address, value);
+    QMetaObject::invokeMethod(m_workerManager, "setWorkerPollInterval",
+                              Qt::QueuedConnection,
+                              Q_ARG(QString, deviceKey),
+                              Q_ARG(int, intervalMs));
+}
+
+// Helper methods
+qint64 ScadaCoreService::generateRequestId()
+{
+    static QAtomicInteger<qint64> counter(1);
+    return counter.fetchAndAddOrdered(1);
+}
+
+void ScadaCoreService::connectWorkerSignals(ModbusWorker* worker)
+{
+    if (!worker || m_connectedWorkers.contains(worker)) {
+        return;
+    }
+    
+    connect(worker, &ModbusWorker::readCompleted,
+            this, &ScadaCoreService::onWorkerReadCompleted,
+            Qt::QueuedConnection);
+    
+    connect(worker, &ModbusWorker::writeCompleted,
+            this, &ScadaCoreService::onWorkerWriteCompleted,
+            Qt::QueuedConnection);
+    
+    connect(worker, &ModbusWorker::errorOccurred,
+            this, &ScadaCoreService::onWorkerError,
+            Qt::QueuedConnection);
+    
+    connect(worker, &ModbusWorker::requestInterrupted,
+            this, &ScadaCoreService::onWorkerRequestInterrupted,
+            Qt::QueuedConnection);
+    
+    m_connectedWorkers.insert(worker);
 }
 
 void ScadaCoreService::onPollTimer()
 {
+    qDebug() << "ScadaCoreService::onPollTimer() - Poll timer triggered. Service running:" << m_serviceRunning << "Data points count:" << m_dataPoints.size();
     if (!m_serviceRunning || m_dataPoints.isEmpty()) {
+        qDebug() << "ScadaCoreService::onPollTimer() - Skipping poll: service running =" << m_serviceRunning << ", data points =" << m_dataPoints.size();
         return;
     }
-    
+    qDebug() << "ScadaCoreService::onPollTimer() - Processing next data point...";
     processNextDataPoint();
 }
 
@@ -261,8 +963,40 @@ void ScadaCoreService::processNextDataPoint()
         return;
     }
     
-    // First pass: Look for ready block points to prioritize by data type
     qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    // Optimized single-threaded mode: simplified polling without complex priority logic
+    if (m_useSingleThreadedMode) {
+        // Simple round-robin through all enabled points
+        int startIndex = m_currentPointIndex;
+        int attempts = 0;
+        
+        while (attempts < m_dataPoints.size()) {
+            const DataAcquisitionPoint &point = m_dataPoints[m_currentPointIndex];
+            
+            if (point.enabled) {
+                qint64 lastPollTime = m_lastPollTimes.value(point.name, 0);
+                if (currentTime - lastPollTime >= point.pollInterval) {
+                    // Process this point and move to next
+                    processDataPoint(point, currentTime);
+                    m_currentPointIndex = (m_currentPointIndex + 1) % m_dataPoints.size();
+                    return;
+                }
+            }
+            
+            m_currentPointIndex = (m_currentPointIndex + 1) % m_dataPoints.size();
+            attempts++;
+            
+            // Prevent infinite loop
+            if (m_currentPointIndex == startIndex) {
+                break;
+            }
+        }
+        return;
+    }
+    
+    // Multi-threaded mode: complex priority-based polling
+    // First pass: Look for ready block points to prioritize by data type
     
     // Collect ready block points and sort by priority
     QVector<QPair<int, int>> readyBlockIndices; // priority, index
@@ -389,27 +1123,66 @@ void ScadaCoreService::processNextDataPoint()
 
 void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint64 currentTime)
 {
-    // Connect to Modbus host (will reuse existing connection if same host)
-    if (!connectToModbusHost(point.host, point.port)) {
-        emit errorOccurred(QString("Failed to connect to Modbus host: %1:%2")
-                         .arg(point.host).arg(point.port));
+    QString unitIdStr = point.tags.value("unit_id", "1");
+    int unitId = unitIdStr.toInt();
+    QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitIdStr);
+    
+    qint64 requestId = generateRequestId();
+    
+    // Track operation start time for performance monitoring
+    if (m_performanceMonitoringEnabled) {
+        QMutexLocker locker(&m_performanceMetricsMutex);
+        m_operationStartTimes[requestId] = m_operationTimer.elapsed();
+    }
+    
+    // Handle single-threaded mode
+    if (m_useSingleThreadedMode) {
+        if (!m_singleThreadModbusManager) {
+            emit errorOccurred("Single-threaded ModbusManager not initialized");
+            return;
+        }
+        
+        // Start data acquisition in single-threaded mode
+        m_lastPollTimes[point.name] = currentTime;
+        m_responseTimers[point.name] = currentTime;
+        
+        qDebug() << "🔧 Single-threaded polling:" << point.name << "at address" << point.address << "Unit ID:" << unitId;
+        
+        // Create read request for single-threaded mode
+        ModbusRequest request;
+        request.startAddress = point.address;
+        request.unitId = unitId;
+        request.requestTime = QDateTime::currentMSecsSinceEpoch();
+        request.count = 1; // Single register read for simplicity
+        request.type = ModbusRequest::ReadHoldingRegisters;
+        request.dataType = point.dataType;
+        
+        // Execute read directly using single ModbusManager
+        m_singleThreadModbusManager->readHoldingRegisters(request.startAddress, request.count, request.dataType, request.unitId);
         return;
     }
     
-    // Wait for connection to be fully established before polling
-    if (!m_modbusManager->isConnected()) {
-        qDebug() << "Waiting for Modbus connection to be established for" << point.name;
-        return; // Skip this polling cycle, will retry on next cycle
+    // Multi-threaded mode: Get or create worker for this device
+    ModbusWorker* worker = m_workerManager->getOrCreateWorker(point.host, point.port, unitId);
+    if (!worker) {
+        emit errorOccurred(QString("Failed to create worker for device: %1").arg(deviceKey));
+        return;
     }
+    
+    // Connect worker signals if not already connected
+    connectWorkerSignals(worker);
     
     // Start data acquisition
     m_lastPollTimes[point.name] = currentTime;
     m_responseTimers[point.name] = currentTime;
     
-    // Extract unit ID from tags (default to 1 if not specified)
-    int unitId = point.tags.value("unit_id", "1").toInt();
+    qDebug() << "Polling data point:" << point.name << "at address" << point.address << "Unit ID:" << unitId << "Device:" << deviceKey;
     
-    qDebug() << "Polling data point:" << point.name << "at address" << point.address << "Unit ID:" << unitId;
+    // Create read request for the worker
+    ModbusRequest request;
+    request.startAddress = point.address;
+    request.unitId = unitId;
+    request.requestTime = QDateTime::currentMSecsSinceEpoch();
     
     // Check if this is an optimized block read with combined conditions
     if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
@@ -421,35 +1194,47 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         qDebug() << "Performing block read - Address:" << point.address << "Size:" << blockSize
                  << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
         
+        request.count = blockSize;
+        
         // Use combined condition: register_type + data_type for precise Modbus operation selection
         if (registerType == "HOLDING_REGISTER") {
             // Handle holding register types based on data_type
             if (dataType == "Int16" || point.dataType == ModbusDataType::HoldingRegister) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::HoldingRegister;
             } else if (dataType == "Float32" || point.dataType == ModbusDataType::Float32) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Float32, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Float32;
             } else if (dataType == "Double64" || point.dataType == ModbusDataType::Double64) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Double64, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Double64;
             } else if (dataType == "Long32" || point.dataType == ModbusDataType::Long32) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long32, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Long32;
             } else if (dataType == "Long64" || point.dataType == ModbusDataType::Long64) {
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::Long64, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Long64;
             } else {
                 // Default to HoldingRegister for unknown data types
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, ModbusDataType::HoldingRegister, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::HoldingRegister;
             }
         } else if (registerType == "INPUT_REGISTER") {
             // Handle input register types
-            m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType, unitId);
+            request.type = ModbusRequest::ReadInputRegisters;
+            request.dataType = point.dataType;
         } else if (registerType == "COIL") {
             // Handle coil types
-            m_modbusManager->readCoils(point.address, blockSize, unitId);
+            request.type = ModbusRequest::ReadCoils;
+            request.dataType = ModbusDataType::Coil;
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
-            m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
+            request.type = ModbusRequest::ReadDiscreteInputs;
+            request.dataType = ModbusDataType::DiscreteInput;
         } else if (registerType == "STATUS") {
             // Handle STATUS register type for block reads - map to DiscreteInput for BOOL data types
-            m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
+            request.type = ModbusRequest::ReadDiscreteInputs;
+            request.dataType = ModbusDataType::DiscreteInput;
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
             switch (point.dataType) {
@@ -458,18 +1243,22 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             case ModbusDataType::Double64:
             case ModbusDataType::Long32:
             case ModbusDataType::Long64:
-                m_modbusManager->readHoldingRegisters(point.address, blockSize, point.dataType, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = point.dataType;
                 break;
             case ModbusDataType::InputRegister:
-                m_modbusManager->readInputRegisters(point.address, blockSize, point.dataType, unitId);
+                request.type = ModbusRequest::ReadInputRegisters;
+                request.dataType = point.dataType;
                 break;
             case ModbusDataType::Coil:
-                m_modbusManager->readCoils(point.address, blockSize, unitId);
+                request.type = ModbusRequest::ReadCoils;
+                request.dataType = ModbusDataType::Coil;
                 break;
             case ModbusDataType::DiscreteInput:
             case ModbusDataType::BOOL:
                 // Default BOOL to DiscreteInput for block reads
-                m_modbusManager->readDiscreteInputs(point.address, blockSize, unitId);
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
                 break;
             }
         }
@@ -485,37 +1274,61 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         if (registerType == "HOLDING_REGISTER") {
             // Handle holding register types based on data_type
             if (dataType == "Int16" || point.dataType == ModbusDataType::HoldingRegister) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::HoldingRegister;
+                request.count = 1;
             } else if (dataType == "Float32" || point.dataType == ModbusDataType::Float32) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Float32, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Float32;
+                request.count = 2;
             } else if (dataType == "Double64" || point.dataType == ModbusDataType::Double64) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Double64, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Double64;
+                request.count = 4;
             } else if (dataType == "Long32" || point.dataType == ModbusDataType::Long32) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long32, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Long32;
+                request.count = 2;
             } else if (dataType == "Long64" || point.dataType == ModbusDataType::Long64) {
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::Long64, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::Long64;
+                request.count = 4;
             } else {
                 // Default to HoldingRegister for unknown data types
-                m_modbusManager->readHoldingRegister(point.address, ModbusDataType::HoldingRegister, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = ModbusDataType::HoldingRegister;
+                request.count = 1;
             }
         } else if (registerType == "INPUT_REGISTER") {
             // Handle input register types
-            m_modbusManager->readInputRegister(point.address, point.dataType, unitId);
+            request.type = ModbusRequest::ReadInputRegisters;
+            request.dataType = point.dataType;
+            request.count = 1;
         } else if (registerType == "COIL") {
             // Handle coil types
-            m_modbusManager->readCoil(point.address, unitId);
+            request.type = ModbusRequest::ReadCoils;
+            request.dataType = ModbusDataType::Coil;
+            request.count = 1;
         } else if (registerType == "DISCRETE_INPUT") {
             // Handle discrete input types
-            m_modbusManager->readDiscreteInput(point.address, unitId);
+            request.type = ModbusRequest::ReadDiscreteInputs;
+            request.dataType = ModbusDataType::DiscreteInput;
+            request.count = 1;
         } else if (registerType == "STATUS") {
             // Handle STATUS register type - map to appropriate Modbus operation based on data type
             if (dataType == "Bool" || point.dataType == ModbusDataType::BOOL || point.dataType == ModbusDataType::Coil) {
-                m_modbusManager->readCoil(point.address, unitId);
+                request.type = ModbusRequest::ReadCoils;
+                request.dataType = ModbusDataType::Coil;
+                request.count = 1;
             } else if (point.dataType == ModbusDataType::DiscreteInput) {
-                m_modbusManager->readDiscreteInput(point.address, unitId);
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
+                request.count = 1;
             } else {
                 // Default STATUS+BOOL to DiscreteInput
-                m_modbusManager->readDiscreteInput(point.address, unitId);
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
+                request.count = 1;
             }
         } else {
             // Fallback to original dataType-based logic if register_type is not specified
@@ -525,165 +1338,53 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             case ModbusDataType::Double64:
             case ModbusDataType::Long32:
             case ModbusDataType::Long64:
-                m_modbusManager->readHoldingRegister(point.address, point.dataType, unitId);
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                request.dataType = point.dataType;
+                request.count = (point.dataType == ModbusDataType::Float32 || point.dataType == ModbusDataType::Long32) ? 2 :
+                               (point.dataType == ModbusDataType::Double64 || point.dataType == ModbusDataType::Long64) ? 4 : 1;
                 break;
             case ModbusDataType::InputRegister:
-                m_modbusManager->readInputRegister(point.address, point.dataType, unitId);
+                request.type = ModbusRequest::ReadInputRegisters;
+                request.dataType = point.dataType;
+                request.count = 1;
                 break;
             case ModbusDataType::Coil:
-                m_modbusManager->readCoil(point.address, unitId);
+                request.type = ModbusRequest::ReadCoils;
+                request.dataType = ModbusDataType::Coil;
+                request.count = 1;
                 break;
             case ModbusDataType::DiscreteInput:
-                m_modbusManager->readDiscreteInput(point.address, unitId);
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
+                request.count = 1;
                 break;
             case ModbusDataType::BOOL:
                 // Default BOOL to DiscreteInput when no register_type specified
-                m_modbusManager->readDiscreteInput(point.address, unitId);
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
+                request.count = 1;
                 break;
             }
         }
     }
     
-    m_statistics.totalReadOperations++;
-}
-
-void ScadaCoreService::onModbusReadCompleted(const ModbusReadResult &result)
-{
-    qDebug() << "📥 Modbus Read Result Received:";
-    qDebug() << "   Start Address:" << result.startAddress;
-    qDebug() << "   Success:" << result.success;
-    qDebug() << "   Raw Data Size:" << result.rawData.size();
-    qDebug() << "   Error String:" << result.errorString;
+    // Submit the request to the worker using thread-safe queued connection
+    requestId = worker->queueReadRequest(request, RequestPriority::Normal);
     
-    // Find the corresponding data point
-    DataAcquisitionPoint *targetPoint = nullptr;
-    for (auto &point : m_dataPoints) {
-        if (point.address == result.startAddress) {
-            targetPoint = &point;
-            break;
-        }
+    // Track the request for completion handling with thread safety
+    {
+        QMutexLocker locker(&m_requestTrackingMutex);
+        m_pendingReadRequests[requestId] = point;
     }
     
-    if (!targetPoint) {
-        qWarning() << "Received read result for unknown address:" << result.startAddress;
-        qDebug() << "Available data point addresses:";
-        for (const auto &point : m_dataPoints) {
-            qDebug() << "   Point:" << point.name << "Address:" << point.address;
-        }
-        return;
-    }
-    
-    // Check if this is a block read result
-    if (targetPoint->tags.contains("block_type") && targetPoint->tags["block_type"] == "optimized_read") {
-        // Handle block read - extract individual point values
-        handleBlockReadResult(result, *targetPoint);
-        return;
-    }
-    
-    // Calculate response time
-    qint64 responseTime = 0;
-    if (m_responseTimers.contains(targetPoint->name)) {
-        responseTime = QDateTime::currentMSecsSinceEpoch() - m_responseTimers[targetPoint->name];
-        m_responseTimers.remove(targetPoint->name);
-    }
-    
-    // Create acquired data point
-    AcquiredDataPoint dataPoint;
-    dataPoint.pointName = targetPoint->name;
-    dataPoint.timestamp = result.timestamp;
-    dataPoint.measurement = targetPoint->measurement;
-    dataPoint.tags = targetPoint->tags;
-    dataPoint.isValid = result.success;
-    
-    // Add address tag for InfluxDB mapping (individual points)
-    dataPoint.tags["address"] = QString::number(targetPoint->address);
-    
-    // Validate and ensure all required InfluxDB tags are present
-    validateAndSetInfluxTags(dataPoint, *targetPoint);
-    
-    if (result.success) {
-        // Extract value based on data type
-        if (!result.processedData.isEmpty()) {
-            QString key = result.processedData.keys().first();
-            dataPoint.value = result.processedData[key];
-        } else if (!result.rawData.isEmpty()) {
-            dataPoint.value = result.rawData.first();
-        }
-        
-        // Additional BOOL-specific validation for individual points
-        if (targetPoint->dataType == ModbusDataType::BOOL) {
-            // Validate BOOL conversion for individual points
-            if (!dataPoint.value.canConvert<bool>()) {
-                qWarning() << "BOOL conversion failed for individual point" << targetPoint->name
-                          << "- QVariant cannot convert to bool. Using default false.";
-                dataPoint.value = false;
-                dataPoint.isValid = false;
-                dataPoint.errorMessage = "BOOL conversion failed: QVariant cannot convert to bool";
-            } else {
-                // Log successful BOOL conversion
-                qDebug() << "BOOL conversion successful for" << targetPoint->name
-                         << "- value:" << dataPoint.value.toBool();
-            }
-        }
-        
-        m_statistics.successfulReads++;
-        updateStatistics(true, responseTime);
-        
-        qDebug() << "Successfully read data point:" << targetPoint->name 
-                 << "Value:" << dataPoint.value.toString();
-    } else {
-        dataPoint.errorMessage = result.errorString;
-        m_statistics.failedReads++;
-        updateStatistics(false, responseTime);
-        
-        qWarning() << "Failed to read data point:" << targetPoint->name 
-                   << "Error:" << result.errorString;
-    }
-    
-    // Emit signal
-    emit dataPointAcquired(dataPoint);
-    
-    // Send to InfluxDB via Telegraf
-    if (dataPoint.isValid) {
-        bool sent = sendDataToInflux(dataPoint);
-        
-        if (sent) {
-            m_statistics.totalDataPointsSent++;
-        }
-    }
-    
-    // Update statistics
-    emit statisticsUpdated(m_statistics);
-}
-
-void ScadaCoreService::onModbusConnectionStateChanged(bool connected)
-{
-    if (connected) {
-        qDebug() << "Modbus connection established to:" << m_currentHost;
-    } else {
-        qDebug() << "Modbus connection lost to:" << m_currentHost;
-        m_currentHost.clear();
+    // Update statistics with thread safety
+    {
+        QMutexLocker locker(&m_statisticsMutex);
+        m_statistics.totalReadOperations++;
     }
 }
 
-void ScadaCoreService::onModbusError(const QString &error)
-{
-    qWarning() << "Modbus error:" << error;
-    emit errorOccurred(QString("Modbus error: %1").arg(error));
-}
-
-void ScadaCoreService::onModbusWriteCompleted(const ModbusWriteResult &result)
-{
-    QString operation = QString("Write@%1[%2]").arg(result.startAddress).arg(result.registerCount);
-    
-    if (result.success) {
-        qDebug() << "✅ Modbus write completed successfully:" << operation;
-        emit writeCompleted(operation, true);
-    } else {
-        qWarning() << "❌ Modbus write failed:" << operation << "Error:" << result.errorString;
-        emit writeCompleted(operation, false, result.errorString);
-    }
-}
+// Obsolete ModbusManager methods removed - now using ModbusWorkerManager architecture
 
 bool ScadaCoreService::writeToTelegrafSocket(const QString& socketPath, const QByteArray& message)
 {
@@ -825,60 +1526,36 @@ bool ScadaCoreService::sendDataToInflux(const AcquiredDataPoint &dataPoint)
 
 bool ScadaCoreService::connectToModbusHost(const QString &host, int port)
 {
-    QString hostKey = QString("%1:%2").arg(host).arg(port);
+    QString deviceKey = QString("%1:%2").arg(host).arg(port);
     
-    // Check if we're already connected to the same host
-    if (m_modbusManager->isConnected() && m_currentHost == hostKey) {
-        qDebug() << "Already connected to" << hostKey << "- reusing connection";
+    // Check if we already have a worker for this device
+    if (m_connectionStates.contains(deviceKey) && m_connectionStates[deviceKey]) {
+        qDebug() << "Already connected to" << deviceKey << "- reusing connection";
         return true;
     }
     
-    // Only disconnect if we're connected to a different host
-    if (m_modbusManager->isConnected() && m_currentHost != hostKey) {
-        qDebug() << "Switching from" << m_currentHost << "to" << hostKey;
-        m_modbusManager->disconnectFromServer();
-        // Give some time for disconnection
-        QThread::msleep(100);
-        m_currentHost.clear();
-    }
-    
-    // Connect to the new host
-    qDebug() << "Connecting to Modbus host:" << hostKey;
-    bool connectionStarted = m_modbusManager->connectToServer(host, port);
-    
-    if (!connectionStarted) {
-        qWarning() << "Failed to start connection to" << hostKey;
-        m_currentHost.clear();
+    // Create or get worker for this device
+    if (!m_workerManager) {
+        qWarning() << "Worker manager not initialized";
         return false;
     }
     
-    // Wait for connection to be established (with timeout)
-    int waitTime = 0;
-    const int maxWaitTime = 15000; // Use ConnectionResilience timeout (15 seconds default)
-    const int checkInterval = 100; // 100ms
+    // The worker manager will handle the connection automatically
+    // when we submit requests to this device
+    qDebug() << "Device" << deviceKey << "will be connected when needed";
     
-    while (waitTime < maxWaitTime && !m_modbusManager->isConnected()) {
-        QThread::msleep(checkInterval);
-        waitTime += checkInterval;
-        QCoreApplication::processEvents(); // Process Qt events
-    }
+    // Mark as connected (the worker will update the actual state)
+    m_connectionStates[deviceKey] = true;
     
-    bool connected = m_modbusManager->isConnected();
-    if (connected) {
-        m_currentHost = hostKey;
-        qDebug() << "Successfully connected to" << hostKey;
-    } else {
-        qWarning() << "Failed to connect to" << hostKey << "(timeout after" << waitTime << "ms)";
-        m_currentHost.clear();
-        // Ensure we disconnect if connection attempt failed
-        m_modbusManager->disconnectFromServer();
-    }
-    
-    return connected;
+    return true;
 }
 
 void ScadaCoreService::updateStatistics(bool success, qint64 responseTime)
 {
+    QMutexLocker locker(&m_statisticsMutex);
+    
+    m_statistics.totalReadOperations++;
+    
     // Update success/failure counters
     if (success) {
         m_statistics.successfulReads++;
@@ -895,6 +1572,13 @@ void ScadaCoreService::updateStatistics(bool success, qint64 responseTime)
         } else {
             m_statistics.averageResponseTime = responseTime;
         }
+    }
+    
+    // Emit statistics update periodically (every 100 operations)
+    if (m_statistics.totalReadOperations % 100 == 0) {
+        ServiceStatistics statsCopy = m_statistics;
+        locker.unlock();
+        emit statisticsUpdated(statsCopy);
     }
 }
 
@@ -1360,5 +2044,261 @@ void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, co
         if (!dataPoint.tags.contains(tag) || dataPoint.tags[tag].isEmpty()) {
             qWarning() << "CRITICAL: Tag validation failed for" << tag << "in point:" << dataPoint.pointName;
         }
+    }
+}
+
+// Worker-specific slot methods
+void ScadaCoreService::onWorkerReadCompleted(qint64 requestId, const ModbusReadResult &result)
+{
+    // Handle read completion from worker threads
+    qDebug() << "Worker read completed - Request ID:" << requestId << "success:" << result.success;
+    
+    // Track performance metrics for multi-threaded operations
+    if (m_performanceMonitoringEnabled) {
+        QMutexLocker perfLocker(&m_performanceMetricsMutex);
+        if (m_operationStartTimes.contains(requestId)) {
+            qint64 operationTime = m_operationTimer.elapsed() - m_operationStartTimes[requestId];
+            m_operationStartTimes.remove(requestId);
+            
+            // Update multi-threaded metrics
+            m_performanceMetrics.multiThreadedOperations++;
+            m_performanceMetrics.multiThreadedTotalTime += operationTime;
+            
+            if (!result.success) {
+                double totalOps = static_cast<double>(m_performanceMetrics.multiThreadedOperations);
+                double errorCount = m_performanceMetrics.multiThreadedErrorRate * (totalOps - 1) + 1;
+                m_performanceMetrics.multiThreadedErrorRate = errorCount / totalOps;
+            }
+        }
+    }
+    
+    // Remove from pending requests and get the corresponding data point with thread safety
+    DataAcquisitionPoint point;
+    bool found = false;
+    {
+        QMutexLocker locker(&m_requestTrackingMutex);
+        if (m_pendingReadRequests.contains(requestId)) {
+            point = m_pendingReadRequests.take(requestId);
+            found = true;
+        }
+    }
+    
+    if (!found) {
+        qWarning() << "Received read completion for unknown request ID:" << requestId;
+        return;
+    }
+    
+    if (result.success && result.hasValidData) {
+        // Update statistics
+        updateStatistics(true, 0); // Response time not available in this context
+        
+        // Create acquired data point
+        AcquiredDataPoint acquiredPoint;
+        acquiredPoint.pointName = point.name;
+        acquiredPoint.timestamp = result.timestamp;
+        acquiredPoint.measurement = point.measurement;
+        acquiredPoint.tags = point.tags;
+        acquiredPoint.isValid = true;
+        
+        // Extract value from processed data
+        if (!result.processedData.isEmpty()) {
+            acquiredPoint.value = result.processedData.first();
+        } else if (!result.rawData.isEmpty()) {
+            acquiredPoint.value = result.rawData.first();
+        }
+        
+        validateAndSetInfluxTags(acquiredPoint, point);
+        
+        // Send to InfluxDB
+        sendDataToInflux(acquiredPoint);
+        
+        // Emit signal
+        emit dataPointAcquired(acquiredPoint);
+    } else {
+        updateStatistics(false, 0);
+        qWarning() << "Worker read failed - Request ID:" << requestId << "error:" << result.errorString;
+        
+        // Emit error signal
+        emit errorOccurred(QString("Read failed for %1: %2").arg(point.name).arg(result.errorString));
+    }
+}
+
+void ScadaCoreService::onWorkerWriteCompleted(qint64 requestId, const ModbusWriteResult &result)
+{
+    QString operation;
+    {
+        QMutexLocker locker(&m_requestTrackingMutex);
+        operation = m_pendingWriteRequests.value(requestId, "Unknown");
+        m_pendingWriteRequests.remove(requestId);
+    }
+    
+    qDebug() << "Worker write completed:" << operation << "requestId" << requestId << "success" << result.success;
+    
+    // Update statistics
+    updateStatistics(result.success, 0); // Response time not available for writes
+    
+    // Emit completion signal
+    emit writeCompleted(requestId, operation, result.success, result.errorString);
+}
+
+void ScadaCoreService::onWorkerError(const QString &deviceKey, const QString &error)
+{
+    qWarning() << "Worker error for device" << deviceKey << ":" << error;
+    
+    // Update statistics
+    updateStatistics(false, 0);
+    
+    // Emit error signal
+    emit errorOccurred(QString("Device %1: %2").arg(deviceKey).arg(error));
+}
+
+void ScadaCoreService::onWorkerRequestInterrupted(qint64 requestId, const QString &reason)
+{
+    qDebug() << "Worker request interrupted:" << requestId << "reason:" << reason;
+    
+    // Remove from pending requests if it was a write
+    if (m_pendingWriteRequests.contains(requestId)) {
+        QString operation = m_pendingWriteRequests.take(requestId);
+        emit writeCompleted(requestId, operation, false, QString("Interrupted: %1").arg(reason));
+    }
+    
+    // Emit interruption signal
+    emit requestInterrupted(requestId, reason);
+}
+
+void ScadaCoreService::onWorkerCreated(const QString &deviceKey)
+{
+    qDebug() << "🔧 Worker created for device:" << deviceKey;
+    
+    // Start and connect the newly created worker
+    if (m_workerManager) {
+        // Get the worker and start it
+        QStringList parts = deviceKey.split(":");
+        if (parts.size() >= 3) {
+            QString host = parts[0];
+            int port = parts[1].toInt();
+            int unitId = parts[2].toInt();
+            
+            ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, unitId);
+            if (worker) {
+                worker->startWorker();
+                worker->connectToDevice();
+                qDebug() << "   Started and connected worker for device:" << deviceKey;
+            }
+        }
+        
+        auto stats = m_workerManager->getGlobalStatistics();
+        qDebug() << "   Total active workers:" << stats.activeWorkers;
+        qDebug() << "   Total successful requests:" << stats.totalSuccessfulRequests;
+        qDebug() << "   Total failed requests:" << stats.totalFailedRequests;
+    }
+    
+    emit workerCreated(deviceKey);
+}
+
+void ScadaCoreService::onWorkerRemoved(const QString &deviceKey)
+{
+    qDebug() << "Worker removed for device:" << deviceKey;
+    emit workerRemoved(deviceKey);
+}
+
+void ScadaCoreService::onWorkerConnectionStateChanged(const QString &deviceId, bool connected)
+{
+    qDebug() << "Worker connection state changed for device" << deviceId << ":" << (connected ? "connected" : "disconnected");
+    
+    // Update connection state tracking
+    m_connectionStates[deviceId] = connected;
+    
+    // Emit connection state change signal if needed
+    // emit connectionStateChanged(deviceId, connected);
+}
+
+void ScadaCoreService::onWorkerStatisticsUpdated(const QString &deviceId, const ModbusWorker::WorkerStatistics &stats)
+{
+    qDebug() << "Worker statistics updated for device" << deviceId 
+             << "- Total requests:" << stats.totalRequests
+             << "- Successful:" << stats.successfulRequests
+             << "- Failed:" << stats.failedRequests
+             << "- Interrupted:" << stats.interruptedRequests
+             << "- Avg response time:" << stats.averageResponseTime << "ms";
+    
+    // Update service-level statistics based on worker statistics
+    // This could aggregate statistics from individual workers
+}
+
+void ScadaCoreService::onGlobalStatisticsUpdated(const ModbusWorkerManager::GlobalStatistics &stats)
+{
+    // Update service-level statistics based on global worker statistics
+    // This could be used to aggregate statistics from all workers
+    emit globalStatisticsUpdated(stats);
+}
+
+void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &result)
+{
+    // Handle read completion in single-threaded mode
+    qint64 responseTime = QDateTime::currentMSecsSinceEpoch() - result.timestamp;
+    
+    // Track performance metrics for single-threaded operations
+    if (m_performanceMonitoringEnabled) {
+        QMutexLocker perfLocker(&m_performanceMetricsMutex);
+        
+        // For single-threaded mode, we track based on the operation completion
+        m_performanceMetrics.singleThreadedOperations++;
+        m_performanceMetrics.singleThreadedTotalTime += responseTime;
+        
+        if (!result.success) {
+            double totalOps = static_cast<double>(m_performanceMetrics.singleThreadedOperations);
+            double errorCount = m_performanceMetrics.singleThreadedErrorRate * (totalOps - 1) + 1;
+            m_performanceMetrics.singleThreadedErrorRate = errorCount / totalOps;
+        }
+    }
+    
+    if (result.success) {
+        // Find the corresponding data point
+        QMutexLocker locker(&m_dataPointsMutex);
+        for (const auto &point : m_dataPoints) {
+            if (point.address == result.startAddress) {
+                AcquiredDataPoint dataPoint;
+                dataPoint.pointName = point.name;
+                dataPoint.timestamp = QDateTime::currentMSecsSinceEpoch();
+                dataPoint.measurement = point.measurement;
+                dataPoint.tags = point.tags;
+                dataPoint.isValid = true;
+                
+                // Extract value based on data type
+                if (!result.rawData.isEmpty()) {
+                    switch (point.dataType) {
+                        case ModbusDataType::HoldingRegister:
+                            dataPoint.value = result.rawData.first();
+                            break;
+                        case ModbusDataType::InputRegister:
+                            dataPoint.value = result.rawData.first();
+                            break;
+                        case ModbusDataType::Float32:
+                            if (result.rawData.size() >= 2) {
+                                // Combine two 16-bit registers into a 32-bit float
+                                quint32 combined = (static_cast<quint32>(result.rawData[0]) << 16) | result.rawData[1];
+                                float floatValue;
+                                std::memcpy(&floatValue, &combined, sizeof(float));
+                                dataPoint.value = floatValue;
+                            }
+                            break;
+                        default:
+                            dataPoint.value = result.rawData.first();
+                            break;
+                    }
+                }
+                
+                // Send data to InfluxDB
+                sendDataToInflux(dataPoint);
+                emit dataPointAcquired(dataPoint);
+                
+                updateStatistics(true, responseTime);
+                break;
+            }
+        }
+    } else {
+        qWarning() << "Single-threaded read failed:" << result.errorString;
+        updateStatistics(false, responseTime);
     }
 }
