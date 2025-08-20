@@ -42,6 +42,10 @@ public:
     void disconnectFromDatabase();
     bool isConnected() const;
     
+    // Execution mode setting
+    void setExecutionMode(const QString &mode);
+    QString getExecutionMode() const;
+    
     // Configuration loading
     QVector<ModbusDeviceConfig> loadModbusDevices();
     QVector<DataAcquisitionPoint> loadDataPoints();
@@ -69,6 +73,7 @@ private:
     QString m_dbUsername;
     QString m_dbPassword;
     int m_dbPort;
+    QString m_executionMode;
     
     void setLastError(const QString &error);
     

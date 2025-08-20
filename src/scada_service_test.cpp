@@ -12,9 +12,17 @@
 #include <QElapsedTimer>
 #include <QAtomicInteger>
 #include <QTest>
+#include <QDateTime>
+#include <QJsonObject>
+#include <QJsonDocument>
+#include <QRandomGenerator>
+#include <QCommandLineParser>
+#include <QCommandLineOption>
 #include "../include/scada_core_service.h"
 #include "../include/database_manager.h"
 #include "../include/modbus_worker.h"
+#include "../include/modbus_worker_manager.h"
+#include "../include/connection_resilience_manager.h"
 
 /**
  * Enhanced ScadaServiceTest with Multithreading Support
@@ -50,22 +58,36 @@ public:
         }
     };
 
-    ScadaServiceTest(ScadaCoreService *service, QObject *parent = nullptr) 
+    ScadaServiceTest(ScadaCoreService *service, const QString &executionMode = "multiple", QObject *parent = nullptr) 
         : QObject(parent), m_service(service), m_dbManager(nullptr), 
           m_workerManager(nullptr), m_multithreadingEnabled(true),
-          m_maxConcurrentWorkers(4), m_performanceTestDuration(60000) {
+          m_maxConcurrentWorkers(4), m_performanceTestDuration(60000),
+          m_testRunning(false), m_mockMode(false), m_resilienceManager(nullptr),
+          m_executionMode(executionMode) {
         // Initialize performance metrics
         m_performanceMetrics.reset();
+        qDebug() << "Enhanced SCADA Test initialized at" << QDateTime::currentDateTime().toString();
+        qDebug() << "Execution mode:" << m_executionMode;
+        
+        // Initialize connection resilience manager
+        m_resilienceManager = new ConnectionResilienceManager(this);
+        setupConnectionResilience();
     }
     
     // Constructor with multithreading support
     ScadaServiceTest(bool enableMultithreading = false, QObject *parent = nullptr)
         : QObject(parent), m_service(nullptr), m_dbManager(nullptr),
           m_workerManager(nullptr), m_multithreadingEnabled(enableMultithreading),
-          m_maxConcurrentWorkers(4), m_performanceTestDuration(60000)
+          m_maxConcurrentWorkers(4), m_performanceTestDuration(60000),
+          m_testRunning(false), m_mockMode(false), m_resilienceManager(nullptr)
     {
         // Initialize performance metrics
         m_performanceMetrics.reset();
+        qDebug() << "Enhanced SCADA Test initialized at" << QDateTime::currentDateTime().toString();
+        
+        // Initialize connection resilience manager
+        m_resilienceManager = new ConnectionResilienceManager(this);
+        setupConnectionResilience();
         
         // Create service if multithreading is enabled
         if (m_multithreadingEnabled) {
@@ -104,8 +126,9 @@ public:
         // Connect to PostgreSQL database using configuration
         qDebug() << "Connecting to PostgreSQL database using configuration...";
         if (!m_dbManager->connectToDatabase()) {
-            qDebug() << "❌ Failed to connect to database:" << m_dbManager->lastError();
-            QCoreApplication::quit();
+            qWarning() << "Failed to connect to database, switching to mock mode";
+            m_mockMode = true;
+            startMockTest();
             return;
         }
         
@@ -130,8 +153,8 @@ public:
         connect(m_workerManager, &ModbusWorkerManager::globalStatisticsUpdated,
                 this, &ScadaServiceTest::onGlobalStatisticsUpdated);
         
-        // Set default poll interval for workers
-        m_workerManager->setDefaultPollInterval(1000);
+        // Set default poll interval for workers (increased to reduce connection drops)
+        m_workerManager->setDefaultPollInterval(2000);
         
         qDebug() << "✅ Multithreading components initialized";
     }
@@ -167,9 +190,8 @@ public:
                 connect(worker, &ModbusWorker::errorOccurred,
                         this, &ScadaServiceTest::onWorkerError);
                 
-                // Start worker
-                worker->startWorker();
-                worker->connectToDevice();
+                // Note: Worker will be started and connected via startAllWorkers() and connectAllDevices()
+                // to avoid race conditions and duplicate initialization
                 
                 qDebug() << "🔧 Created worker for device:" << device.deviceName 
                          << "(" << device.ipAddress << ":" << device.port << ")";
@@ -296,6 +318,175 @@ public:
         }
         qDebug() << "";
     }
+    
+    void startMockTest()
+    {
+        qDebug() << "\n=== Starting Mock Mode Test ===";
+        
+        // Create mock data points
+        QVector<DataAcquisitionPoint> mockPoints = createMockDataPoints();
+        
+        // Initialize SCADA service if not already created
+        if (!m_service) {
+            m_service = new ScadaCoreService(this);
+        }
+        
+        // Connect signals
+        connect(m_service, &ScadaCoreService::dataPointAcquired, this, &ScadaServiceTest::onDataPointAcquired);
+        connect(m_service, &ScadaCoreService::errorOccurred, this, &ScadaServiceTest::onErrorOccurred);
+        
+        // Add mock data points
+        for (const auto &point : mockPoints) {
+            m_service->addDataPoint(point);
+        }
+        
+        // Start service
+        if (m_service->startService()) {
+            qDebug() << "Mock SCADA service started successfully";
+            m_testRunning = true;
+            
+            // Generate mock data
+            startMockDataGeneration();
+            
+            // Start monitoring
+            QTimer::singleShot(5000, this, &ScadaServiceTest::printStatus);
+            
+            // Schedule completion
+            QTimer::singleShot(30000, this, &ScadaServiceTest::completeTest); // Run for 30 seconds in mock mode
+        } else {
+            qWarning() << "Failed to start mock SCADA service";
+            QTimer::singleShot(1000, this, &ScadaServiceTest::completeTest);
+        }
+    }
+    
+    QVector<DataAcquisitionPoint> createMockDataPoints()
+    {
+        QVector<DataAcquisitionPoint> points;
+        
+        // Create mock data points for testing - using simulation mode
+        DataAcquisitionPoint point1;
+        point1.name = "MOCK_TEMP_001";
+        point1.host = "SIMULATION";
+        point1.port = 0;
+        point1.unitId = 1;
+        point1.address = 1001;
+        point1.dataType = ModbusDataType::HoldingRegister;
+        point1.pollInterval = 2000;
+        point1.enabled = true;
+        point1.measurement = "temperature";
+        point1.tags["device_name"] = "MockDevice1";
+        point1.tags["description"] = "Mock temperature sensor";
+        point1.tags["simulation_mode"] = "true";
+        points.append(point1);
+        
+        DataAcquisitionPoint point2;
+        point2.name = "MOCK_PRESSURE_001";
+        point2.host = "SIMULATION";
+        point2.port = 0;
+        point2.unitId = 1;
+        point2.address = 1002;
+        point2.dataType = ModbusDataType::Float32;
+        point2.pollInterval = 3000;
+        point2.enabled = true;
+        point2.measurement = "pressure";
+        point2.tags["device_name"] = "MockDevice1";
+        point2.tags["description"] = "Mock pressure sensor";
+        point2.tags["simulation_mode"] = "true";
+        points.append(point2);
+        
+        DataAcquisitionPoint point3;
+        point3.name = "MOCK_STATUS_001";
+        point3.host = "SIMULATION";
+        point3.port = 0;
+        point3.unitId = 2;
+        point3.address = 2001;
+        point3.dataType = ModbusDataType::BOOL;
+        point3.pollInterval = 1000;
+        point3.enabled = true;
+        point3.measurement = "status";
+        point3.tags["device_name"] = "MockDevice2";
+        point3.tags["description"] = "Mock status indicator";
+        point3.tags["simulation_mode"] = "true";
+        points.append(point3);
+        
+        return points;
+    }
+    
+    void startMockDataGeneration()
+    {
+        // This would simulate data acquisition in a real implementation
+        // For now, we rely on the existing polling mechanism
+        qDebug() << "Mock data generation started (simulated by polling mechanism)";
+    }
+    
+    void printStatus()
+    {
+        if (!m_testRunning) return;
+        
+        qDebug() << "\n=== Status Report ===";
+        qDebug() << "Timestamp:" << QDateTime::currentDateTime().toString();
+        qDebug() << "Mode:" << (m_mockMode ? "Mock" : "Real");
+        
+        if (m_service) {
+            auto stats = m_service->getStatistics();
+            qDebug() << "Total Requests:" << stats.totalReadOperations;
+            qDebug() << "Successful Requests:" << stats.successfulReads;
+            qDebug() << "Failed Requests:" << stats.failedReads;
+            qDebug() << "Average Response Time:" << stats.averageResponseTime << "ms";
+            
+            auto perfMetrics = m_service->getPerformanceMetrics();
+            qDebug() << "Single-threaded Operations:" << perfMetrics.singleThreadedOperations;
+            qDebug() << "Multi-threaded Operations:" << perfMetrics.multiThreadedOperations;
+        }
+        
+        // Schedule next status report
+        if (m_testRunning) {
+            QTimer::singleShot(10000, this, &ScadaServiceTest::printStatus);
+        }
+    }
+    
+    void completeTest()
+    {
+        qDebug() << "\n=== Test Completion ===";
+        m_testRunning = false;
+        
+        if (m_service) {
+            auto finalStats = m_service->getStatistics();
+            qDebug() << "Final Statistics:";
+            qDebug() << "  Total Requests:" << finalStats.totalReadOperations;
+            qDebug() << "  Successful:" << finalStats.successfulReads;
+            qDebug() << "  Failed:" << finalStats.failedReads;
+            qDebug() << "  Success Rate:" << (finalStats.totalReadOperations > 0 ?
+                        (double)finalStats.successfulReads / finalStats.totalReadOperations * 100 : 0) << "%";
+            qDebug() << "  Average Response Time:" << finalStats.averageResponseTime << "ms";
+            
+            auto perfReport = m_service->getPerformanceReport();
+            qDebug() << "Performance Report:" << perfReport;
+        }
+        
+        qDebug() << "Test completed at" << QDateTime::currentDateTime().toString();
+        
+        // Cleanup and exit
+        QTimer::singleShot(1000, this, &ScadaServiceTest::cleanup);
+    }
+    
+    void cleanup()
+    {
+        if (m_service) {
+            m_service->stopService();
+            m_service->deleteLater();
+            m_service = nullptr;
+        }
+        
+        if (m_dbManager) {
+            m_dbManager->disconnectFromDatabase();
+            m_dbManager->deleteLater();
+            m_dbManager = nullptr;
+        }
+        
+        qDebug() << "Cleanup completed";
+        QCoreApplication::quit();
+    }
 
 private slots:
     void onDatabaseConnected() {
@@ -403,15 +594,23 @@ private slots:
     }
     
     void onDataPointAcquired(const AcquiredDataPoint &dataPoint) {
-        if (dataPoint.isValid) {
-            qDebug() << "📊 Data acquired:" << dataPoint.pointName 
-                     << "=" << dataPoint.value.toString()
-                     << "(" << dataPoint.measurement << ")"
-                     << "Unit ID:" << dataPoint.tags.value("unit_id", "N/A");
-        } else {
-            qDebug() << "❌ Data acquisition failed:" << dataPoint.pointName 
-                     << "Error:" << dataPoint.errorMessage;
+        static int dataCount = 0;
+        dataCount++;
+        
+        if (dataCount % 10 == 0) { // Print every 10th data point to avoid spam
+            if (dataPoint.isValid) {
+                qDebug() << "📊 Data acquired [" << dataCount << "]:" << dataPoint.pointName 
+                         << "=" << dataPoint.value.toString()
+                         << "(" << dataPoint.measurement << ")"
+                         << "Unit ID:" << dataPoint.tags.value("unit_id", "N/A");
+            } else {
+                qDebug() << "❌ Data acquisition failed [" << dataCount << "]:" << dataPoint.pointName 
+                         << "Error:" << dataPoint.errorMessage;
+            }
         }
+        
+        // Update performance metrics
+        updatePerformanceMetrics(dataPoint.isValid, 0); // Response time not available here
     }
     
     void onDataPointSentToInflux(const QString &pointName, bool success) {
@@ -575,6 +774,18 @@ private slots:
     }
     
 private:
+    void setupConnectionResilience() {
+        // Configure connection resilience settings
+        if (m_resilienceManager) {
+            // Set default retry parameters
+            m_resilienceManager->setMaxRetries(3);
+            m_resilienceManager->setRetryDelay(1000);
+            m_resilienceManager->setConnectionTimeout(5000);
+            
+            qDebug() << "Connection resilience manager configured";
+        }
+    };
+    
     void setupDataPointsFromDatabase() {
         qDebug() << "Loading data acquisition points from database...";
         
@@ -617,6 +828,12 @@ private:
     // Thread synchronization
     QMutex m_testMutex;
     QWaitCondition m_testCondition;
+    
+    // Mock mode support
+    bool m_testRunning;
+    bool m_mockMode;
+    ConnectionResilienceManager *m_resilienceManager;
+    QString m_executionMode;
 };
 
 /**
@@ -725,9 +942,42 @@ private slots:
 int main(int argc, char *argv[])
 {
     QCoreApplication app(argc, argv);
+    app.setApplicationName("SCADA Service Test");
+    app.setApplicationVersion("2.0");
+    
     QLoggingCategory::setFilterRules(QStringLiteral("qt.modbus* = true"));
     
+    // Setup command line parser
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Enhanced SCADA Service Test Application with device mode selection");
+    parser.addHelpOption();
+    parser.addVersionOption();
+    
+    // Add execution mode options
+    QCommandLineOption singleModeOption(QStringList() << "s" << "single",
+                                        "Run in single device mode (device ID 2 only)");
+    QCommandLineOption multipleModeOption(QStringList() << "m" << "multiple", 
+                                         "Run in multiple device mode (device IDs 2,3)");
+    
+    parser.addOption(singleModeOption);
+    parser.addOption(multipleModeOption);
+    
+    // Process command line arguments
+    parser.process(app);
+    
+    // Determine execution mode
+    QString executionMode = "multiple"; // default
+    if (parser.isSet(singleModeOption)) {
+        executionMode = "single";
+    } else if (parser.isSet(multipleModeOption)) {
+        executionMode = "multiple";
+    }
+    
+    qDebug() << "Enhanced SCADA Service Test Application";
+    qDebug() << "Version: 2.0";
+    qDebug() << "Build Date:" << __DATE__ << __TIME__;
     qDebug() << "🚀 Starting SCADA Service Test with Configuration File...";
+    qDebug() << "📋 Execution Mode:" << executionMode;
     
     // Create database manager and load configuration
     DatabaseManager dbManager;
@@ -735,6 +985,9 @@ int main(int argc, char *argv[])
         qDebug() << "❌ Failed to load configuration:" << dbManager.lastError();
         return -1;
     }
+    
+    // Set execution mode for database queries
+    dbManager.setExecutionMode(executionMode);
     
     // Connect to database using configuration
     if (!dbManager.connectToDatabase()) {
@@ -775,7 +1028,7 @@ int main(int argc, char *argv[])
     qDebug() << "Testing database-driven configuration and InfluxDB integration";
     qDebug();
     
-    ScadaServiceTest test(&scadaService);
+    ScadaServiceTest test(&scadaService, executionMode);
     
     // Start test after event loop starts
     QTimer::singleShot(100, &test, &ScadaServiceTest::runTest);

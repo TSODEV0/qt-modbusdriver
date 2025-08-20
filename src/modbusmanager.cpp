@@ -25,31 +25,46 @@ ModbusManager::ModbusManager(QObject *parent)
 {
     qDebug() << "DEBUG: ModbusManager constructor - Entry point";
     
-    qDebug() << "DEBUG: Creating QModbusTcpClient...";
-    m_modbusClient = new QModbusTcpClient(this);
-    qDebug() << "DEBUG: QModbusTcpClient created successfully";
-    
-    // Initialize timers
-    qDebug() << "DEBUG: Creating request timer...";
-    m_requestTimer = new QTimer(this);
-    m_requestTimer->setSingleShot(true);
-    connect(m_requestTimer, &QTimer::timeout, this, &ModbusManager::processNextRequest);
-    qDebug() << "DEBUG: Request timer created and connected";
-    
-    qDebug() << "DEBUG: Creating timeout timer...";
-    m_timeoutTimer = new QTimer(this);
-    m_timeoutTimer->setSingleShot(true);
-    connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
-    qDebug() << "DEBUG: Timeout timer created and connected";
-    
-    qDebug() << "DEBUG: Connecting modbus client signals...";
-    connect(m_modbusClient, &QModbusClient::stateChanged,
-            this, &ModbusManager::onStateChanged);
-    connect(m_modbusClient, &QModbusDevice::errorOccurred,
-            this, &ModbusManager::onErrorOccurred);
-    qDebug() << "DEBUG: Modbus client signals connected";
+    // QModbusTcpClient and timers will be created in initializeClient() after moveToThread()
+    // to avoid threading violations
     
     qDebug() << "DEBUG: ModbusManager constructor completed successfully";
+}
+
+void ModbusManager::initializeClient()
+{
+    // This method should be called after moveToThread() to create Qt objects in the correct thread
+    if (!m_modbusClient) {
+        qDebug() << "DEBUG: Creating QModbusTcpClient in worker thread...";
+        m_modbusClient = new QModbusTcpClient(this);
+        qDebug() << "DEBUG: QModbusTcpClient created successfully";
+        
+        // Connect modbus client signals
+        connect(m_modbusClient, &QModbusClient::stateChanged,
+                this, &ModbusManager::onStateChanged);
+        connect(m_modbusClient, &QModbusDevice::errorOccurred,
+                this, &ModbusManager::onErrorOccurred);
+        qDebug() << "DEBUG: Modbus client signals connected";
+    }
+    
+    // Initialize timers
+    if (!m_requestTimer) {
+        qDebug() << "DEBUG: Creating request timer in worker thread...";
+        m_requestTimer = new QTimer(this);
+        m_requestTimer->setSingleShot(true);
+        connect(m_requestTimer, &QTimer::timeout, this, &ModbusManager::processNextRequest);
+        qDebug() << "DEBUG: Request timer created and connected";
+    }
+    
+    if (!m_timeoutTimer) {
+        qDebug() << "DEBUG: Creating timeout timer in worker thread...";
+        m_timeoutTimer = new QTimer(this);
+        m_timeoutTimer->setSingleShot(true);
+        connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
+        qDebug() << "DEBUG: Timeout timer created and connected";
+    }
+    
+    qDebug() << "DEBUG: ModbusManager initialization completed successfully";
 }
 
 ModbusManager::~ModbusManager()
@@ -156,6 +171,15 @@ bool ModbusManager::isConnected() const
     }
     
     return connected;
+}
+
+bool ModbusManager::isClientInitialized() const
+{
+    bool initialized = (m_modbusClient != nullptr);
+    if (!initialized) {
+        qDebug() << "ModbusManager::isClientInitialized() - Client is not initialized";
+    }
+    return initialized;
 }
 
 // Single read operations

@@ -1,3 +1,4 @@
+#include "modbus_worker_manager.h"
 #include "modbus_worker.h"
 #include <QThread>
 #include <QDebug>
@@ -9,7 +10,7 @@
 // ModbusWorkerManager Implementation
 ModbusWorkerManager::ModbusWorkerManager(QObject *parent)
     : QObject(parent)
-    , m_defaultPollInterval(1000)
+    , m_defaultPollInterval(2000)  // Increased from 1000ms to reduce connection drops
     , m_statsUpdateTimer(nullptr)
     , m_loadBalancingEnabled(true)
     , m_loadBalancingTimer(nullptr)
@@ -77,9 +78,29 @@ ModbusWorker* ModbusWorkerManager::getOrCreateWorker(const QString& host, int po
         // Start thread
         thread->start();
         
+        // Initialize timers in the worker thread (must be done after moveToThread)
+        // Use BlockingQueuedConnection to ensure proper initialization sequence
+        QMetaObject::invokeMethod(worker, "initializeTimers", Qt::BlockingQueuedConnection);
+        
         // Set default poll interval for new worker
-        QMetaObject::invokeMethod(worker, "setPollInterval", Qt::QueuedConnection,
+        QMetaObject::invokeMethod(worker, "setPollInterval", Qt::BlockingQueuedConnection,
                                   Q_ARG(int, m_defaultPollInterval));
+        
+        // Stagger worker startup to prevent resource contention
+        // Each new worker gets a slightly delayed start with proper synchronization
+        int workerCount = m_workers.size();
+        int startupDelay = qMax(500, workerCount * 300); // Minimum 500ms, 300ms delay per existing worker
+        
+        QTimer::singleShot(startupDelay, this, [this, worker, deviceKey]() {
+            // Ensure worker is still valid and start it synchronously
+            QMutexLocker locker(&m_workersMutex);
+            if (m_workers.contains(deviceKey) && m_workers[deviceKey].worker == worker) {
+                QMetaObject::invokeMethod(worker, "startWorker", Qt::BlockingQueuedConnection);
+                qDebug() << "ModbusWorkerManager::getOrCreateWorker() - Worker started successfully for device:" << deviceKey;
+            }
+        });
+        
+        qDebug() << "ModbusWorkerManager::getOrCreateWorker() - Worker startup scheduled with" << startupDelay << "ms delay for device:" << deviceKey;
     }
     
     // Emit signals and update statistics outside the mutex lock to avoid deadlock
@@ -209,8 +230,22 @@ void ModbusWorkerManager::connectWorkerSignals(ModbusWorker* worker)
 {
     connect(worker, &ModbusWorker::connectionStateChanged,
             this, &ModbusWorkerManager::onWorkerConnectionStateChanged, Qt::QueuedConnection);
+    
+    // Convert ModbusWorker::WorkerStatistics to ModbusWorkerTypes::WorkerStatistics
     connect(worker, &ModbusWorker::statisticsUpdated,
-            this, &ModbusWorkerManager::onWorkerStatisticsUpdated, Qt::QueuedConnection);
+            this, [this](const QString& deviceKey, const ModbusWorker::WorkerStatistics& stats) {
+                ModbusWorkerTypes::WorkerStatistics convertedStats;
+                convertedStats.totalRequests = stats.totalRequests;
+                convertedStats.successfulRequests = stats.successfulRequests;
+                convertedStats.failedRequests = stats.failedRequests;
+                convertedStats.interruptedRequests = stats.interruptedRequests;
+                convertedStats.highPriorityRequests = stats.highPriorityRequests;
+                convertedStats.averageResponseTime = stats.averageResponseTime;
+                convertedStats.lastActivityTime = stats.lastActivityTime;
+                convertedStats.isConnected = stats.isConnected;
+                this->onWorkerStatisticsUpdated(deviceKey, convertedStats);
+            }, Qt::QueuedConnection);
+    
     connect(worker, &ModbusWorker::workerStarted,
             this, &ModbusWorkerManager::onWorkerStarted, Qt::QueuedConnection);
     connect(worker, &ModbusWorker::workerStopped,
@@ -314,7 +349,7 @@ void ModbusWorkerManager::onWorkerStopped(const QString& deviceKey)
     updateGlobalStatistics();
 }
 
-void ModbusWorkerManager::onWorkerStatisticsUpdated(const QString& deviceKey, const ModbusWorker::WorkerStatistics& stats)
+void ModbusWorkerManager::onWorkerStatisticsUpdated(const QString& deviceKey, const ModbusWorkerTypes::WorkerStatistics& stats)
 {
     QMutexLocker locker(&m_workersMutex);
     auto it = m_workers.find(deviceKey);
@@ -370,8 +405,33 @@ void ModbusWorkerManager::distributeLoad()
     }
     
     QMutexLocker loadLocker(&m_loadBalancingMutex);
+    
+    // Check if any workers are still initializing to prevent interference
+    QMutexLocker workersLocker(&m_workersMutex);
+    int initializingWorkers = 0;
+    for (auto it = m_workers.constBegin(); it != m_workers.constEnd(); ++it) {
+        if (!it.value().isConnected && it.value().worker) {
+            // Check if worker thread is running but not yet connected (likely initializing)
+            if (it.value().thread && it.value().thread->isRunning()) {
+                initializingWorkers++;
+            }
+        }
+    }
+    
+    // Defer load balancing if workers are still initializing
+    if (initializingWorkers > 0) {
+        qDebug() << "ModbusWorkerManager::distributeLoad() - Deferring load balancing," << initializingWorkers << "workers still initializing";
+        // Schedule another load balancing attempt in 5 seconds
+        QTimer::singleShot(5000, this, &ModbusWorkerManager::distributeLoad);
+        return;
+    }
+    
+    workersLocker.unlock();
+    
     calculateWorkerLoads();
     rebalanceWorkerLoads();
+    
+    qDebug() << "ModbusWorkerManager::distributeLoad() - Load balancing completed for" << m_workers.size() << "workers";
 }
 
 void ModbusWorkerManager::setLoadBalancingEnabled(bool enabled)

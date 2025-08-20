@@ -13,6 +13,8 @@
 #include <QReadWriteLock>
 #include <QWaitCondition>
 #include <QThreadPool>
+#include <QTime>
+#include <QRandomGenerator>
 #include <cstring>
 #include <algorithm>
 
@@ -141,6 +143,7 @@ bool ScadaCoreService::startService()
                 int unitId = unitIdStr.toInt();
                 
                 m_singleThreadModbusManager = new ModbusManager(this);
+                m_singleThreadModbusManager->initializeClient(); // Initialize the QModbusTcpClient
                 m_singleThreadModbusManager->connectToServer(firstPoint.host, firstPoint.port);
                 
                 // Connect signals for single-threaded mode
@@ -1135,6 +1138,47 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         m_operationStartTimes[requestId] = m_operationTimer.elapsed();
     }
     
+    // Check for simulation mode
+    if (point.tags.contains("simulation_mode") && point.tags["simulation_mode"] == "true") {
+        // Generate simulated data
+        m_lastPollTimes[point.name] = currentTime;
+        m_responseTimers[point.name] = currentTime;
+        
+        qDebug() << "🎭 Simulation mode polling:" << point.name << "at address" << point.address;
+        
+        // Generate mock data based on data type
+        QVariant simulatedValue;
+        if (point.dataType == ModbusDataType::Float32) {
+            // Generate realistic sensor values
+            if (point.measurement == "temperature") {
+                simulatedValue = 20.0f + (QRandomGenerator::global()->bounded(100)) / 10.0f; // 20-30°C
+            } else if (point.measurement == "pressure") {
+                simulatedValue = 1000.0f + QRandomGenerator::global()->bounded(200); // 1000-1200 hPa
+            } else {
+                simulatedValue = QRandomGenerator::global()->bounded(1000) / 10.0f;
+            }
+        } else {
+            // Generate integer values for status/holding registers
+            simulatedValue = QRandomGenerator::global()->bounded(100);
+        }
+        
+        // Create simulated result
+        AcquiredDataPoint dataPoint;
+        dataPoint.pointName = point.name;
+        dataPoint.value = simulatedValue;
+        dataPoint.isValid = true;
+        dataPoint.timestamp = QDateTime::currentMSecsSinceEpoch();
+        dataPoint.measurement = point.measurement;
+        dataPoint.tags = point.tags;
+        
+        // Emit the simulated data
+        emit dataPointAcquired(dataPoint);
+        
+        // Update statistics
+        updateStatistics(true, 10); // Simulate 10ms response time
+        return;
+    }
+    
     // Handle single-threaded mode
     if (m_useSingleThreadedMode) {
         if (!m_singleThreadModbusManager) {
@@ -1153,9 +1197,23 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         request.startAddress = point.address;
         request.unitId = unitId;
         request.requestTime = QDateTime::currentMSecsSinceEpoch();
-        request.count = 1; // Single register read for simplicity
-        request.type = ModbusRequest::ReadHoldingRegisters;
         request.dataType = point.dataType;
+        
+        // Check if this is an optimized block read
+        if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
+            // This is a block read - use block size
+            int blockSize = point.tags["block_size"].toInt();
+            request.count = blockSize;
+            qDebug() << "🔧 Single-threaded block read:" << point.name << "Address:" << point.address 
+                     << "Block Size:" << blockSize << "Unit ID:" << unitId;
+        } else {
+            // Individual point read
+            request.count = 1;
+            qDebug() << "🔧 Single-threaded individual read:" << point.name << "Address:" << point.address 
+                     << "Unit ID:" << unitId;
+        }
+        
+        request.type = ModbusRequest::ReadHoldingRegisters;
         
         // Execute read directly using single ModbusManager
         m_singleThreadModbusManager->readHoldingRegisters(request.startAddress, request.count, request.dataType, request.unitId);
@@ -2258,40 +2316,50 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
         QMutexLocker locker(&m_dataPointsMutex);
         for (const auto &point : m_dataPoints) {
             if (point.address == result.startAddress) {
-                AcquiredDataPoint dataPoint;
-                dataPoint.pointName = point.name;
-                dataPoint.timestamp = QDateTime::currentMSecsSinceEpoch();
-                dataPoint.measurement = point.measurement;
-                dataPoint.tags = point.tags;
-                dataPoint.isValid = true;
-                
-                // Extract value based on data type
-                if (!result.rawData.isEmpty()) {
-                    switch (point.dataType) {
-                        case ModbusDataType::HoldingRegister:
-                            dataPoint.value = result.rawData.first();
-                            break;
-                        case ModbusDataType::InputRegister:
-                            dataPoint.value = result.rawData.first();
-                            break;
-                        case ModbusDataType::Float32:
-                            if (result.rawData.size() >= 2) {
-                                // Combine two 16-bit registers into a 32-bit float
-                                quint32 combined = (static_cast<quint32>(result.rawData[0]) << 16) | result.rawData[1];
-                                float floatValue;
-                                std::memcpy(&floatValue, &combined, sizeof(float));
-                                dataPoint.value = floatValue;
-                            }
-                            break;
-                        default:
-                            dataPoint.value = result.rawData.first();
-                            break;
+                // Check if this is an optimized block read
+                if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
+                    qDebug() << "📊 Processing block read result in single-threaded mode:" << point.name
+                             << "Start Address:" << result.startAddress << "Data Size:" << result.rawData.size();
+                    
+                    // Use the existing block processing logic
+                    handleBlockReadResult(result, point);
+                } else {
+                    // Handle individual point read
+                    AcquiredDataPoint dataPoint;
+                    dataPoint.pointName = point.name;
+                    dataPoint.timestamp = QDateTime::currentMSecsSinceEpoch();
+                    dataPoint.measurement = point.measurement;
+                    dataPoint.tags = point.tags;
+                    dataPoint.isValid = true;
+                    
+                    // Extract value based on data type
+                    if (!result.rawData.isEmpty()) {
+                        switch (point.dataType) {
+                            case ModbusDataType::HoldingRegister:
+                                dataPoint.value = result.rawData.first();
+                                break;
+                            case ModbusDataType::InputRegister:
+                                dataPoint.value = result.rawData.first();
+                                break;
+                            case ModbusDataType::Float32:
+                                if (result.rawData.size() >= 2) {
+                                    // Combine two 16-bit registers into a 32-bit float
+                                    quint32 combined = (static_cast<quint32>(result.rawData[0]) << 16) | result.rawData[1];
+                                    float floatValue;
+                                    std::memcpy(&floatValue, &combined, sizeof(float));
+                                    dataPoint.value = floatValue;
+                                }
+                                break;
+                            default:
+                                dataPoint.value = result.rawData.first();
+                                break;
+                        }
                     }
+                    
+                    // Send data to InfluxDB
+                    sendDataToInflux(dataPoint);
+                    emit dataPointAcquired(dataPoint);
                 }
-                
-                // Send data to InfluxDB
-                sendDataToInflux(dataPoint);
-                emit dataPointAcquired(dataPoint);
                 
                 updateStatistics(true, responseTime);
                 break;

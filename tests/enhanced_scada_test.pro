@@ -1,15 +1,15 @@
-QT += core serialbus network sql concurrent testlib
+QT += core serialbus network sql concurrent
 QT -= gui
 
 CONFIG += c++17 console
 CONFIG -= app_bundle
 
-TARGET = scada_service_test
+TARGET = enhanced_scada_test
 TEMPLATE = app
 
 # Source files
 SOURCES += \
-    src/scada_service_test.cpp \
+    enhanced_scada_test.cpp \
     src/modbusmanager.cpp \
     src/scada_core_service.cpp \
     src/modbus_worker.cpp \
@@ -22,6 +22,7 @@ HEADERS += \
     include/modbusmanager.h \
     include/scada_core_service.h \
     include/modbus_worker.h \
+    include/modbus_worker_manager.h \
     include/connection_resilience_manager.h \
     include/database_manager.h
 
@@ -43,11 +44,10 @@ INCLUDEPATH += include src
 DESTDIR = .
 
 # Object files directory
-OBJECTS_DIR = build/obj
-MOC_DIR = build/moc
-RCC_DIR = build/rcc
-UI_DIR = build/ui
+OBJECTS_DIR = build/enhanced_obj
+MOC_DIR = build/enhanced_moc
+RCC_DIR = build/enhanced_rcc
+UI_DIR = build/enhanced_ui
 
-# Installation
-target.path = .
-INSTALLS += target
+# Libraries
+LIBS += -lpthread

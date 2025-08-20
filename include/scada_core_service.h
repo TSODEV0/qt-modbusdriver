@@ -19,6 +19,7 @@
 #include <unistd.h>
 #include "modbusmanager.h"
 #include "modbus_worker.h"
+#include "modbus_worker_manager.h"
 
 // Configuration structure for data acquisition points
 struct DataAcquisitionPoint {

@@ -2102,6 +2102,8 @@ build-release/obj/scada_core_service.o: src/scada_core_service.cpp include/scada
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonArray \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonarray.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonParseError \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QFile \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCoreApplication \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication.h \

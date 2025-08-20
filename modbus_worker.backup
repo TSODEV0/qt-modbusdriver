@@ -1,0 +1,408 @@
+#include "modbus_worker.h"
+#include <QTimer>
+#include <QDebug>
+#include <QEventLoop>
+#include <QMetaObject>
+#include <QThread>
+#include <limits>
+
+ModbusWorker::ModbusWorker(const QString &deviceName, const QString &ipAddress, int port, int unitId, const QList<QVariantMap> &tags, QObject *parent)
+    : QObject(parent),
+      deviceName(deviceName),
+      unitId(unitId),
+      tags(tags),
+      pollingTimer(nullptr),
+      operationTimer(nullptr),
+      isProcessingQueue(false),
+      writeInProgress(false),
+      reader(nullptr)
+{
+    // Don't create ModbusReader here - it will be created in initializeReader()
+    // after the worker is moved to its thread
+    
+    // operationTimer will be created when needed in the worker thread
+}
+
+ModbusWorker::~ModbusWorker()
+{
+    if (pollingTimer) {
+        pollingTimer->stop();
+        delete pollingTimer;
+    }
+    if (operationTimer) {
+        operationTimer->stop();
+        delete operationTimer;
+    }
+    if (reader) {
+        reader->deleteLater();
+    }
+}
+
+void ModbusWorker::initializeReader(const QString &ipAddress, int port)
+{
+    if (reader) {
+        qDebug() << "ModbusReader already initialized for device" << deviceName;
+        return;
+    }
+    
+    qDebug() << "Initializing ModbusReader for device" << deviceName << "in thread" << QThread::currentThread();
+    
+    reader = new ModbusReader(ipAddress, port, this);
+    
+    // Use queued connections to ensure thread safety
+    connect(reader, &ModbusReader::stateChanged, this, &ModbusWorker::handleDeviceStateChanged, Qt::QueuedConnection);
+    connect(reader, &ModbusReader::registerRead, this, &ModbusWorker::handleRegisterRead, Qt::QueuedConnection);
+    connect(reader, &ModbusReader::writeCompleted, this, &ModbusWorker::handleWriteComplete, Qt::QueuedConnection);
+}
+
+void ModbusWorker::startPolling(int intervalMs)
+{
+    if (!pollingTimer) {
+        pollingTimer = new QTimer(this);
+        connect(pollingTimer, &QTimer::timeout, this, &ModbusWorker::pollDevice);
+    }
+    pollingTimer->start(intervalMs);
+    pollDevice(); // Initial poll
+}
+
+void ModbusWorker::stopPolling()
+{
+    if (pollingTimer) {
+        pollingTimer->stop();
+    }
+}
+
+void ModbusWorker::pollDevice()
+{
+    if (!reader) {
+        qDebug() << "ModbusReader not initialized for device" << deviceName;
+        return;
+    }
+    
+    if (reader->state() != QModbusDevice::ConnectedState) {
+        qDebug() << "Device" << deviceName << "is not connected. Skipping poll.";
+        return;
+    }
+
+    // Add read operations to queue instead of executing directly
+    addReadOperationsToQueue();
+    
+    // Start processing queue if not already processing
+    if (!isProcessingQueue) {
+        processOperationQueue();
+    }
+}
+
+void ModbusWorker::handleDeviceStateChanged(int state)
+{
+    qDebug() << "Device" << deviceName << "state changed to" << static_cast<QModbusDevice::State>(state);
+    if (state != QModbusDevice::ConnectedState) {
+        emit errorOccurred(deviceName, reader->errorString());
+    }
+}
+
+void ModbusWorker::handleRegisterRead(const QString &tagName, int address, QVariant value, int unitId)
+{
+    Q_UNUSED(unitId);
+
+    auto tagIt = std::find_if(tags.begin(), tags.end(), [&tagName](const QVariantMap &tag) {
+        return tag["tag_name"].toString() == tagName;
+    });
+
+    if (tagIt != tags.end()) {
+        const QVariantMap &tag = *tagIt;
+        QString dataType = tag["data_type"].toString();
+
+        if (value.isValid()) {
+            qDebug() << "Data ready for" << tagName << "with value" << value;
+            emit dataReady(deviceName, tagName, value);
+        } else {
+            qDebug() << "Invalid value for" << tagName;
+            emit errorOccurred(deviceName, "Invalid value read for tag: " + tagName);
+        }
+    } else {
+        // Handle cases where the tag is not found, maybe from a grouped read
+        if (value.isValid()) {
+            // This part needs to be smarter, for now, just log it.
+            qDebug() << "Data ready for address" << address << "with value" << value;
+        } else {
+            qDebug() << "Invalid value for address" << address;
+        }
+    }
+    
+    // Continue processing queue after read operation completes
+    if (isProcessingQueue && !operationTimer->isActive()) {
+        operationTimer->start(50); // Small delay before next operation
+    }
+}
+
+bool ModbusWorker::writeHoldingRegisterWithPriority(int address, quint16 value, int unitId)
+{
+    if (!reader) {
+        qDebug() << "ModbusReader not initialized for device" << deviceName;
+        return false;
+    }
+    
+    if (reader->state() != QModbusDevice::ConnectedState) {
+        qDebug() << "Device" << deviceName << "is not connected for write operation";
+        return false;
+    }
+    
+    QMutexLocker locker(&queueMutex);
+    
+    // Create high-priority write operation
+    ModbusOperation writeOp;
+    writeOp.type = ModbusOperation::WRITE;
+    writeOp.address = address;
+    writeOp.value = value;
+    writeOp.unitId = (unitId == -1) ? this->unitId : unitId;
+    writeOp.isMultipleRead = false;
+    
+    // Insert at front of queue for priority
+    operationQueue.prepend(writeOp);
+    
+    qDebug() << "Priority write operation queued for device" << deviceName << "address" << address << "value" << value;
+    
+    // Start processing immediately if not already processing
+    if (!isProcessingQueue) {
+        locker.unlock();
+        processOperationQueue();
+    }
+    
+    return true;
+}
+
+bool ModbusWorker::connectToDevice()
+{
+    if (!reader) {
+        qDebug() << "ModbusReader not initialized for device" << deviceName;
+        return false;
+    }
+    
+    return reader->connectToDevice();
+}
+
+bool ModbusWorker::writeHoldingRegisterWithAutoConnect(int address, quint16 value, int unitId)
+{
+    if (!reader) {
+        qDebug() << "ModbusReader not initialized for device" << deviceName;
+        return false;
+    }
+    
+    // Check if already connected
+    if (reader->state() == QModbusDevice::ConnectedState) {
+        return writeHoldingRegisterWithPriority(address, value, unitId);
+    }
+    
+    qDebug() << "Device" << deviceName << "not connected. Attempting to connect for write operation...";
+    
+    // Attempt to connect
+    if (!connectToDevice()) {
+        qDebug() << "Failed to initiate connection for device" << deviceName;
+        return false;
+    }
+    
+    // Wait for connection with timeout
+    QTimer connectionTimer;
+    connectionTimer.setSingleShot(true);
+    bool connectionEstablished = false;
+    
+    // Connect to state change signal to detect when connected
+    QMetaObject::Connection stateConnection = connect(reader, &ModbusReader::stateChanged, [&](int state) {
+        if (state == QModbusDevice::ConnectedState) {
+            connectionEstablished = true;
+            connectionTimer.stop();
+        } else if (state == QModbusDevice::UnconnectedState) {
+            connectionTimer.stop();
+        }
+    });
+    
+    // Start timeout timer (5 seconds)
+    connectionTimer.start(5000);
+    
+    // Wait for connection or timeout
+    QEventLoop loop;
+    connect(&connectionTimer, &QTimer::timeout, &loop, &QEventLoop::quit);
+    connect(reader, &ModbusReader::stateChanged, [&](int state) {
+        if (state == QModbusDevice::ConnectedState || state == QModbusDevice::UnconnectedState) {
+            loop.quit();
+        }
+    });
+    
+    // Only enter event loop if not already connected
+    if (reader->state() != QModbusDevice::ConnectedState) {
+        loop.exec();
+    } else {
+        connectionEstablished = true;
+    }
+    
+    // Disconnect the temporary signal connection
+    disconnect(stateConnection);
+    
+    if (connectionEstablished && reader->state() == QModbusDevice::ConnectedState) {
+        qDebug() << "Connection established for device" << deviceName << ". Executing write operation.";
+        return writeHoldingRegisterWithPriority(address, value, unitId);
+    } else {
+        qDebug() << "Connection timeout or failed for device" << deviceName;
+        return false;
+    }
+}
+
+void ModbusWorker::addReadOperationsToQueue()
+{
+    QMutexLocker locker(&queueMutex);
+    
+    QMap<QString, QList<QVariantMap>> tagsByType;
+    for (const auto &tag : tags) {
+        if (tag["register_type"].toString() == "HOLDING_REGISTER") {
+            tagsByType[tag["data_type"].toString()].append(tag);
+        }
+    }
+
+    QList<QVariantMap> singleReadQueue;
+
+    for (auto it = tagsByType.constBegin(); it != tagsByType.constEnd(); ++it) {
+        const QString &dataType = it.key();
+        const QList<QVariantMap> &currentTags = it.value();
+
+        if (currentTags.isEmpty()) continue;
+
+        if (dataType == "INT16" || dataType == "FLOAT32" || dataType == "DOUBLE") {
+            QList<QVariantMap> sortedTags = currentTags;
+            std::sort(sortedTags.begin(), sortedTags.end(), [](const QVariantMap &a, const QVariantMap &b) {
+                return a["register_address"].toInt() < b["register_address"].toInt();
+            });
+
+            QList<QList<QVariantMap>> groupedTags;
+            if (!sortedTags.isEmpty()) {
+                groupedTags.append({sortedTags.first()});
+                for (int i = 1; i < sortedTags.size(); ++i) {
+                    int prevAddress = sortedTags[i-1]["register_address"].toInt();
+                    int currentAddress = sortedTags[i]["register_address"].toInt();
+                    int registerSize = (dataType == "DOUBLE") ? 4 : (dataType == "FLOAT32") ? 2 : 1;
+
+                    if (currentAddress - prevAddress < 10) {
+                        groupedTags.last().append(sortedTags[i]);
+                    } else {
+                        groupedTags.append({sortedTags[i]});
+                    }
+                }
+            }
+
+            for (const auto &group : groupedTags) {
+                if (group.size() > 1) {
+                    int minAddress = group.first()["register_address"].toInt();
+                    int maxAddress = group.last()["register_address"].toInt();
+                    int registerSize = (dataType == "DOUBLE") ? 4 : (dataType == "FLOAT32") ? 2 : 1;
+                    int readCount = maxAddress - minAddress + registerSize;
+
+                    if (readCount <= 125) {
+                        ModbusOperation readOp;
+                        readOp.type = ModbusOperation::READ;
+                        readOp.address = minAddress - 1;
+                        readOp.unitId = unitId;
+                        readOp.isMultipleRead = true;
+                        readOp.readCount = readCount;
+                        for(const auto& tag : group) {
+                            readOp.addressToTagAndType[tag["register_address"].toInt()] = qMakePair(tag["tag_name"].toString(), tag["data_type"].toString());
+                        }
+                        operationQueue.enqueue(readOp);
+                    } else {
+                        singleReadQueue.append(group);
+                    }
+                } else {
+                    singleReadQueue.append(group);
+                }
+            }
+        } 
+    }
+
+    // Add single reads to queue
+    for (const auto &tag : singleReadQueue) {
+        const QString &dataType = tag["data_type"].toString();
+        ModbusOperation readOp;
+        readOp.type = ModbusOperation::READ;
+        readOp.address = tag["register_address"].toInt() - 1;
+        readOp.unitId = unitId;
+        readOp.tagName = tag["tag_name"].toString();
+        readOp.dataType = dataType;
+        readOp.isMultipleRead = false;
+        operationQueue.enqueue(readOp);
+    }
+}
+
+void ModbusWorker::processOperationQueue()
+{
+    QMutexLocker locker(&queueMutex);
+    
+    if (operationQueue.isEmpty() || writeInProgress) {
+        isProcessingQueue = false;
+        return;
+    }
+    
+    isProcessingQueue = true;
+    currentOperation = operationQueue.dequeue();
+    locker.unlock();
+    
+    executeOperation(currentOperation);
+}
+
+void ModbusWorker::executeOperation(const ModbusOperation &operation)
+{
+    if (!reader) {
+        qDebug() << "ModbusReader not initialized for device" << deviceName;
+        // Continue with next operation
+        if (!operationTimer->isActive()) {
+            operationTimer->start(100);
+        }
+        return;
+    }
+    
+    if (reader->state() != QModbusDevice::ConnectedState) {
+        qDebug() << "Device" << deviceName << "is not connected. Skipping operation.";
+        // Continue with next operation
+        if (!operationTimer->isActive()) {
+            operationTimer->start(100);
+        }
+        return;
+    }
+    
+    if (operation.type == ModbusOperation::WRITE) {
+        writeInProgress = true;
+        qDebug() << "Executing priority write operation on device" << deviceName << "address" << operation.address << "value" << operation.value;
+        
+        // Connect to write completion signal
+        connect(reader, &ModbusReader::writeCompleted, this, &ModbusWorker::handleWriteComplete, Qt::UniqueConnection);
+        
+        reader->writeSingleRegister(operation.address, operation.value, operation.unitId);
+    } else if (operation.type == ModbusOperation::READ) {
+        if (operation.isMultipleRead) {
+            reader->readMultipleRegisters(operation.address, operation.readCount, operation.unitId, operation.addressToTagAndType);
+        } else {
+            reader->readSingleRegister(operation.address, operation.unitId, operation.tagName, operation.dataType);
+        }
+    }
+}
+
+void ModbusWorker::handleWriteComplete(int address, bool success)
+{
+    writeInProgress = false;
+    
+    qDebug() << "Write operation completed for device" << deviceName << "address" << address << "success:" << success;
+    
+    // Emit write completion signal
+    emit writeCompleted(deviceName, address, success);
+    
+    // Disconnect the write completion signal to avoid multiple connections
+    disconnect(reader, &ModbusReader::writeCompleted, this, &ModbusWorker::handleWriteComplete);
+    
+    // Continue processing queue
+    if (!operationTimer) {
+        operationTimer = new QTimer(this);
+        operationTimer->setSingleShot(true);
+        connect(operationTimer, &QTimer::timeout, this, &ModbusWorker::processOperationQueue);
+    }
+    if (!operationTimer->isActive()) {
+        operationTimer->start(50); // Small delay before next operation
+    }
+}

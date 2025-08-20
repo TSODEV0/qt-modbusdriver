@@ -112,13 +112,19 @@ public:
     explicit ModbusManager(QObject *parent = nullptr);
     ~ModbusManager();
     
+    // Initialization (must be called after moveToThread)
+    void initializeClient();
+    
     // Configuration
     bool loadConfigurationFromFile(const QString &configPath);
+    int getConnectionTimeout() const { return m_connectionTimeout; }
+    int getRequestTimeout() const { return m_requestTimeout; }
     
     // Connection management
     bool connectToServer(const QString &host, int port = 502);
     void disconnectFromServer();
     bool isConnected() const;
+    bool isClientInitialized() const;
     
     // Single read operations
     void readHoldingRegister(int address, ModbusDataType dataType, int unitId = 1);

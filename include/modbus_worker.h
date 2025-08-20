@@ -9,7 +9,23 @@
 #include <QWaitCondition>
 #include <QMap>
 #include <QAtomicInteger>
+#include <QSemaphore>
 #include "modbusmanager.h"
+
+// Error classification for enhanced error handling
+enum class ModbusErrorType {
+    Unknown,
+    ConnectionTimeout,
+    ConnectionRefused,
+    DeviceOverload,
+    DeviceBusy,
+    NetworkError,
+    ProtocolError,
+    ConfigurationError,
+    RequestTimeout,
+    ResourceExhaustion
+};
+Q_DECLARE_METATYPE(ModbusErrorType)
 
 // PriorityModbusRequest structure for queue management
 struct PriorityModbusRequest {
@@ -85,12 +101,34 @@ public:
     // Polling control
     int getPollInterval() const;
     
+    // Request batching configuration
+    void setBatchingEnabled(bool enabled);
+    bool isBatchingEnabled() const;
+    void setMaxBatchSize(int maxSize);
+    int getMaxBatchSize() const;
+    
+    // Connection health monitoring configuration
+    void setHealthMonitoringEnabled(bool enabled);
+    bool isHealthMonitoringEnabled() const;
+    void setHealthCheckInterval(int intervalMs);
+    int getHealthCheckInterval() const;
+    double getConnectionHealthScore() const;
+    
+    // Keep-alive heartbeat configuration
+    void setHeartbeatEnabled(bool enabled);
+    bool isHeartbeatEnabled() const;
+    void setHeartbeatInterval(int intervalMs);
+    int getHeartbeatInterval() const;
+    
 public slots:
     // Worker lifecycle (called from worker thread)
     void startWorker();
     void stopWorker();
     
-    // Connection control (thread-safe)
+    // Timer initialization (called after moveToThread)
+    void initializeTimers();
+    
+    // Connection management (called from worker thread)
     void connectToDevice();
     void disconnectFromDevice();
     
@@ -110,6 +148,7 @@ signals:
     // Status signals
     void connectionStateChanged(const QString &deviceKey, bool connected);
     void errorOccurred(const QString &deviceKey, const QString &error);
+    void errorOccurredClassified(const QString &deviceKey, const QString &error, ModbusErrorType errorType);
     void requestInterrupted(qint64 requestId, const QString &reason);
     void statisticsUpdated(const QString &deviceKey, const WorkerStatistics &stats);
     
@@ -119,13 +158,16 @@ signals:
     
 private slots:
     // Internal event handlers (called from worker thread)
+    void onRequestTimeout();
     void processRequestQueue();
     void onPollTimer();
     void onModbusReadCompleted(const ModbusReadResult &result);
     void onModbusWriteCompleted(const ModbusWriteResult &result);
     void onModbusConnectionStateChanged(bool connected);
     void onModbusError(const QString &error);
-    
+    void onBatchTimeout();  // Handle batch timeout
+    void onHealthCheckTimer();  // Handle health check timer
+    void onHeartbeatTimer();  // Handle keep-alive heartbeat timer
 private:
     // Device configuration
     QString m_host;
@@ -160,7 +202,51 @@ private:
     bool m_workerRunning;
     bool m_stopRequested;
     
-    // Helper methods
+    // Connection resilience
+    qint64 m_lastConnectionAttempt;
+    qint64 m_reconnectionDelay;
+    int m_connectionAttempts;
+    
+    // Adaptive polling and connection health
+    int m_basePollInterval;          // Base polling interval (2000ms)
+    int m_adaptivePollInterval;      // Current adaptive interval
+    int m_consecutiveSuccesses;      // Track successful requests
+    int m_consecutiveFailures;       // Track failed requests
+    qint64 m_lastSuccessTime;        // Last successful request time
+    qint64 m_lastFailureTime;        // Last failure time
+    static const int MAX_POLL_INTERVAL = 10000;  // Maximum 10 seconds
+    static const int MIN_POLL_INTERVAL = 1000;   // Minimum 1 second
+    
+    // Request batching
+    bool m_batchingEnabled;          // Enable/disable request batching
+    int m_maxBatchSize;              // Maximum requests per batch
+    QTimer *m_batchTimer;            // Timer for batch processing
+    QQueue<PriorityModbusRequest> m_batchQueue;  // Temporary batch queue
+    static const int BATCH_TIMEOUT_MS = 100;     // Batch collection timeout
+    
+    // Connection health monitoring
+    bool m_healthMonitoringEnabled;  // Enable/disable health monitoring
+    double m_connectionHealthScore;  // Current health score (0.0-1.0)
+    qint64 m_lastHealthCheck;        // Last health check timestamp
+    int m_healthCheckInterval;       // Health check interval (ms)
+    QTimer *m_healthCheckTimer;      // Timer for periodic health checks
+    int m_maxReconnectionAttempts;   // Maximum reconnection attempts before backing off
+    qint64 m_healthCheckWindow;      // Time window for health calculations (ms)
+    static const int DEFAULT_HEALTH_CHECK_INTERVAL = 30000;  // 30 seconds
+    static const int MAX_RECONNECTION_ATTEMPTS = 3;          // Max attempts before backoff
+    static const qint64 HEALTH_CHECK_WINDOW = 300000;        // 5 minutes window
+    
+    // Keep-alive heartbeat settings
+    bool m_heartbeatEnabled;         // Enable/disable heartbeat functionality
+    int m_heartbeatInterval;         // Heartbeat interval (ms)
+    QTimer *m_heartbeatTimer;        // Timer for periodic heartbeats
+    qint64 m_lastHeartbeatTime;      // Last heartbeat timestamp
+    static const int DEFAULT_HEARTBEAT_INTERVAL = 30000;  // 30 seconds
+    
+    // Connection coordination
+    static QSemaphore s_connectionSemaphore;                 // Limit simultaneous connections
+    
+    // Private methods
     void executeRequest(const PriorityModbusRequest &request);
     void completeCurrentRequest(bool success, const QString &error = QString());
     void updateStatistics(bool success, qint64 responseTime = 0);
@@ -168,114 +254,22 @@ private:
     PriorityModbusRequest getNextRequest();
     bool hasHigherPriorityRequest(RequestPriority currentPriority) const;
     void emitStatisticsUpdate();
+    void generateAutomaticPollingRequests();
+    void handleConnectionFailure(const QString &errorMessage);
+    void adjustAdaptivePollInterval(bool success);  // Adjust polling based on connection health
+    void processBatchQueue();                       // Process batched requests
+    void executeBatchedRequests(const QList<PriorityModbusRequest> &batch);  // Execute a batch of requests
+    bool canBatchRequests(const PriorityModbusRequest &req1, const PriorityModbusRequest &req2) const;  // Check if requests can be batched
+    void updateConnectionHealth(bool success);      // Update connection health score
+    void performHealthCheck();                      // Perform periodic health check
+    bool shouldAttemptReconnection() const;         // Check if reconnection should be attempted
+    void resetConnectionHealth();                   // Reset health monitoring state
+    ModbusErrorType classifyError(const QString &errorMessage) const;  // Classify error types for enhanced handling
+    void emitClassifiedError(const QString &errorMessage);             // Emit both regular and classified error signals
+    void sendHeartbeat();                                              // Send keep-alive heartbeat request
+    void handleHeartbeatResponse(bool success);                        // Handle heartbeat response
 };
 
-/**
- * ModbusWorkerManager - Manages multiple ModbusWorker instances
- * 
- * Creates and manages worker threads for different Modbus devices.
- * Routes requests to appropriate workers based on device key.
- * Provides global statistics and worker lifecycle management.
- */
-class ModbusWorkerManager : public QObject
-{
-    Q_OBJECT
-    
-public:
-    struct GlobalStatistics {
-        int activeWorkers;
-        int connectedDevices;
-        qint64 totalRequests;
-        qint64 totalSuccessfulRequests;
-        qint64 totalFailedRequests;
-        qint64 totalInterruptedRequests;
-        double globalAverageResponseTime;
-        qint64 lastUpdateTime;
-        
-        GlobalStatistics() : activeWorkers(0), connectedDevices(0), totalRequests(0),
-                           totalSuccessfulRequests(0), totalFailedRequests(0),
-                           totalInterruptedRequests(0), globalAverageResponseTime(0.0),
-                           lastUpdateTime(0) {}
-    };
-    
-    explicit ModbusWorkerManager(QObject *parent = nullptr);
-    ~ModbusWorkerManager();
-    
-    // Worker management
-    ModbusWorker* getOrCreateWorker(const QString &host, int port, int unitId = 1);
-    ModbusWorker* getWorker(const QString &deviceKey) const;
-    void removeWorker(const QString &deviceKey);
-    void removeAllWorkers();
-    
-    // Device management
-    QStringList getActiveDevices() const;
-    QStringList getConnectedDevices() const;
-    int getWorkerCount() const;
-    
-    // Statistics
-    GlobalStatistics getGlobalStatistics() const;
-    void resetGlobalStatistics();
-    
-    // Configuration
-    void setDefaultPollInterval(int intervalMs);
-    void setWorkerPollInterval(const QString &deviceKey, int intervalMs);
-    
-    // Load balancing and coordination
-    QString getLeastLoadedWorker() const;
-    void distributeLoad();
-    void setLoadBalancingEnabled(bool enabled);
-    bool isLoadBalancingEnabled() const;
-    double getWorkerLoad(const QString &deviceKey) const;
-    void optimizeWorkerDistribution();
-    
-public slots:
-    void startAllWorkers();
-    void stopAllWorkers();
-    void connectAllDevices();
-    void disconnectAllDevices();
-    
-signals:
-    void workerCreated(const QString &deviceKey);
-    void workerRemoved(const QString &deviceKey);
-    void globalStatisticsUpdated(const GlobalStatistics &stats);
-    
-private slots:
-    void onWorkerStarted(const QString &deviceKey);
-    void onWorkerStopped(const QString &deviceKey);
-    void onWorkerConnectionStateChanged(const QString &deviceKey, bool connected);
-    void onWorkerStatisticsUpdated(const QString &deviceKey, const ModbusWorker::WorkerStatistics &stats);
-    void updateGlobalStatistics();
-    
-private:
-    struct WorkerInfo {
-        ModbusWorker *worker;
-        QThread *thread;
-        bool isConnected;
-        ModbusWorker::WorkerStatistics lastStats;
-        
-        WorkerInfo() : worker(nullptr), thread(nullptr), isConnected(false) {}
-    };
-    
-    mutable QMutex m_workersMutex;
-    QMap<QString, WorkerInfo> m_workers;
-    
-    GlobalStatistics m_globalStats;
-    mutable QMutex m_globalStatsMutex;
-    
-    int m_defaultPollInterval;
-    QTimer *m_statsUpdateTimer;
-    
-    // Load balancing
-    bool m_loadBalancingEnabled;
-    QTimer *m_loadBalancingTimer;
-    mutable QMutex m_loadBalancingMutex;
-    
-    // Helper methods
-    QString createDeviceKey(const QString &host, int port, int unitId) const;
-    void connectWorkerSignals(ModbusWorker *worker);
-    void cleanupWorker(const QString &deviceKey);
-    void calculateWorkerLoads() const;
-    void rebalanceWorkerLoads();
-};
+
 
 #endif // MODBUS_WORKER_H

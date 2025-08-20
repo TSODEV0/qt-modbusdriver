@@ -14,6 +14,7 @@ DatabaseManager::DatabaseManager(QObject *parent)
     , m_connectionName(QUuid::createUuid().toString())
     , m_settings(nullptr)  // QSettings pointer initialized
     , m_dbPort(5432)
+    , m_executionMode("multiple")  // Default to multiple device mode
 {
     m_database = QSqlDatabase::addDatabase("QPSQL", m_connectionName);
 }
@@ -115,10 +116,11 @@ QVector<ModbusDeviceConfig> DatabaseManager::loadModbusDevices()
     }
     
     QSqlQuery query(m_database);
-    QString sql = "SELECT device_id, device_name, ip_address, port, unit_id, protocol_type, pollinterval "
-                  "FROM devices "
-                  "WHERE protocol_type = 'TCP' AND device_id IN (2, 3) "
-                  "ORDER BY device_id";
+    QString deviceFilter = (m_executionMode == "single") ? "device_id IN (2)" : "device_id IN (2,3)";
+    QString sql = QString("SELECT device_id, device_name, ip_address, port, unit_id, protocol_type, pollinterval "
+                         "FROM devices "
+                         "WHERE protocol_type = 'TCP' AND %1 "
+                         "ORDER BY device_id").arg(deviceFilter);
     
     if (query.exec(sql)) {
         while (query.next()) {
@@ -166,13 +168,13 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
     }
     
     QSqlQuery query(m_database);
-    QString sql = "SELECT t.tag_id, t.device_id, t.tag_name, t.register_type, t.register_address, t.data_type, t.description, t.influx_measurement, "
-                  "       d.device_name, d.ip_address, d.port, d.unit_id, d.protocol_type, d.pollinterval "
-                  "FROM public.tags t "
-                  "JOIN public.devices d ON t.device_id = d.device_id "
-                  "WHERE t.device_id IN (2,3) "
-                  "ORDER BY t.device_id, t.tag_name";
-                  //"WHERE t.device_id IN (2) "
+    QString deviceFilter = (m_executionMode == "single") ? "t.device_id IN (2)" : "t.device_id IN (2,3)";
+    QString sql = QString("SELECT t.tag_id, t.device_id, t.tag_name, t.register_type, t.register_address, t.data_type, t.description, t.influx_measurement, "
+                         "       d.device_name, d.ip_address, d.port, d.unit_id, d.protocol_type, d.pollinterval "
+                         "FROM public.tags t "
+                         "JOIN public.devices d ON t.device_id = d.device_id "
+                         "WHERE %1 "
+                         "ORDER BY t.device_id, t.tag_name").arg(deviceFilter);
     
     if (query.exec(sql)) {
         while (query.next()) {
@@ -446,6 +448,17 @@ void DatabaseManager::setLastError(const QString &error)
 {
     m_lastError = error;
     emit errorOccurred(error);
+}
+
+void DatabaseManager::setExecutionMode(const QString &mode)
+{
+    m_executionMode = mode;
+    qDebug() << "DatabaseManager execution mode set to:" << m_executionMode;
+}
+
+QString DatabaseManager::getExecutionMode() const
+{
+    return m_executionMode;
 }
 
 // Helper methods for block optimization
