@@ -335,17 +335,31 @@ void ScadaCoreService::optimizePollInterval()
     
     if (m_useSingleThreadedMode) {
         // Single-threaded mode: faster polling for better responsiveness
-        // Base interval on number of data points to ensure all points get polled efficiently
-        int dataPointCount = m_dataPoints.size();
-        if (dataPointCount <= 5) {
+        // Base interval on number of effective polling points (accounting for optimization)
+        int effectivePollingPoints = 0;
+        
+        // Count only points that will actually be polled
+        for (const DataAcquisitionPoint &point : m_dataPoints) {
+            if (!point.enabled) {
+                continue; // Skip disabled points
+            }
+            
+            // Count block points and individual points not covered by blocks
+            if (point.tags.contains("block_type") || !isPointCoveredByBlock(point)) {
+                effectivePollingPoints++;
+            }
+        }
+        
+        // Set interval based on effective polling points
+        if (effectivePollingPoints <= 5) {
             optimalInterval = 100; // Very fast for few points
-        } else if (dataPointCount <= 20) {
+        } else if (effectivePollingPoints <= 20) {
             optimalInterval = 200; // Fast for moderate number of points
         } else {
             optimalInterval = 500; // Moderate for many points
         }
         
-        qDebug() << "🔧 Single-threaded mode: optimized poll interval to" << optimalInterval << "ms for" << dataPointCount << "data points";
+        qDebug() << "🔧 Single-threaded mode: optimized poll interval to" << optimalInterval << "ms for" << effectivePollingPoints << "effective polling points (" << m_dataPoints.size() << "total points)";
     } else {
         // Multi-threaded mode: standard interval since workers handle concurrency
         optimalInterval = 1000; // Standard 1 second interval
@@ -947,12 +961,21 @@ void ScadaCoreService::connectWorkerSignals(ModbusWorker* worker)
 
 void ScadaCoreService::onPollTimer()
 {
-    qDebug() << "ScadaCoreService::onPollTimer() - Poll timer triggered. Service running:" << m_serviceRunning << "Data points count:" << m_dataPoints.size();
+    // Reduce debug verbosity - only log every 50 poll cycles (5 seconds at 100ms intervals)
+    static int pollCount = 0;
+    pollCount++;
+    
+    if (pollCount % 50 == 0) {
+        qDebug() << "ScadaCoreService::onPollTimer() - Poll cycle" << pollCount << "- Service running:" << m_serviceRunning << "Data points count:" << m_dataPoints.size();
+    }
+    
     if (!m_serviceRunning || m_dataPoints.isEmpty()) {
-        qDebug() << "ScadaCoreService::onPollTimer() - Skipping poll: service running =" << m_serviceRunning << ", data points =" << m_dataPoints.size();
+        if (pollCount % 50 == 0) {
+            qDebug() << "ScadaCoreService::onPollTimer() - Skipping poll: service running =" << m_serviceRunning << ", data points =" << m_dataPoints.size();
+        }
         return;
     }
-    qDebug() << "ScadaCoreService::onPollTimer() - Processing next data point...";
+    
     processNextDataPoint();
 }
 
@@ -1190,7 +1213,13 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         m_lastPollTimes[point.name] = currentTime;
         m_responseTimers[point.name] = currentTime;
         
-        qDebug() << "🔧 Single-threaded polling:" << point.name << "at address" << point.address << "Unit ID:" << unitId;
+        // Reduce debug verbosity for single-threaded polling
+        static int singleThreadPollCount = 0;
+        singleThreadPollCount++;
+        
+        if (singleThreadPollCount % 100 == 0) {
+            qDebug() << "🔧 Single-threaded polling cycle" << singleThreadPollCount << ":" << point.name << "at address" << point.address << "Unit ID:" << unitId;
+        }
         
         // Create read request for single-threaded mode
         ModbusRequest request;
@@ -1204,19 +1233,82 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             // This is a block read - use block size
             int blockSize = point.tags["block_size"].toInt();
             request.count = blockSize;
-            qDebug() << "🔧 Single-threaded block read:" << point.name << "Address:" << point.address 
-                     << "Block Size:" << blockSize << "Unit ID:" << unitId;
+            if (singleThreadPollCount % 100 == 0) {
+                qDebug() << "🔧 Single-threaded block read:" << point.name << "Address:" << point.address 
+                         << "Block Size:" << blockSize << "Unit ID:" << unitId;
+            }
         } else {
             // Individual point read
             request.count = 1;
-            qDebug() << "🔧 Single-threaded individual read:" << point.name << "Address:" << point.address 
-                     << "Unit ID:" << unitId;
+            if (singleThreadPollCount % 100 == 0) {
+                qDebug() << "🔧 Single-threaded individual read:" << point.name << "Address:" << point.address 
+                         << "Unit ID:" << unitId;
+            }
         }
         
-        request.type = ModbusRequest::ReadHoldingRegisters;
+        // Apply the same register type logic as multi-threaded mode for single-threaded operations
+        QString registerType = point.tags.value("register_type", "");
+        QString dataType = point.tags.value("data_type", "");
         
-        // Execute read directly using single ModbusManager
-        m_singleThreadModbusManager->readHoldingRegisters(request.startAddress, request.count, request.dataType, request.unitId);
+        // Use combined condition: register_type + data_type for precise Modbus operation selection
+        if (registerType == "HOLDING_REGISTER") {
+            request.type = ModbusRequest::ReadHoldingRegisters;
+        } else if (registerType == "INPUT_REGISTER") {
+            request.type = ModbusRequest::ReadInputRegisters;
+        } else if (registerType == "COIL") {
+            request.type = ModbusRequest::ReadCoils;
+        } else if (registerType == "DISCRETE_INPUT") {
+            request.type = ModbusRequest::ReadDiscreteInputs;
+        } else if (registerType == "STATUS") {
+            // Handle STATUS register type - map to ReadDiscreteInputs for BOOL data types (function code 0x02)
+            if (dataType == "Bool" || point.dataType == ModbusDataType::BOOL) {
+                request.type = ModbusRequest::ReadDiscreteInputs;
+            } else {
+                // Default STATUS to DiscreteInput in single-threaded mode
+                request.type = ModbusRequest::ReadDiscreteInputs;
+            }
+        } else {
+            // Fallback to dataType-based logic if register_type is not specified
+            switch (point.dataType) {
+            case ModbusDataType::HoldingRegister:
+            case ModbusDataType::Float32:
+            case ModbusDataType::Double64:
+            case ModbusDataType::Long32:
+            case ModbusDataType::Long64:
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                break;
+            case ModbusDataType::InputRegister:
+                request.type = ModbusRequest::ReadInputRegisters;
+                break;
+            case ModbusDataType::Coil:
+                request.type = ModbusRequest::ReadCoils;
+                break;
+            case ModbusDataType::DiscreteInput:
+            case ModbusDataType::BOOL:
+                // Default BOOL to DiscreteInput in single-threaded mode
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                break;
+            default:
+                request.type = ModbusRequest::ReadHoldingRegisters;
+                break;
+            }
+        }
+        
+        // Execute read using appropriate function based on request type
+        switch (request.type) {
+        case ModbusRequest::ReadHoldingRegisters:
+            m_singleThreadModbusManager->readHoldingRegisters(request.startAddress, request.count, request.dataType, request.unitId);
+            break;
+        case ModbusRequest::ReadInputRegisters:
+            m_singleThreadModbusManager->readInputRegisters(request.startAddress, request.count, request.dataType, request.unitId);
+            break;
+        case ModbusRequest::ReadCoils:
+            m_singleThreadModbusManager->readCoils(request.startAddress, request.count, request.unitId);
+            break;
+        case ModbusRequest::ReadDiscreteInputs:
+            m_singleThreadModbusManager->readDiscreteInputs(request.startAddress, request.count, request.unitId);
+            break;
+        }
         return;
     }
     
@@ -1325,8 +1417,14 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         QString registerType = point.tags.value("register_type", "");
         QString dataType = point.tags.value("data_type", "");
         
-        qDebug() << "Performing individual read - Address:" << point.address
-                 << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
+        // Reduce debug verbosity for individual reads
+        static int individualReadCount = 0;
+        individualReadCount++;
+        
+        if (individualReadCount % 100 == 0) {
+            qDebug() << "Performing individual read cycle" << individualReadCount << "- Address:" << point.address
+                     << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
+        }
         
         // Use combined condition: register_type + data_type for precise Modbus operation selection
         if (registerType == "HOLDING_REGISTER") {
@@ -1373,8 +1471,12 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
             request.dataType = ModbusDataType::DiscreteInput;
             request.count = 1;
         } else if (registerType == "STATUS") {
-            // Handle STATUS register type - map to appropriate Modbus operation based on data type
-            if (dataType == "Bool" || point.dataType == ModbusDataType::BOOL || point.dataType == ModbusDataType::Coil) {
+            // Handle STATUS register type - map to ReadDiscreteInputs for BOOL data types (function code 0x02)
+            if (dataType == "Bool" || point.dataType == ModbusDataType::BOOL) {
+                request.type = ModbusRequest::ReadDiscreteInputs;
+                request.dataType = ModbusDataType::DiscreteInput;
+                request.count = 1;
+            } else if (point.dataType == ModbusDataType::Coil) {
                 request.type = ModbusRequest::ReadCoils;
                 request.dataType = ModbusDataType::Coil;
                 request.count = 1;
@@ -2308,8 +2410,14 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
             if (point.address == result.startAddress) {
                 // Check if this is an optimized block read
                 if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
-                    qDebug() << "📊 Processing block read result in single-threaded mode:" << point.name
-                             << "Start Address:" << result.startAddress << "Data Size:" << result.rawData.size();
+                    // Reduce debug verbosity for block read results
+                    static int blockReadResultCount = 0;
+                    blockReadResultCount++;
+                    
+                    if (blockReadResultCount % 100 == 0) {
+                        qDebug() << "📊 Processing block read result cycle" << blockReadResultCount << "in single-threaded mode:" << point.name
+                                 << "Start Address:" << result.startAddress << "Data Size:" << result.rawData.size();
+                    }
                     
                     // Use the existing block processing logic
                     handleBlockReadResult(result, point);
@@ -2338,6 +2446,45 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
                                     float floatValue;
                                     std::memcpy(&floatValue, &combined, sizeof(float));
                                     dataPoint.value = floatValue;
+                                }
+                                break;
+                            case ModbusDataType::BOOL:
+                                // Handle BOOL data type with proper boolean conversion
+                                {
+                                    quint16 rawValue = result.rawData.first();
+                                    
+                                    // Debug log for BOOL conversion process
+                                    qDebug() << "BOOL conversion for" << point.name << "- Raw value:" << rawValue;
+                                    
+                                    // Validate raw value range for BOOL conversion
+                                    if (rawValue > 1) {
+                                        qWarning() << "BOOL conversion warning for" << point.name 
+                                                  << "- raw value" << rawValue << "exceeds typical boolean range (0-1)."
+                                                  << "Converting non-zero to true.";
+                                    }
+                                    
+                                    // Convert to boolean: 0 = false, non-zero = true
+                                    bool boolValue = (rawValue != 0);
+                                    dataPoint.value = boolValue;
+                                    
+                                    // Debug log for converted boolean value
+                                    qDebug() << "BOOL conversion for" << point.name << "- Boolean value:" << boolValue;
+                                    
+                                    // Validate QVariant conversion success
+                                    if (!dataPoint.value.canConvert<bool>()) {
+                                        qWarning() << "BOOL QVariant conversion failed for" << point.name
+                                                  << "- unable to convert to boolean type. Using default false.";
+                                        dataPoint.value = false;
+                                        dataPoint.isValid = false;
+                                        dataPoint.errorMessage = QString("BOOL conversion failed: QVariant cannot convert to bool");
+                                    }
+                                    
+#ifdef MODBUS_DEBUG_ENABLED
+                                    qDebug() << "BOOL decode for" << point.name << ":"
+                                             << "Raw value:" << rawValue
+                                             << "Boolean value:" << boolValue
+                                             << "Conversion valid:" << dataPoint.value.canConvert<bool>();
+#endif
                                 }
                                 break;
                             default:
