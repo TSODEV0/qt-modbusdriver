@@ -2098,6 +2098,7 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		include/connection_resilience_manager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/include -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/src -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtConcurrent -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtTest -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include src/scada_service_test.cpp -o build/moc/scada_service_test.moc
@@ -2549,7 +2550,8 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		include/connection_resilience_manager.h \
-		build/moc/scada_service_test.moc
+		build/moc/scada_service_test.moc \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/scada_service_test.o src/scada_service_test.cpp
 
 build/obj/modbusmanager.o: src/modbusmanager.cpp include/modbusmanager.h \

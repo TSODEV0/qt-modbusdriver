@@ -1708,8 +1708,29 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
     // Process each original point
     for (int pointIndex = 0; pointIndex < originalAddresses.size(); pointIndex++) {
         int originalAddress = originalAddresses[pointIndex].toInt();
-        int dataTypeInt = originalDataTypes[pointIndex].toInt();
-        ModbusDataType dataType = static_cast<ModbusDataType>(dataTypeInt);
+        QString dataTypeStr = originalDataTypes[pointIndex];
+        
+        // Convert string data type to enum
+        ModbusDataType dataType;
+        if (dataTypeStr == "FLOAT32" || dataTypeStr == "Float32") {
+            dataType = ModbusDataType::Float32;
+        } else if (dataTypeStr == "DOUBLE" || dataTypeStr == "Double64" || dataTypeStr == "DOUBLE64") {
+            dataType = ModbusDataType::Double64;
+        } else if (dataTypeStr == "INT16" || dataTypeStr == "Int16") {
+            dataType = ModbusDataType::HoldingRegister;
+        } else if (dataTypeStr == "INT32" || dataTypeStr == "Int32") {
+            dataType = ModbusDataType::Long32;
+        } else if (dataTypeStr == "INT64" || dataTypeStr == "Int64") {
+            dataType = ModbusDataType::Long64;
+        } else if (dataTypeStr == "COIL" || dataTypeStr == "Coil") {
+            dataType = ModbusDataType::Coil;
+        } else if (dataTypeStr == "DISCRETE_INPUT" || dataTypeStr == "DiscreteInput") {
+            dataType = ModbusDataType::DiscreteInput;
+        } else if (dataTypeStr == "BOOL" || dataTypeStr == "Bool" || dataTypeStr == "Boolean") {
+            dataType = ModbusDataType::BOOL;
+        } else {
+            dataType = ModbusDataType::HoldingRegister; // Default
+        }
         
         // Calculate offset from start address based on actual register address difference
         int offset = originalAddress - startAddress;
@@ -1719,7 +1740,7 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
                  << "Address:" << originalAddress
                  << "Start Address:" << startAddress
                  << "Calculated Offset:" << offset
-                 << "Data Type:" << dataTypeInt
+                 << "Data Type:" << dataTypeStr
                  << "Raw data at offset:" << (offset < result.rawData.size() ? QString::number(result.rawData[offset]) : "OUT_OF_BOUNDS");
         
         // Register count validation for different data types
@@ -1782,40 +1803,9 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
         }
         dataPoint.tags["read_mode"] = readMode;
         
-        // Map data_type to string
-        QString dataTypeStr;
-        switch (dataType) {
-            case ModbusDataType::HoldingRegister:
-                dataTypeStr = "Int16";
-                break;
-            case ModbusDataType::InputRegister:
-                dataTypeStr = "Int16";
-                break;
-            case ModbusDataType::Coil:
-                dataTypeStr = "Bool";
-                break;
-            case ModbusDataType::DiscreteInput:
-                dataTypeStr = "Bool";
-                break;
-            case ModbusDataType::Float32:
-                dataTypeStr = "Float32";
-                break;
-            case ModbusDataType::Double64:
-                dataTypeStr = "Double64";
-                break;
-            case ModbusDataType::Long32:
-                dataTypeStr = "Long32";
-                break;
-            case ModbusDataType::Long64:
-                dataTypeStr = "Long64";
-                break;
-            case ModbusDataType::BOOL:
-                dataTypeStr = "Bool";
-                break;
-            default:
-                dataTypeStr = "Int16";
-        }
-        dataPoint.tags["data_type"] = dataTypeStr;
+        // Preserve original database data_type format for consistency
+        QString originalDataType = originalDataTypes[pointIndex];
+        dataPoint.tags["data_type"] = originalDataType;
         
         // Extract value based on data type
         switch (dataType) {
@@ -1937,7 +1927,7 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
         qDebug() << "📊 Block Data Point Extracted:";
         qDebug() << "   Point Name:" << dataPoint.pointName;
         qDebug() << "   Address:" << originalAddress << "(offset" << offset << "from block start" << startAddress << ")";
-        qDebug() << "   Data Type:" << dataTypeInt;
+        qDebug() << "   Data Type:" << dataTypeStr;
         qDebug() << "   Raw Value:" << result.rawData[offset] << "(register" << (startAddress + offset) << ")";
         qDebug() << "   Processed Value:" << dataPoint.value.toString();
         qDebug() << "   Measurement:" << dataPoint.measurement;
@@ -1949,7 +1939,7 @@ void ScadaCoreService::handleBlockReadResult(const ModbusReadResult &result, con
         DataAcquisitionPoint tempSourcePoint;
         tempSourcePoint.address = originalAddress;
         tempSourcePoint.host = blockPoint.host;
-        tempSourcePoint.dataType = static_cast<ModbusDataType>(dataTypeInt);
+        tempSourcePoint.dataType = dataType;
         tempSourcePoint.name = originalNames[pointIndex];
         tempSourcePoint.tags = blockPoint.tags;
         

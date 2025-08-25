@@ -386,7 +386,8 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
                 for (int k = i; k < j; k++) {
                     originalAddresses << QString::number(devicePoints[k].address);
                     originalNames << devicePoints[k].name;
-                    originalDataTypes << QString::number(static_cast<int>(devicePoints[k].dataType));
+                    // Use original string data type from database instead of enum integer
+                    originalDataTypes << devicePoints[k].tags.value("data_type", "UNKNOWN");
                     originalDescriptions << devicePoints[k].tags.value("description", QString("CURRENT_RTU_%1").arg(devicePoints[k].address));
                     originalMeasurements << devicePoints[k].measurement;
                 }
