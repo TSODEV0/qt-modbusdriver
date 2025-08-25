@@ -44,7 +44,7 @@ public:
     
     // Configuration loading
     QVector<ModbusDeviceConfig> loadModbusDevices();
-    QVector<DataAcquisitionPoint> loadDataPoints();
+    QVector<DataAcquisitionPoint> loadDataPoints(const QString &executionMode = "multiple");
     QVector<DataAcquisitionPoint> optimizeModbusReadBlocks(const QVector<DataAcquisitionPoint> &dataPoints);
     bool updateDeviceStatus(int deviceId, bool online);
     

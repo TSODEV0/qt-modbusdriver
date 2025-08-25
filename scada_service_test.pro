@@ -10,15 +10,19 @@ TEMPLATE = app
 # Source files
 SOURCES += \
     src/scada_service_test.cpp \
-    src/modbusmanager.cpp \
     src/scada_core_service.cpp \
-    src/database_manager.cpp
+    src/modbusmanager.cpp \
+    src/connection_resilience_manager.cpp \
+    src/database_manager.cpp \
+    src/influxdb_line_protocol.cpp
 
 # Header files
 HEADERS += \
     include/modbusmanager.h \
     include/scada_core_service.h \
-    include/database_manager.h
+    include/connection_resilience_manager.h \
+    include/database_manager.h \
+    include/influxdb_line_protocol.h
 
 # Compiler flags
 CXXFLAGS += -std=c++17

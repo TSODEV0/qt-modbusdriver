@@ -1,0 +1,11 @@
+[33m5f4daf5[m[33m ([m[1;36mHEAD -> [m[1;32mrestore-branch[m[33m)[m add implement function read BOOL in modbus system
+[33m58a1925[m Fix InfluxDB insert address 0
+[33m360792c[m Solve modbus block optimize and polling in float32
+[33m7ae835c[m add modbus optimization block read
+[33mdcd11c1[m modify code directory structrue
+[33mf810360[m implement core serice improve write function and fix connection error when we use write function
+[33mcd4f08a[m create scada core service and test core service function
+[33m5d76611[m Add Register Limits 125 when read data
+[33mef1e66c[m Add Function Array block read in Float and Double
+[33m879814d[m first commit
+[33mcfd943d[m Initial commit

@@ -57,11 +57,12 @@ constexpr auto qt_meta_stringdata_CLASSModbusManagerENDCLASS = QtMocHelpers::str
     "onErrorOccurred",
     "QModbusDevice::Error",
     "processNextRequest",
-    "onRequestTimeout"
+    "onRequestTimeout",
+    "onRetryTimer"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSModbusManagerENDCLASS_t {
-    uint offsetsAndSizes[40];
+    uint offsetsAndSizes[42];
     char stringdata0[14];
     char stringdata1[14];
     char stringdata2[1];
@@ -82,6 +83,7 @@ struct qt_meta_stringdata_CLASSModbusManagerENDCLASS_t {
     char stringdata17[21];
     char stringdata18[19];
     char stringdata19[17];
+    char stringdata20[13];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSModbusManagerENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -106,7 +108,8 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusManagerENDCLASS_t qt_meta
         QT_MOC_LITERAL(206, 15),  // "onErrorOccurred"
         QT_MOC_LITERAL(222, 20),  // "QModbusDevice::Error"
         QT_MOC_LITERAL(243, 18),  // "processNextRequest"
-        QT_MOC_LITERAL(262, 16)   // "onRequestTimeout"
+        QT_MOC_LITERAL(262, 16),  // "onRequestTimeout"
+        QT_MOC_LITERAL(279, 12)   // "onRetryTimer"
     },
     "ModbusManager",
     "readCompleted",
@@ -127,7 +130,8 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusManagerENDCLASS_t qt_meta
     "onErrorOccurred",
     "QModbusDevice::Error",
     "processNextRequest",
-    "onRequestTimeout"
+    "onRequestTimeout",
+    "onRetryTimer"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -139,7 +143,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusManagerENDCLASS[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      10,   14, // methods
+      11,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -147,18 +151,19 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusManagerENDCLASS[] = {
        4,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   74,    2, 0x06,    1 /* Public */,
-       5,    1,   77,    2, 0x06,    3 /* Public */,
-       7,    1,   80,    2, 0x06,    5 /* Public */,
-       9,    1,   83,    2, 0x06,    7 /* Public */,
+       1,    1,   80,    2, 0x06,    1 /* Public */,
+       5,    1,   83,    2, 0x06,    3 /* Public */,
+       7,    1,   86,    2, 0x06,    5 /* Public */,
+       9,    1,   89,    2, 0x06,    7 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      11,    0,   86,    2, 0x08,    9 /* Private */,
-      12,    0,   87,    2, 0x08,   10 /* Private */,
-      13,    1,   88,    2, 0x08,   11 /* Private */,
-      16,    1,   91,    2, 0x08,   13 /* Private */,
-      18,    0,   94,    2, 0x08,   15 /* Private */,
-      19,    0,   95,    2, 0x08,   16 /* Private */,
+      11,    0,   92,    2, 0x08,    9 /* Private */,
+      12,    0,   93,    2, 0x08,   10 /* Private */,
+      13,    1,   94,    2, 0x08,   11 /* Private */,
+      16,    1,   97,    2, 0x08,   13 /* Private */,
+      18,    0,  100,    2, 0x08,   15 /* Private */,
+      19,    0,  101,    2, 0x08,   16 /* Private */,
+      20,    0,  102,    2, 0x08,   17 /* Private */,
 
  // signals: parameters
     QMetaType::Void, 0x80000000 | 3,    4,
@@ -171,6 +176,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusManagerENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 14,   15,
     QMetaType::Void, 0x80000000 | 17,   10,
+    QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
 
@@ -211,6 +217,8 @@ Q_CONSTINIT const QMetaObject ModbusManager::staticMetaObject = { {
         // method 'processNextRequest'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onRequestTimeout'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onRetryTimer'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
@@ -232,6 +240,7 @@ void ModbusManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         case 7: _t->onErrorOccurred((*reinterpret_cast< std::add_pointer_t<QModbusDevice::Error>>(_a[1]))); break;
         case 8: _t->processNextRequest(); break;
         case 9: _t->onRequestTimeout(); break;
+        case 10: _t->onRetryTimer(); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -286,13 +295,13 @@ int ModbusManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 10)
+        if (_id < 11)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 10;
+        _id -= 11;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 10)
+        if (_id < 11)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 10;
+        _id -= 11;
     }
     return _id;
 }

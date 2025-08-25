@@ -47,8 +47,14 @@ struct ModbusRequest {
     QVector<quint16> writeData;
     QVector<bool> writeBoolData;
     
+    // Retry mechanism fields
+    int retryCount;
+    qint64 nextRetryTime;
+    QString lastError;
+    
     ModbusRequest() : type(ReadHoldingRegisters), startAddress(0), count(1), 
-                     unitId(1), dataType(ModbusDataType::HoldingRegister), requestTime(0) {}
+                     unitId(1), dataType(ModbusDataType::HoldingRegister), requestTime(0),
+                     retryCount(0), nextRetryTime(0) {}
 };
 
 // Modbus read result structure
@@ -175,17 +181,21 @@ private slots:
     void onErrorOccurred(QModbusDevice::Error error);
     void processNextRequest();
     void onRequestTimeout();
+    void onRetryTimer();
 
 private:
-    // Core components
+    // Core Modbus components
     QModbusTcpClient *m_modbusClient;
     QTimer *m_requestTimer;
     QTimer *m_timeoutTimer;
+    QTimer *m_retryTimer;
     
-    // Request management
+    // Request queue management
     QQueue<ModbusRequest> m_requestQueue;
+    QQueue<ModbusRequest> m_retryQueue;
     bool m_requestInProgress;
     QModbusReply *m_currentReply;
+    ModbusRequest m_currentRequest;
     qint64 m_currentRequestTime;
     QMap<QModbusReply*, QPair<int, int>> m_replyAddressMap;
     QMap<QModbusReply*, ModbusDataType> m_pendingReads;
@@ -206,6 +216,9 @@ private:
     void executeRequest(const ModbusRequest &request);
     void completeCurrentRequest();
     void handleRequestTimeout();
+    void retryFailedRequest(const ModbusRequest &request, const QString &error);
+    void processRetryQueue();
+    qint64 calculateRetryDelay(int retryCount);
     ModbusReadResult processReadReply(QModbusReply *reply, ModbusDataType dataType);
     ModbusWriteResult processWriteReply(QModbusReply *reply, int startAddress, int count);
     void validateIEEE754Data(ModbusReadResult &result);

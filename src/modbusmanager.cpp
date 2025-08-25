@@ -4,6 +4,7 @@
 #include <QDataStream>
 #include <QByteArray>
 #include <QFileInfo>
+#include <QRandomGenerator>
 
 ModbusManager::ModbusManager(QObject *parent)
     : QObject(parent)
@@ -33,6 +34,12 @@ ModbusManager::ModbusManager(QObject *parent)
     m_timeoutTimer = new QTimer(this);
     m_timeoutTimer->setSingleShot(true);
     connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
+    
+    m_retryTimer = new QTimer(this);
+    m_retryTimer->setSingleShot(false);
+    m_retryTimer->setInterval(1000); // Check retry queue every second
+    connect(m_retryTimer, &QTimer::timeout, this, &ModbusManager::onRetryTimer);
+    m_retryTimer->start();
     
     connect(m_modbusClient, &QModbusClient::stateChanged,
             this, &ModbusManager::onStateChanged);
@@ -617,6 +624,7 @@ void ModbusManager::executeRequest(const ModbusRequest &request)
     }
     
     m_requestInProgress = true;
+    m_currentRequest = request;
     m_currentRequestTime = QDateTime::currentMSecsSinceEpoch();
     
     QModbusDataUnit readUnit;
@@ -680,7 +688,10 @@ void ModbusManager::handleRequestTimeout()
         m_replyAddressMap.remove(m_currentReply);
         
         qint64 elapsed = QDateTime::currentMSecsSinceEpoch() - m_currentRequestTime;
-        emit errorOccurred(QString("Modbus request timeout after %1ms").arg(elapsed));
+        QString timeoutError = QString("Modbus request timeout after %1ms").arg(elapsed);
+        
+        // Retry the current request
+        retryFailedRequest(m_currentRequest, timeoutError);
     }
     
     completeCurrentRequest();
@@ -780,6 +791,14 @@ ModbusReadResult ModbusManager::processReadReply(QModbusReply *reply, ModbusData
         result.errorType = reply->error();
         result.errorString = reply->errorString();
         result.hasValidData = false;
+        
+        // CRITICAL FIX: Use original request address when read fails
+        // This ensures failed reads can be matched to their data points
+        result.startAddress = m_currentRequest.startAddress;
+        result.registerCount = m_currentRequest.count;
+        
+        qDebug() << "📥 Modbus Read Failed - Using original request address:" << result.startAddress
+                 << "Error:" << result.errorString;
     }
     
     return result;
@@ -898,4 +917,81 @@ QVariantMap ModbusManager::convertRawData(const QVector<quint16> &rawData, Modbu
     }
     
     return convertedData;
+}
+
+void ModbusManager::retryFailedRequest(const ModbusRequest &request, const QString &error)
+{
+    ModbusRequest retryRequest = request;
+    retryRequest.retryCount++;
+    retryRequest.lastError = error;
+    
+    if (retryRequest.retryCount <= m_maxRetries) {
+        // Calculate retry delay with exponential backoff
+        qint64 delay = calculateRetryDelay(retryRequest.retryCount);
+        retryRequest.nextRetryTime = QDateTime::currentMSecsSinceEpoch() + delay;
+        
+        // Add to retry queue
+        m_retryQueue.enqueue(retryRequest);
+        
+        qDebug() << "Scheduling retry" << retryRequest.retryCount << "for request at address" 
+                 << retryRequest.startAddress << "in" << delay << "ms. Error:" << error;
+    } else {
+        qWarning() << "Max retries" << m_maxRetries << "exceeded for request at address" 
+                   << retryRequest.startAddress << ". Final error:" << error;
+        emit errorOccurred(QString("Max retries exceeded: %1").arg(error));
+    }
+}
+
+void ModbusManager::processRetryQueue()
+{
+    if (m_retryQueue.isEmpty() || m_requestInProgress) {
+        return;
+    }
+    
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    QQueue<ModbusRequest> pendingRetries;
+    
+    // Process all retry requests
+    while (!m_retryQueue.isEmpty()) {
+        ModbusRequest retryRequest = m_retryQueue.dequeue();
+        
+        if (currentTime >= retryRequest.nextRetryTime) {
+            qDebug() << "Executing retry" << retryRequest.retryCount << "for request at address" 
+                     << retryRequest.startAddress;
+            
+            // Execute the retry immediately
+            executeRequest(retryRequest);
+            return; // Only process one request at a time
+        } else {
+            // Not time yet, put back in queue
+            pendingRetries.enqueue(retryRequest);
+        }
+    }
+    
+    // Put back requests that aren't ready yet
+    m_retryQueue = pendingRetries;
+}
+
+qint64 ModbusManager::calculateRetryDelay(int retryCount)
+{
+    // Exponential backoff: base_delay * 2^(retryCount-1)
+    // With jitter to avoid thundering herd
+    qint64 baseDelay = m_retryDelay * (1LL << (retryCount - 1));
+    
+    // Cap the maximum delay at 60 seconds
+    qint64 maxDelay = 60000;
+    if (baseDelay > maxDelay) {
+        baseDelay = maxDelay;
+    }
+    
+    // Add 10% jitter
+    qint64 jitter = (baseDelay * 10) / 100;
+    qint64 randomJitter = (QRandomGenerator::global()->bounded(2 * jitter + 1)) - jitter;
+    
+    return baseDelay + randomJitter;
+}
+
+void ModbusManager::onRetryTimer()
+{
+    processRetryQueue();
 }
