@@ -92,15 +92,11 @@ ModbusWorker* ModbusWorkerManager::getOrCreateWorker(const QString& host, int po
         int startupDelay = qMax(500, workerCount * 300); // Minimum 500ms, 300ms delay per existing worker
         
         QTimer::singleShot(startupDelay, this, [this, worker, deviceKey]() {
-            // Ensure worker is still valid and start it synchronously
             QMutexLocker locker(&m_workersMutex);
             if (m_workers.contains(deviceKey) && m_workers[deviceKey].worker == worker) {
                 QMetaObject::invokeMethod(worker, "startWorker", Qt::BlockingQueuedConnection);
-                qDebug() << "ModbusWorkerManager::getOrCreateWorker() - Worker started successfully for device:" << deviceKey;
             }
         });
-        
-        qDebug() << "ModbusWorkerManager::getOrCreateWorker() - Worker startup scheduled with" << startupDelay << "ms delay for device:" << deviceKey;
     }
     
     // Emit signals and update statistics outside the mutex lock to avoid deadlock
@@ -125,7 +121,6 @@ void ModbusWorkerManager::removeWorker(const QString& deviceKey)
     QMutexLocker locker(&m_workersMutex);
     
     if (!m_workers.contains(deviceKey)) {
-        qWarning() << "Worker not found for device:" << deviceKey;
         return;
     }
     
@@ -142,8 +137,6 @@ void ModbusWorkerManager::removeWorker(const QString& deviceKey)
     m_workers.remove(deviceKey);
     
     emit workerRemoved(deviceKey);
-    
-    qDebug() << "Removed worker for device:" << deviceKey;
 }
 
 void ModbusWorkerManager::removeAllWorkers()
@@ -345,7 +338,6 @@ void ModbusWorkerManager::onWorkerStarted(const QString& deviceKey)
 
 void ModbusWorkerManager::onWorkerStopped(const QString& deviceKey)
 {
-    qDebug() << "Worker stopped:" << deviceKey;
     updateGlobalStatistics();
 }
 
@@ -420,8 +412,6 @@ void ModbusWorkerManager::distributeLoad()
     
     // Defer load balancing if workers are still initializing
     if (initializingWorkers > 0) {
-        qDebug() << "ModbusWorkerManager::distributeLoad() - Deferring load balancing," << initializingWorkers << "workers still initializing";
-        // Schedule another load balancing attempt in 5 seconds
         QTimer::singleShot(5000, this, &ModbusWorkerManager::distributeLoad);
         return;
     }
@@ -430,8 +420,6 @@ void ModbusWorkerManager::distributeLoad()
     
     calculateWorkerLoads();
     rebalanceWorkerLoads();
-    
-    qDebug() << "ModbusWorkerManager::distributeLoad() - Load balancing completed for" << m_workers.size() << "workers";
 }
 
 void ModbusWorkerManager::setLoadBalancingEnabled(bool enabled)
@@ -441,10 +429,8 @@ void ModbusWorkerManager::setLoadBalancingEnabled(bool enabled)
     
     if (enabled && m_loadBalancingTimer) {
         m_loadBalancingTimer->start(10000);
-        qDebug() << "Load balancing enabled";
     } else if (m_loadBalancingTimer) {
         m_loadBalancingTimer->stop();
-        qDebug() << "Load balancing disabled";
     }
 }
 

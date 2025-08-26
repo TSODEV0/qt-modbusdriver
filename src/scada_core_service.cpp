@@ -89,21 +89,12 @@ bool ScadaCoreService::startService()
         return false;
     }
     
-    qDebug() << "Starting SCADA Core Service...";
-    qDebug() << "Configured data points:" << m_dataPoints.size();
-    qDebug() << "Telegraf socket path:" << m_telegrafSocketPath;
-    
-    // Log device summary for multi-device visibility
+    // Determine device configuration
     QMap<QString, int> devicePointCounts;
     for (const auto &point : m_dataPoints) {
         QString unitIdStr = point.tags.value("unit_id", "1");
         QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitIdStr);
         devicePointCounts[deviceKey]++;
-    }
-    
-    qDebug() << "📊 Multi-device configuration summary:";
-    for (auto it = devicePointCounts.begin(); it != devicePointCounts.end(); ++it) {
-        qDebug() << "   Device" << it.key() << "has" << it.value() << "data points";
     }
     
     // Determine threading strategy based on device count and configuration
@@ -120,8 +111,7 @@ bool ScadaCoreService::startService()
             break;
     }
     
-    qDebug() << "🔧 Threading Strategy:" << (m_useSingleThreadedMode ? "Single-threaded" : "Multi-threaded")
-             << "(" << deviceCount << "devices," << "mode:" << (int)m_threadingMode << ")";
+    // Threading strategy determined
     
     // Note: Using direct Unix socket calls for each data transmission
     
@@ -132,40 +122,16 @@ bool ScadaCoreService::startService()
     
     // Initialize based on threading mode
     if (m_useSingleThreadedMode) {
-        // Single-threaded mode: create one ModbusManager for direct communication
-        qDebug() << "🔧 Initializing single-threaded mode...";
-        
-        if (!m_singleThreadModbusManager) {
-            // Get the first device configuration for single-threaded mode
-            if (!m_dataPoints.isEmpty()) {
-                const auto &firstPoint = m_dataPoints.first();
-                QString unitIdStr = firstPoint.tags.value("unit_id", "1");
-                int unitId = unitIdStr.toInt();
-                
-                m_singleThreadModbusManager = new ModbusManager(this);
-                m_singleThreadModbusManager->initializeClient(); // Initialize the QModbusTcpClient
-                m_singleThreadModbusManager->connectToServer(firstPoint.host, firstPoint.port);
-                
-                // Connect signals for single-threaded mode
-                connect(m_singleThreadModbusManager, &ModbusManager::readCompleted,
-                        this, [this](const ModbusReadResult &result) {
-                            // Handle read completion in single-threaded mode
-                            this->onSingleThreadReadCompleted(result);
-                        });
-                
-                connect(m_singleThreadModbusManager, &ModbusManager::connectionStateChanged,
-                        this, [this](bool connected) {
-                            qDebug() << "Single-threaded Modbus connection state:" << connected;
-                        });
-                
-                connect(m_singleThreadModbusManager, &ModbusManager::errorOccurred,
-                        this, [this](const QString &error) {
-                            qDebug() << "Single-threaded Modbus error:" << error;
-                            emit errorOccurred(error);
-                        });
-                
-                qDebug() << "✅ Single-threaded ModbusManager created for" << firstPoint.host << ":" << firstPoint.port;
-            }
+        if (!m_singleThreadModbusManager && !m_dataPoints.isEmpty()) {
+            const auto &firstPoint = m_dataPoints.first();
+            m_singleThreadModbusManager = new ModbusManager(this);
+            m_singleThreadModbusManager->initializeClient();
+            m_singleThreadModbusManager->connectToServer(firstPoint.host, firstPoint.port);
+            
+            connect(m_singleThreadModbusManager, &ModbusManager::readCompleted,
+                    this, &ScadaCoreService::onSingleThreadReadCompleted);
+            connect(m_singleThreadModbusManager, &ModbusManager::errorOccurred,
+                    this, &ScadaCoreService::errorOccurred);
         }
     } else {
         // Multi-threaded mode: create workers for all configured devices
@@ -177,7 +143,6 @@ bool ScadaCoreService::startService()
             uniqueDevices.insert(deviceKey);
         }
         
-        qDebug() << "🔧 Pre-creating workers for" << uniqueDevices.size() << "unique devices...";
         for (const QString &deviceKey : uniqueDevices) {
             QStringList parts = deviceKey.split(":");
             if (parts.size() >= 3) {
@@ -185,18 +150,12 @@ bool ScadaCoreService::startService()
                 int port = parts[1].toInt();
                 int unitId = parts[2].toInt();
                 
-                qDebug() << "Creating worker for device:" << deviceKey;
                 ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, unitId);
                 if (worker) {
                     connectWorkerSignals(worker);
-                    qDebug() << "✅ Pre-created worker for device:" << deviceKey;
-                } else {
-                    qDebug() << "❌ Failed to create worker for device:" << deviceKey;
                 }
             }
         }
-        
-        qDebug() << "Starting all workers...";
         // Start all workers for configured devices
         m_workerManager->startAllWorkers();
         qDebug() << "✅ All workers started";
@@ -1053,9 +1012,7 @@ void ScadaCoreService::processNextDataPoint()
             int blockIndex = pair.second;
             const DataAcquisitionPoint &prioritizedBlock = m_dataPoints[blockIndex];
             
-            qDebug() << "Processing prioritized block:" << prioritizedBlock.name 
-                     << "Data type:" << prioritizedBlock.tags.value("block_data_type", "UNKNOWN")
-                     << "Priority:" << prioritizedBlock.tags.value("data_type_priority", "99");
+            // Process prioritized block
             
             processDataPoint(prioritizedBlock, currentTime);
         }
@@ -1134,7 +1091,7 @@ void ScadaCoreService::processNextDataPoint()
         int pointIndex = highestPriorityPoints[selectedIndex].second;
         const DataAcquisitionPoint &prioritizedPoint = m_dataPoints[pointIndex];
         
-        qDebug() << "Processing individual point:" << prioritizedPoint.name;
+        // Process individual point
         
         processDataPoint(prioritizedPoint, currentTime);
         return;
@@ -1167,7 +1124,7 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         m_lastPollTimes[point.name] = currentTime;
         m_responseTimers[point.name] = currentTime;
         
-        qDebug() << "🎭 Simulation mode polling:" << point.name << "at address" << point.address;
+        // Simulation mode polling
         
         // Generate mock data based on data type
         QVariant simulatedValue;
@@ -2414,10 +2371,7 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
                     static int blockReadResultCount = 0;
                     blockReadResultCount++;
                     
-                    if (blockReadResultCount % 100 == 0) {
-                        qDebug() << "📊 Processing block read result cycle" << blockReadResultCount << "in single-threaded mode:" << point.name
-                                 << "Start Address:" << result.startAddress << "Data Size:" << result.rawData.size();
-                    }
+                    // Block read processing
                     
                     // Use the existing block processing logic
                     handleBlockReadResult(result, point);
@@ -2449,43 +2403,7 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
                                 }
                                 break;
                             case ModbusDataType::BOOL:
-                                // Handle BOOL data type with proper boolean conversion
-                                {
-                                    quint16 rawValue = result.rawData.first();
-                                    
-                                    // Debug log for BOOL conversion process
-                                    qDebug() << "BOOL conversion for" << point.name << "- Raw value:" << rawValue;
-                                    
-                                    // Validate raw value range for BOOL conversion
-                                    if (rawValue > 1) {
-                                        qWarning() << "BOOL conversion warning for" << point.name 
-                                                  << "- raw value" << rawValue << "exceeds typical boolean range (0-1)."
-                                                  << "Converting non-zero to true.";
-                                    }
-                                    
-                                    // Convert to boolean: 0 = false, non-zero = true
-                                    bool boolValue = (rawValue != 0);
-                                    dataPoint.value = boolValue;
-                                    
-                                    // Debug log for converted boolean value
-                                    qDebug() << "BOOL conversion for" << point.name << "- Boolean value:" << boolValue;
-                                    
-                                    // Validate QVariant conversion success
-                                    if (!dataPoint.value.canConvert<bool>()) {
-                                        qWarning() << "BOOL QVariant conversion failed for" << point.name
-                                                  << "- unable to convert to boolean type. Using default false.";
-                                        dataPoint.value = false;
-                                        dataPoint.isValid = false;
-                                        dataPoint.errorMessage = QString("BOOL conversion failed: QVariant cannot convert to bool");
-                                    }
-                                    
-#ifdef MODBUS_DEBUG_ENABLED
-                                    qDebug() << "BOOL decode for" << point.name << ":"
-                                             << "Raw value:" << rawValue
-                                             << "Boolean value:" << boolValue
-                                             << "Conversion valid:" << dataPoint.value.canConvert<bool>();
-#endif
-                                }
+                                dataPoint.value = (result.rawData.first() != 0);
                                 break;
                             default:
                                 dataPoint.value = result.rawData.first();

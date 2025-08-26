@@ -67,7 +67,6 @@ void ModbusWorker::initializeTimers()
     if (!m_pollTimer) {
         m_pollTimer = new QTimer(this);
         connect(m_pollTimer, &QTimer::timeout, this, &ModbusWorker::onPollTimer);
-        qDebug() << "ModbusWorker::initializeTimers - Poll timer created for device:" << m_deviceKey;
     }
     
     if (!m_requestTimeoutTimer) {
@@ -75,12 +74,9 @@ void ModbusWorker::initializeTimers()
         m_requestTimeoutTimer->setSingleShot(true);
         connect(m_requestTimeoutTimer, &QTimer::timeout, this, [this]() {
             if (m_requestInProgress) {
-                qDebug() << "ModbusWorker::requestTimeout - Request timeout for device:" << m_deviceKey;
                 completeCurrentRequest(false, "Request timeout");
                 
-                // Try to reconnect if connection seems lost
                 if (m_statistics.isConnected) {
-                    qDebug() << "ModbusWorker::requestTimeout - Attempting reconnection due to timeout";
                     disconnectFromDevice();
                     QTimer::singleShot(1000, this, [this]() {
                         connectToDevice();
@@ -88,14 +84,14 @@ void ModbusWorker::initializeTimers()
                 }
             }
         });
-        qDebug() << "ModbusWorker::initializeTimers - Request timeout timer created for device:" << m_deviceKey;
+        // Request timeout timer created
     }
     
     if (!m_batchTimer) {
         m_batchTimer = new QTimer(this);
         m_batchTimer->setSingleShot(true);
         connect(m_batchTimer, &QTimer::timeout, this, &ModbusWorker::onBatchTimeout);
-        qDebug() << "ModbusWorker::initializeTimers - Batch timer created for device:" << m_deviceKey;
+        // Batch timer created
     }
     
     if (!m_healthCheckTimer) {
@@ -105,7 +101,7 @@ void ModbusWorker::initializeTimers()
         if (m_healthMonitoringEnabled) {
             m_healthCheckTimer->start(m_healthCheckInterval);
         }
-        qDebug() << "ModbusWorker::initializeTimers - Health check timer created for device:" << m_deviceKey;
+        // Health check timer created
     }
     
     if (!m_heartbeatTimer) {
@@ -115,7 +111,7 @@ void ModbusWorker::initializeTimers()
         if (m_heartbeatEnabled) {
             m_heartbeatTimer->start(m_heartbeatInterval);
         }
-        qDebug() << "ModbusWorker::initializeTimers - Heartbeat timer created for device:" << m_deviceKey;
+        // Heartbeat timer created
     }
 }
 
@@ -132,15 +128,11 @@ ModbusWorker::~ModbusWorker()
 
 void ModbusWorker::connectToDevice()
 {
-    qDebug() << "ModbusWorker::connectToDevice() - Entry for device:" << m_deviceKey;
-    
     if (m_statistics.isConnected) {
-        qDebug() << "ModbusWorker::connectToDevice() - Already connected, returning";
         return;
     }
     
     if (!m_modbusManager) {
-        qDebug() << "ModbusWorker::connectToDevice() - ERROR: m_modbusManager is null!";
         emitClassifiedError("ModbusManager not available");
         return;
     }
@@ -159,14 +151,11 @@ void ModbusWorker::connectToDevice()
         return;
     }
     
-    qDebug() << "ModbusWorker::connectToDevice() - Acquired connection semaphore for device:" << m_deviceKey;
-    qDebug() << "ModbusWorker::connectToDevice() - m_modbusManager pointer:" << (void*)m_modbusManager;
-    qDebug() << "ModbusWorker::connectToDevice() - About to call connectToServer with host:" << m_host << "port:" << m_port;
+    // Connection semaphore acquired
     
     // Attempt connection with proper error handling
     bool connectionResult = m_modbusManager->connectToServer(m_host, m_port);
     if (!connectionResult) {
-        qDebug() << "ModbusWorker::connectToDevice() - Initial connection attempt failed for device:" << m_deviceKey;
         handleConnectionFailure("Failed to initiate connection");
         return;
     }
@@ -179,12 +168,9 @@ void ModbusWorker::connectToDevice()
     
     QTimer::singleShot(connectionTimeout, this, [this]() {
         if (!m_statistics.isConnected && m_workerRunning) {
-            qDebug() << "ModbusWorker::connectToDevice() - Connection timeout for device:" << m_deviceKey;
             handleConnectionFailure("Connection timeout");
         }
     });
-    
-    qDebug() << "ModbusWorker::connectToDevice() - Connection initiated for device:" << m_deviceKey;
     // Connection state will be updated via onModbusConnectionStateChanged callback
 }
 

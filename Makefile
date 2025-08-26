@@ -14,7 +14,7 @@ EQ            = =
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x060000 -DQT_THREAD_SUPPORT -DQT_TESTCASE_BUILDDIR="./" -DQT_NO_DEBUG -DQT_SERIALBUS_LIB -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CONCURRENT_LIB -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR='"/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver"'
+DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_DISABLE_DEPRECATED_BEFORE=0x060000 -DQT_NO_DEBUG -DQT_SERIALBUS_LIB -DQT_NETWORK_LIB -DQT_SQL_LIB -DQT_CONCURRENT_LIB -DQT_TESTLIB_LIB -DQT_CORE_LIB -DQT_TESTCASE_BUILDDIR='"/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver"'
 CFLAGS        = -pipe -O2 -Wall -Wextra -fPIC -D_REENTRANT $(DEFINES)
 CXXFLAGS      = -pipe -pthread -O2 -std=gnu++1z -Wall -Wextra -fPIC -D_REENTRANT $(DEFINES)
 INCPATH       = -I. -Iinclude -Isrc -I../../../Qt/6.6.3/gcc_64/include -I../../../Qt/6.6.3/gcc_64/include/QtSerialBus -I../../../Qt/6.6.3/gcc_64/include/QtNetwork -I../../../Qt/6.6.3/gcc_64/include/QtSql -I../../../Qt/6.6.3/gcc_64/include/QtConcurrent -I../../../Qt/6.6.3/gcc_64/include/QtTest -I../../../Qt/6.6.3/gcc_64/include/QtCore -Ibuild/moc -I../../../Qt/6.6.3/gcc_64/mkspecs/linux-g++
@@ -1794,15 +1794,12 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasictimer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QThread \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QLoggingCategory \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qloggingcategory.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutex \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutexLocker \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QWaitCondition \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qwaitcondition.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDeadlineTimer \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QThreadPool \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QFuture \
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/QtConcurrent \
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/QtConcurrentDepends \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QtCore \
@@ -1871,6 +1868,7 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qline.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qpoint.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qlockfile.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qloggingcategory.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmargins.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmessageauthenticationcode.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetaobject.h \
@@ -1954,116 +1952,12 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/qtconcurrentversion.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QElapsedTimer \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QAtomicInteger \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/QTest \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestlib-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestcase.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestdata.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qbenchmark.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qbenchmarkmetric.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestsystem.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qtestsupport_core.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtestsupport_gui.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtguiglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtgui-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtguiexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qeventpoint.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector2d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvectornd.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpointingdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qinputdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qscreen.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QRect \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSize \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSizeF \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/QTransform \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtransform.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpolygon.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qregion.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qwindowdefs.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qkeysequence.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtestsupport_widgets.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgetsglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgets-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgetsexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_network.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QHostAddress \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qhostaddress.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetworkglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetwork-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetworkexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qabstractsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkCookie \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkcookie.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSharedDataPointer \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkReply \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkreply.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QIODevice \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkRequest \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkrequest.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QUrl \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkAccessManager \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkaccessmanager.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QSslConfiguration \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslconfiguration.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtcpsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslerror.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslcertificate.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qssl.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QFlags \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslpresharedkeyauthenticator.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_widgets.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_gui.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestassert.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestkeyboard.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestspontaneevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qguiapplication.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qinputmethod.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qguiapplication_platform.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qwindow.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QEvent \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMargins \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qsurface.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qsurfaceformat.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qicon.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpixmap.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpaintdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qcolor.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qrgb.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qrgba64.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qimage.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpixelformat.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qcursor.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qbitmap.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qwidget.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qaction.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpalette.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qbrush.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfont.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfontmetrics.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfontinfo.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qsizepolicy.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qapplication.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestmouse.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtesttouch.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector3d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector4d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/QSizePolicy \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaEnum \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QRandomGenerator \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCommandLineParser \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCommandLineOption \
 		include/scada_core_service.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVector \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QSet \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QFileInfo \
@@ -2246,15 +2140,12 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasictimer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QThread \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QLoggingCategory \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qloggingcategory.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutex \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutexLocker \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QWaitCondition \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qwaitcondition.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDeadlineTimer \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QThreadPool \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QFuture \
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/QtConcurrent \
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/QtConcurrentDepends \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QtCore \
@@ -2323,6 +2214,7 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qline.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qpoint.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qlockfile.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qloggingcategory.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmargins.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmessageauthenticationcode.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetaobject.h \
@@ -2406,116 +2298,12 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtConcurrent/qtconcurrentversion.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QElapsedTimer \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QAtomicInteger \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/QTest \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestlib-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qttestexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestcase.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestdata.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qbenchmark.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qbenchmarkmetric.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestsystem.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qtestsupport_core.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtestsupport_gui.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtguiglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtgui-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtguiexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qeventpoint.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector2d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvectornd.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpointingdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qinputdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qscreen.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QRect \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSize \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSizeF \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/QTransform \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qtransform.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpolygon.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qregion.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qwindowdefs.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qkeysequence.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtestsupport_widgets.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgetsglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgets-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qtwidgetsexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_network.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QHostAddress \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qhostaddress.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetworkglobal.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetwork-config.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtnetworkexports.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qabstractsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkCookie \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkcookie.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QSharedDataPointer \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkReply \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkreply.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QIODevice \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkRequest \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkrequest.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QUrl \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QNetworkAccessManager \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qnetworkaccessmanager.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QSslConfiguration \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslconfiguration.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qtcpsocket.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslerror.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslcertificate.h \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qssl.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QFlags \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
-		../../../Qt/6.6.3/gcc_64/include/QtNetwork/qsslpresharedkeyauthenticator.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_widgets.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtest_gui.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestassert.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestkeyboard.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestspontaneevent.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qguiapplication.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qinputmethod.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qguiapplication_platform.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qwindow.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QEvent \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMargins \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qsurface.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qsurfaceformat.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qicon.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpixmap.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpaintdevice.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qcolor.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qrgb.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qrgba64.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qimage.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpixelformat.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qcursor.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qbitmap.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qwidget.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qaction.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qpalette.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qbrush.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfont.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfontmetrics.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qfontinfo.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qsizepolicy.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/qapplication.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtestmouse.h \
-		../../../Qt/6.6.3/gcc_64/include/QtTest/qtesttouch.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector3d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtGui/qvector4d.h \
-		../../../Qt/6.6.3/gcc_64/include/QtWidgets/QSizePolicy \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaEnum \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QRandomGenerator \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCommandLineParser \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCommandLineOption \
 		include/scada_core_service.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QVector \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QSet \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QFileInfo \

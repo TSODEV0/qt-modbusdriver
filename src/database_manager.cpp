@@ -37,7 +37,6 @@ bool DatabaseManager::loadConfigurationFromFile(const QString &configPath)
     QFileInfo configFile(configPath);
     if (!configFile.exists()) {
         setLastError("Configuration file not found: " + configPath);
-        qDebug() << "❌ Config file not found:" << configPath;
         return false;
     }
     
@@ -52,10 +51,7 @@ bool DatabaseManager::loadConfigurationFromFile(const QString &configPath)
     m_dbPort = m_settings->value("port", 5432).toInt();
     m_settings->endGroup();
     
-    qDebug() << "✅ Configuration loaded from:" << configPath;
-    qDebug() << "   Database Host:" << m_dbHost;
-    qDebug() << "   Database Name:" << m_dbName;
-    qDebug() << "   Database Port:" << m_dbPort;
+    // Configuration loaded successfully
     
     emit configurationLoaded();
     return true;
@@ -82,12 +78,10 @@ bool DatabaseManager::connectToDatabase(const QString &host, const QString &data
     m_database.setPort(port);
     
     if (m_database.open()) {
-        qDebug() << "✅ Connected to PostgreSQL database:" << database << "on" << host;
         emit databaseConnected();
         return true;
     } else {
         setLastError("Failed to connect to database: " + m_database.lastError().text());
-        qDebug() << "❌ Database connection failed:" << m_lastError;
         return false;
     }
 }
@@ -97,7 +91,6 @@ void DatabaseManager::disconnectFromDatabase()
     if (m_database.isOpen()) {
         m_database.close();
         emit databaseDisconnected();
-        qDebug() << "🔌 Disconnected from database";
     }
 }
 
@@ -136,16 +129,12 @@ QVector<ModbusDeviceConfig> DatabaseManager::loadModbusDevices()
             
             devices.append(config);
             
-            qDebug() << "📋 Loaded device:" << config.deviceName 
-                     << "(" << config.ipAddress << ":" << config.port << ")"
-                     << "Unit ID:" << config.unitId
-                     << "Poll:" << config.pollInterval << "ms";
+            // Device loaded successfully
         }
         
-        qDebug() << "✅ Loaded" << devices.size() << "Modbus devices from database";
+        // Devices loaded successfully
     } else {
         setLastError("Failed to load devices: " + query.lastError().text());
-        qDebug() << "❌ Database query failed:" << m_lastError;
     }
     
     return devices;
@@ -230,10 +219,9 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
             dataPoints.append(point);
         }
         
-        qDebug() << "✅ Generated" << dataPoints.size() << "data acquisition points from database";
+        // Data points loaded successfully
     } else {
         setLastError("Failed to load data points: " + query.lastError().text());
-        qDebug() << "❌ Data points query failed:" << m_lastError;
     }
     
     return dataPoints;
@@ -307,7 +295,7 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
     for (const QString &key : sortedKeys) {
         QVector<DataAcquisitionPoint> devicePoints = deviceRegisterDataTypeGroups[key];
         
-        qDebug() << "Processing data type group:" << key << "with" << devicePoints.size() << "points";
+        // Processing data type group
         
         // Sort points by register address
         std::sort(devicePoints.begin(), devicePoints.end(), 
@@ -400,9 +388,7 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
                 
                 optimizedPoints.append(optimizedBlock);
                 
-                qDebug() << "Created optimized block:" << optimizedBlock.name 
-                         << "Address range:" << startAddress << "-" << endAddress
-                         << "Block size:" << blockSize << "Original points:" << (j - i);
+                // Optimized block created
             } else {
                 // Single point - add as is
                 optimizedPoints.append(blockPoint);
@@ -412,10 +398,7 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
         }
     }
     
-    qDebug() << "Modbus read optimization completed:" 
-             << "Original points:" << dataPoints.size() 
-             << "Optimized points:" << optimizedPoints.size()
-             << "Reduction:" << QString("%1%").arg((1.0 - (double)optimizedPoints.size() / dataPoints.size()) * 100, 0, 'f', 1);
+    // Modbus read optimization completed
     
     return optimizedPoints;
 }
@@ -454,7 +437,6 @@ void DatabaseManager::setLastError(const QString &error)
 void DatabaseManager::setExecutionMode(const QString &mode)
 {
     m_executionMode = mode;
-    qDebug() << "DatabaseManager execution mode set to:" << m_executionMode;
 }
 
 QString DatabaseManager::getExecutionMode() const

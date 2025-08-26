@@ -23,48 +23,35 @@ ModbusManager::ModbusManager(QObject *parent)
     , m_networkType("cellular_4g")
     , m_requestInterval(100)  // 100ms between requests
 {
-    qDebug() << "DEBUG: ModbusManager constructor - Entry point";
-    
     // QModbusTcpClient and timers will be created in initializeClient() after moveToThread()
     // to avoid threading violations
-    
-    qDebug() << "DEBUG: ModbusManager constructor completed successfully";
 }
 
 void ModbusManager::initializeClient()
 {
     // This method should be called after moveToThread() to create Qt objects in the correct thread
     if (!m_modbusClient) {
-        qDebug() << "DEBUG: Creating QModbusTcpClient in worker thread...";
         m_modbusClient = new QModbusTcpClient(this);
-        qDebug() << "DEBUG: QModbusTcpClient created successfully";
         
         // Connect modbus client signals
         connect(m_modbusClient, &QModbusClient::stateChanged,
                 this, &ModbusManager::onStateChanged);
         connect(m_modbusClient, &QModbusDevice::errorOccurred,
                 this, &ModbusManager::onErrorOccurred);
-        qDebug() << "DEBUG: Modbus client signals connected";
     }
     
     // Initialize timers
     if (!m_requestTimer) {
-        qDebug() << "DEBUG: Creating request timer in worker thread...";
         m_requestTimer = new QTimer(this);
         m_requestTimer->setSingleShot(true);
         connect(m_requestTimer, &QTimer::timeout, this, &ModbusManager::processNextRequest);
-        qDebug() << "DEBUG: Request timer created and connected";
     }
     
     if (!m_timeoutTimer) {
-        qDebug() << "DEBUG: Creating timeout timer in worker thread...";
         m_timeoutTimer = new QTimer(this);
         m_timeoutTimer->setSingleShot(true);
         connect(m_timeoutTimer, &QTimer::timeout, this, &ModbusManager::onRequestTimeout);
-        qDebug() << "DEBUG: Timeout timer created and connected";
     }
-    
-    qDebug() << "DEBUG: ModbusManager initialization completed successfully";
 }
 
 ModbusManager::~ModbusManager()
@@ -85,7 +72,6 @@ bool ModbusManager::loadConfigurationFromFile(const QString &configPath)
     
     QFileInfo configFile(configPath);
     if (!configFile.exists()) {
-        qDebug() << "❌ Config file not found:" << configPath;
         return false;
     }
     
@@ -102,47 +88,27 @@ bool ModbusManager::loadConfigurationFromFile(const QString &configPath)
     m_networkType = m_settings->value("network_type", "cellular_4g").toString();
     m_settings->endGroup();
     
-    qDebug() << "✅ ModbusManager configuration loaded from:" << configPath;
-    qDebug() << "   Auto Adjust:" << m_autoAdjust;
-    qDebug() << "   Heartbeat Interval:" << m_heartbeatInterval << "ms";
-    qDebug() << "   Retry Delay:" << m_retryDelay << "ms";
-    qDebug() << "   Max Retries:" << m_maxRetries;
-    qDebug() << "   Request Timeout:" << m_requestTimeout << "ms";
-    qDebug() << "   Connection Timeout:" << m_connectionTimeout << "ms";
-    qDebug() << "   Network Type:" << m_networkType;
+    // Configuration loaded successfully
     
     return true;
 }
 
 bool ModbusManager::connectToServer(const QString &host, int port)
 {
-    qDebug() << "DEBUG: ModbusManager::connectToServer() - Entry point";
-    
     if (!m_modbusClient) {
-        qDebug() << "ERROR: m_modbusClient is null!";
         return false;
     }
         
     if (m_modbusClient->state() == QModbusDevice::ConnectedState) {
         return true;
     }
-        
-    // Reduce debug verbosity for connection attempts
-    static int connectionAttemptCount = 0;
-    connectionAttemptCount++;
     
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkPortParameter, port);
     m_modbusClient->setConnectionParameter(QModbusDevice::NetworkAddressParameter, host);
-    m_modbusClient->setTimeout(m_connectionTimeout);  // Use config value
-    m_modbusClient->setNumberOfRetries(m_maxRetries); // Use config value
+    m_modbusClient->setTimeout(m_connectionTimeout);
+    m_modbusClient->setNumberOfRetries(m_maxRetries);
     
-    if (connectionAttemptCount % 50 == 1) {
-        qDebug() << "🔗 Connection attempt" << connectionAttemptCount << "to Modbus server" << host << ":" << port;
-        qDebug() << "   Using timeout:" << m_connectionTimeout << "ms, retries:" << m_maxRetries;
-    }
-    
-    bool result = m_modbusClient->connectDevice();
-    return result;
+    return m_modbusClient->connectDevice();
 }
 
 void ModbusManager::disconnectFromServer()
@@ -155,27 +121,15 @@ void ModbusManager::disconnectFromServer()
 bool ModbusManager::isConnected() const
 {
     if (!m_modbusClient) {
-        qDebug() << "isConnected() check: m_modbusClient is null";
         return false;
     }
     
-    QModbusDevice::State currentState = m_modbusClient->state();
-    bool connected = (currentState == QModbusDevice::ConnectedState);
-    
-    if (!connected) {
-        qDebug() << "isConnected() check: Current state is" << currentState << "(not ConnectedState)";
-    }
-    
-    return connected;
+    return (m_modbusClient->state() == QModbusDevice::ConnectedState);
 }
 
 bool ModbusManager::isClientInitialized() const
 {
-    bool initialized = (m_modbusClient != nullptr);
-    if (!initialized) {
-        qDebug() << "ModbusManager::isClientInitialized() - Client is not initialized";
-    }
-    return initialized;
+    return (m_modbusClient != nullptr);
 }
 
 // Single read operations

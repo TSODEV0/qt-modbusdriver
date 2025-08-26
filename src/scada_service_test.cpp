@@ -2,20 +2,14 @@
 #include <QDebug>
 #include <QTimer>
 #include <QThread>
-#include <QLoggingCategory>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QWaitCondition>
 #include <QThreadPool>
-#include <QFuture>
 #include <QtConcurrent>
 #include <QElapsedTimer>
 #include <QAtomicInteger>
-#include <QTest>
 #include <QDateTime>
-#include <QJsonObject>
-#include <QJsonDocument>
-#include <QRandomGenerator>
 #include <QCommandLineParser>
 #include <QCommandLineOption>
 #include "../include/scada_core_service.h"
@@ -66,8 +60,6 @@ public:
           m_executionMode(executionMode) {
         // Initialize performance metrics
         m_performanceMetrics.reset();
-        qDebug() << "Enhanced SCADA Test initialized at" << QDateTime::currentDateTime().toString();
-        qDebug() << "Execution mode:" << m_executionMode;
         
         // Initialize connection resilience manager
         m_resilienceManager = new ConnectionResilienceManager(this);
@@ -83,7 +75,6 @@ public:
     {
         // Initialize performance metrics
         m_performanceMetrics.reset();
-        qDebug() << "Enhanced SCADA Test initialized at" << QDateTime::currentDateTime().toString();
         
         // Initialize connection resilience manager
         m_resilienceManager = new ConnectionResilienceManager(this);
@@ -96,11 +87,6 @@ public:
     }
     
     void runTest() {
-        qDebug() << "=== Enhanced SCADA Core Service Test with Multithreading Support ===";
-        qDebug() << "Testing data acquisition with PostgreSQL configuration, InfluxDB integration, and concurrent operations";
-        qDebug() << "Multithreading enabled:" << (m_multithreadingEnabled ? "YES" : "NO");
-        qDebug() << "Max concurrent workers:" << m_maxConcurrentWorkers;
-        qDebug();
         
         // Initialize performance metrics
         m_performanceMetrics.reset();
@@ -116,17 +102,13 @@ public:
                 this, &ScadaServiceTest::onDatabaseError);
         
         // Load configuration from file
-        qDebug() << "Loading configuration from file...";
         if (!m_dbManager->loadConfigurationFromFile("/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/config/config.ini")) {
-            qDebug() << "❌ Failed to load configuration:" << m_dbManager->lastError();
             QCoreApplication::quit();
             return;
         }
         
         // Connect to PostgreSQL database using configuration
-        qDebug() << "Connecting to PostgreSQL database using configuration...";
         if (!m_dbManager->connectToDatabase()) {
-            qWarning() << "Failed to connect to database. Test cannot proceed without database connection.";
             QTimer::singleShot(1000, []() {
                 QCoreApplication::quit();
             });
@@ -141,8 +123,6 @@ public:
     
     // New multithreading methods
     void initializeMultithreadingComponents() {
-        qDebug() << "🔧 Initializing multithreading components...";
-        
         // Create ModbusWorkerManager
         m_workerManager = new ModbusWorkerManager(this);
         
@@ -156,17 +136,12 @@ public:
         
         // Set default poll interval for workers (increased to reduce connection drops)
         m_workerManager->setDefaultPollInterval(2000);
-        
-        qDebug() << "✅ Multithreading components initialized";
     }
     
     void runConcurrentDataAcquisitionTest() {
-        qDebug() << "🚀 Starting concurrent data acquisition test...";
-        
         // Load Modbus devices from database
         QVector<ModbusDeviceConfig> devices = m_dbManager->loadModbusDevices();
         if (devices.isEmpty()) {
-            qDebug() << "❌ No Modbus devices found for concurrent testing";
             return;
         }
         
@@ -174,7 +149,6 @@ public:
         QList<QFuture<void>> futures;
         for (const auto &device : devices) {
             if (m_workerManager->getWorkerCount() >= m_maxConcurrentWorkers) {
-                qDebug() << "⚠️  Maximum concurrent workers reached:" << m_maxConcurrentWorkers;
                 break;
             }
             
@@ -193,9 +167,6 @@ public:
                 
                 // Note: Worker will be started and connected via startAllWorkers() and connectAllDevices()
                 // to avoid race conditions and duplicate initialization
-                
-                qDebug() << "🔧 Created worker for device:" << device.deviceName 
-                         << "(" << device.ipAddress << ":" << device.port << ")";
             }
         }
         
@@ -237,7 +208,6 @@ public:
         }
         
         qint64 benchmarkTime = benchmarkTimer.elapsed();
-        qDebug() << "📈 Performance benchmark completed in" << benchmarkTime << "ms";
         
         // Calculate and display performance metrics
         displayPerformanceMetrics();
@@ -296,28 +266,10 @@ public:
     }
     
     void displayPerformanceMetrics() {
-        qDebug() << "";
-        qDebug() << "=== Performance Metrics ===";
-        qDebug() << "Total operations:" << m_performanceMetrics.totalOperations.loadAcquire();
-        qDebug() << "Successful operations:" << m_performanceMetrics.successfulOperations.loadAcquire();
-        qDebug() << "Failed operations:" << m_performanceMetrics.failedOperations.loadAcquire();
-        qDebug() << "Average response time:" << QString::number(m_performanceMetrics.averageResponseTime, 'f', 2) << "ms";
-        
+        // Performance metrics calculated internally
         qint64 totalOps = m_performanceMetrics.totalOperations.loadAcquire();
         qint64 successOps = m_performanceMetrics.successfulOperations.loadAcquire();
-        if (totalOps > 0) {
-            double successRate = (double)successOps / totalOps * 100.0;
-            qDebug() << "Success rate:" << QString::number(successRate, 'f', 1) << "%";
-        }
-        
         qint64 testDuration = QDateTime::currentMSecsSinceEpoch() - m_performanceMetrics.testStartTime;
-        qDebug() << "Test duration:" << QString::number(testDuration / 1000.0, 'f', 1) << "seconds";
-        
-        if (testDuration > 0) {
-            double throughput = (double)totalOps / (testDuration / 1000.0);
-            qDebug() << "Throughput:" << QString::number(throughput, 'f', 2) << "operations/second";
-        }
-        qDebug() << "";
     }
     
 
@@ -334,14 +286,11 @@ public:
 
 private slots:
     void onDatabaseConnected() {
-        qDebug() << "✅ Database connected successfully";
-        
         // Enhanced database connection handling with multithreading support
         
         // Load Modbus device configurations from database
         QVector<ModbusDeviceConfig> devices = m_dbManager->loadModbusDevices();
         if (devices.isEmpty()) {
-            qDebug() << "❌ No Modbus devices found in database";
             QCoreApplication::quit();
             return;
         }
@@ -364,17 +313,11 @@ private slots:
         
         // Configure Telegraf socket
         m_service->setTelegrafSocketPath("/tmp/telegraf.sock");
-        qDebug() << "Telegraf socket configured:" << m_service->getTelegrafSocketPath();
         
         // Data points already configured in main() with optimization
-        qDebug() << "✅ Using optimized data points configured in main():" << m_service->getDataPoints().size() << "points";
         
         // Start service
-        qDebug() << "Starting SCADA Core Service with database configuration...";
-        if (m_service->startService()) {
-            qDebug() << "Service started successfully";
-        } else {
-            qDebug() << "Failed to start service";
+        if (!m_service->startService()) {
             QCoreApplication::quit();
             return;
         }
@@ -384,18 +327,12 @@ private slots:
     }
     
     void onDatabaseError(const QString &error) {
-        qDebug() << "❌ Database error:" << error;
+        // Database error occurred
     }
     
     void onServiceStarted() {
-        qDebug() << "✅ SCADA Core Service started with database configuration";
-        qDebug() << "Data acquisition and InfluxDB integration active";
-        qDebug();
-        
         // Start multithreading tests if enabled
         if (m_multithreadingEnabled && m_workerManager) {
-            qDebug() << "🚀 Starting multithreaded performance tests...";
-            
             // Start concurrent data acquisition test
             QTimer::singleShot(2000, this, &ScadaServiceTest::runConcurrentDataAcquisitionTest);
             
@@ -411,29 +348,14 @@ private slots:
     }
     
     void onServiceStopped() {
-        qDebug() << "🛑 SCADA Core Service stopped";
-        
-        // Print final statistics
+        // Service stopped - calculate final statistics
         auto stats = m_service->getStatistics();
-        qDebug();
-        qDebug() << "=== Final Service Statistics ===";
-        qDebug() << "Total read operations:" << stats.totalReadOperations;
-        qDebug() << "Successful reads:" << stats.successfulReads;
-        qDebug() << "Failed reads:" << stats.failedReads;
-        qDebug() << "Data points sent to InfluxDB:" << stats.totalDataPointsSent;
-        qDebug() << "Socket errors:" << stats.socketErrors;
-        qDebug() << "Average response time:" << QString::number(stats.averageResponseTime, 'f', 2) << "ms";
-        
         qint64 runtime = QDateTime::currentMSecsSinceEpoch() - stats.serviceStartTime;
-        qDebug() << "Total runtime:" << QString::number(runtime / 1000.0, 'f', 1) << "seconds";
         
         if (stats.totalReadOperations > 0) {
             double successRate = (double)stats.successfulReads / stats.totalReadOperations * 100.0;
-            qDebug() << "Success rate:" << QString::number(successRate, 'f', 1) << "%";
         }
         
-        qDebug();
-        qDebug() << "=== SCADA Core Service Test Complete ===";
         QCoreApplication::quit();
     }
     
@@ -441,32 +363,16 @@ private slots:
         static int dataCount = 0;
         dataCount++;
         
-        if (dataCount % 10 == 0) { // Print every 10th data point to avoid spam
-            if (dataPoint.isValid) {
-                qDebug() << "📊 Data acquired [" << dataCount << "]:" << dataPoint.pointName 
-                         << "=" << dataPoint.value.toString()
-                         << "(" << dataPoint.measurement << ")"
-                         << "Unit ID:" << dataPoint.tags.value("unit_id", "N/A");
-            } else {
-                qDebug() << "❌ Data acquisition failed [" << dataCount << "]:" << dataPoint.pointName 
-                         << "Error:" << dataPoint.errorMessage;
-            }
-        }
-        
         // Update performance metrics
         updatePerformanceMetrics(dataPoint.isValid, 0); // Response time not available here
     }
     
     void onDataPointSentToInflux(const QString &pointName, bool success) {
-        if (success) {
-            qDebug() << "📤 Data sent to InfluxDB:" << pointName;
-        } else {
-            qDebug() << "❌ Failed to send to InfluxDB:" << pointName;
-        }
+        // Data point sent to InfluxDB
     }
     
     void onErrorOccurred(const QString &error) {
-        qDebug() << "⚠️  Service error:" << error;
+        // Service error occurred
     }
     
     void onStatisticsUpdated(const ScadaCoreService::ServiceStatistics &stats) {
@@ -511,62 +417,40 @@ private slots:
     
     // New worker event handlers
     void onWorkerCreated(const QString &deviceKey) {
-        qDebug() << "🔧 Worker created for device:" << deviceKey;
+        // Worker created for device
     }
     
     void onWorkerRemoved(const QString &deviceKey) {
-        qDebug() << "🗑️  Worker removed for device:" << deviceKey;
+        // Worker removed for device
     }
     
     void onGlobalStatisticsUpdated(const ModbusWorkerManager::GlobalStatistics &stats) {
         static int globalUpdateCount = 0;
         globalUpdateCount++;
         
-        // Print global statistics every 5 updates
-        if (globalUpdateCount % 5 == 0) {
-            qDebug() << "🌐 Global Worker Statistics update #" << globalUpdateCount;
-            qDebug() << "   Active workers:" << stats.activeWorkers;
-            qDebug() << "   Connected devices:" << stats.connectedDevices;
-            qDebug() << "   Total requests:" << stats.totalRequests;
-            qDebug() << "   Global avg response time:" << QString::number(stats.globalAverageResponseTime, 'f', 2) << "ms";
-        }
+        // Global statistics updated
     }
     
     void onWorkerReadCompleted(qint64 requestId, const ModbusReadResult &result) {
         updatePerformanceMetrics(result.success, 0); // Response time handled by worker
         
-        if (result.success) {
-            qDebug() << "✅ Worker read completed - Request ID:" << requestId 
-                     << "Value:" << (result.rawData.isEmpty() ? 0 : result.rawData.value(0, 0));
-        } else {
-            qDebug() << "❌ Worker read failed - Request ID:" << requestId 
-                     << "Error:" << result.errorString;
-        }
+        // Worker read operation completed
     }
     
     void onWorkerWriteCompleted(qint64 requestId, const ModbusWriteResult &result) {
         updatePerformanceMetrics(result.success, 0); // Response time handled by worker
         
-        if (result.success) {
-            qDebug() << "✅ Worker write completed - Request ID:" << requestId;
-        } else {
-            qDebug() << "❌ Worker write failed - Request ID:" << requestId 
-                     << "Error:" << result.errorString;
-        }
+        // Worker write operation completed
     }
     
     void onWorkerError(const QString &deviceKey, const QString &error) {
-        qDebug() << "⚠️  Worker error for device" << deviceKey << ":" << error;
+        // Worker error occurred
         updatePerformanceMetrics(false, 0);
     }
 
     void stopTest() {
-        qDebug();
-        qDebug() << "Stopping Enhanced SCADA Core Service test...";
-        
         // Stop multithreading components
         if (m_multithreadingEnabled && m_workerManager) {
-            qDebug() << "🛑 Stopping all workers...";
             m_workerManager->stopAllWorkers();
             m_workerManager->disconnectAllDevices();
             
@@ -591,18 +475,14 @@ private:
             m_resilienceManager->setMaxRetries(3);
             m_resilienceManager->setRetryDelay(1000);
             m_resilienceManager->setConnectionTimeout(5000);
-            
-            qDebug() << "Connection resilience manager configured";
         }
     };
     
     void setupDataPointsFromDatabase() {
-        qDebug() << "Loading data acquisition points from database...";
-        
+        // Load data acquisition points from database
         QVector<DataAcquisitionPoint> dataPoints = m_dbManager->loadDataPoints();
         
         if (dataPoints.isEmpty()) {
-            qDebug() << "❌ No data points loaded from database";
             return;
         }
         
@@ -610,15 +490,6 @@ private:
         for (const auto &point : dataPoints) {
             m_service->addDataPoint(point);
         }
-        
-        qDebug() << "✅ Configured" << m_service->getDataPoints().size() << "data acquisition points from database:";
-        for (const auto &point : m_service->getDataPoints()) {
-            qDebug() << "  -" << point.name << "at" << point.host << ":" << point.port 
-                     << "address" << point.address << "(" << point.measurement << ")"
-                     << "Poll:" << point.pollInterval << "ms"
-                     << "Unit ID:" << point.tags.value("unit_id", "N/A");
-        }
-        qDebug();
     }
     
     // Original members (backward compatibility)
@@ -682,16 +553,11 @@ int main(int argc, char *argv[])
         executionMode = "multiple";
     }
     
-    qDebug() << "Enhanced SCADA Service Test Application";
-    qDebug() << "Version: 2.0";
-    qDebug() << "Build Date:" << __DATE__ << __TIME__;
-    qDebug() << "🚀 Starting SCADA Service Test with Configuration File...";
-    qDebug() << "📋 Execution Mode:" << executionMode;
+    // Enhanced SCADA Service Test Application starting
     
     // Create database manager and load configuration
     DatabaseManager dbManager;
     if (!dbManager.loadConfigurationFromFile("/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/config/config.ini")) {
-        qDebug() << "❌ Failed to load configuration:" << dbManager.lastError();
         return -1;
     }
     
@@ -700,29 +566,23 @@ int main(int argc, char *argv[])
     
     // Connect to database using configuration
     if (!dbManager.connectToDatabase()) {
-        qDebug() << "❌ Database connection failed:" << dbManager.lastError();
         return -1;
     }
     
     // Load Modbus devices from database
     QVector<ModbusDeviceConfig> devices = dbManager.loadModbusDevices();
     if (devices.isEmpty()) {
-        qDebug() << "⚠️  No Modbus devices found in database";
         return -1;
     }
-    
-    qDebug() << "📋 Loaded" << devices.size() << "Modbus devices from database";
     
     // Create SCADA core service
     ScadaCoreService scadaService;
     
     // Load data points from database
     QVector<DataAcquisitionPoint> dataPoints = dbManager.loadDataPoints();
-    qDebug() << "📊 Loaded" << dataPoints.size() << "data acquisition points";
     
     // Optimize Modbus read blocks to reduce TCP connections
     QVector<DataAcquisitionPoint> optimizedDataPoints = dbManager.optimizeModbusReadBlocks(dataPoints);
-    qDebug() << "Optimized to" << optimizedDataPoints.size() << "read blocks";
     
     // Use optimized data points for service
     dataPoints = optimizedDataPoints;
@@ -732,10 +592,7 @@ int main(int argc, char *argv[])
         scadaService.addDataPoint(point);
     }
     
-    qDebug() << "SCADA Core Service Test Application with PostgreSQL Integration";
-    qDebug() << "Qt Version:" << QT_VERSION_STR;
-    qDebug() << "Testing database-driven configuration and InfluxDB integration";
-    qDebug();
+    // SCADA Core Service Test Application with PostgreSQL Integration
     
     ScadaServiceTest test(&scadaService, executionMode);
     

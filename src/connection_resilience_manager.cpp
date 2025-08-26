@@ -37,8 +37,6 @@ ConnectionResilienceManager::~ConnectionResilienceManager()
 
 void ConnectionResilienceManager::configureForPoorConnection()
 {
-    qDebug() << "Configuring system for poor network conditions...";
-    
     // Aggressive timeout settings for poor connections
     m_connectionTimeout = 15000;   // 15 seconds
     m_requestTimeout = 12000;      // 12 seconds per request
@@ -46,33 +44,17 @@ void ConnectionResilienceManager::configureForPoorConnection()
     m_retryDelay = 3000;           // 3 seconds between retries
     m_heartbeatInterval = 20000;   // More frequent heartbeat (20s)
     
-    qDebug() << "Poor connection configuration applied:";
-    qDebug() << "  - Connection timeout:" << m_connectionTimeout << "ms";
-    qDebug() << "  - Request timeout:" << m_requestTimeout << "ms";
-    qDebug() << "  - Max retries:" << m_maxRetries;
-    qDebug() << "  - Retry delay:" << m_retryDelay << "ms";
-    qDebug() << "  - Heartbeat interval:" << m_heartbeatInterval << "ms";
-    
     emit configurationChanged("Poor connection settings applied");
 }
 
 void ConnectionResilienceManager::configureForGoodConnection()
 {
-    qDebug() << "Configuring system for good network conditions...";
-    
     // Standard timeout settings
     m_connectionTimeout = 5000;    // 5 seconds
     m_requestTimeout = 3000;       // 3 seconds per request
     m_maxRetries = 3;              // Standard retries
     m_retryDelay = 1000;           // 1 second between retries
     m_heartbeatInterval = 60000;   // Less frequent heartbeat (60s)
-    
-    qDebug() << "Good connection configuration applied:";
-    qDebug() << "  - Connection timeout:" << m_connectionTimeout << "ms";
-    qDebug() << "  - Request timeout:" << m_requestTimeout << "ms";
-    qDebug() << "  - Max retries:" << m_maxRetries;
-    qDebug() << "  - Retry delay:" << m_retryDelay << "ms";
-    qDebug() << "  - Heartbeat interval:" << m_heartbeatInterval << "ms";
     
     emit configurationChanged("Good connection settings applied");
 }
@@ -104,8 +86,6 @@ void ConnectionResilienceManager::startMonitoring(const QString &host, int port)
     m_targetPort = port;
     m_isMonitoring = true;
     
-    qDebug() << "Starting connection monitoring for" << host << ":" << port;
-    
     // Start quality assessment
     m_qualityTimer->start();
     
@@ -125,8 +105,6 @@ void ConnectionResilienceManager::stopMonitoring()
         return;
     }
     
-    qDebug() << "Stopping connection monitoring";
-    
     m_isMonitoring = false;
     m_heartbeatTimer->stop();
     m_qualityTimer->stop();
@@ -141,10 +119,7 @@ void ConnectionResilienceManager::performHeartbeat()
         return;
     }
     
-    qDebug() << "Performing connection heartbeat...";
-    
     if (!m_modbusManager->isConnected()) {
-        qDebug() << "Connection lost - attempting reconnection";
         attemptReconnection();
         return;
     }
@@ -163,10 +138,7 @@ void ConnectionResilienceManager::attemptReconnection()
     
     m_consecutiveFailures++;
     
-    qDebug() << "Attempting reconnection (attempt" << m_consecutiveFailures << "of" << m_maxRetries << ")";
-    
     if (m_consecutiveFailures >= m_maxRetries) {
-        qDebug() << "Maximum reconnection attempts reached. Switching to poor connection mode.";
         configureForPoorConnection();
         m_consecutiveFailures = 0; // Reset for next cycle
     }
@@ -192,12 +164,9 @@ void ConnectionResilienceManager::retryConnection()
         return;
     }
     
-    qDebug() << "Retrying connection to" << m_targetHost << ":" << m_targetPort;
-    
     bool success = m_modbusManager->connectToServer(m_targetHost, m_targetPort);
     
     if (success) {
-        qDebug() << "Reconnection successful";
         m_consecutiveFailures = 0;
         emit reconnectionSuccessful();
     } else {
