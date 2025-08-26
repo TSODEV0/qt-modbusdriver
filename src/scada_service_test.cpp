@@ -126,9 +126,10 @@ public:
         // Connect to PostgreSQL database using configuration
         qDebug() << "Connecting to PostgreSQL database using configuration...";
         if (!m_dbManager->connectToDatabase()) {
-            qWarning() << "Failed to connect to database, switching to mock mode";
-            m_mockMode = true;
-            startMockTest();
+            qWarning() << "Failed to connect to database. Test cannot proceed without database connection.";
+            QTimer::singleShot(1000, []() {
+                QCoreApplication::quit();
+            });
             return;
         }
         
@@ -319,174 +320,17 @@ public:
         qDebug() << "";
     }
     
-    void startMockTest()
-    {
-        qDebug() << "\n=== Starting Mock Mode Test ===";
-        
-        // Create mock data points
-        QVector<DataAcquisitionPoint> mockPoints = createMockDataPoints();
-        
-        // Initialize SCADA service if not already created
-        if (!m_service) {
-            m_service = new ScadaCoreService(this);
-        }
-        
-        // Connect signals
-        connect(m_service, &ScadaCoreService::dataPointAcquired, this, &ScadaServiceTest::onDataPointAcquired);
-        connect(m_service, &ScadaCoreService::errorOccurred, this, &ScadaServiceTest::onErrorOccurred);
-        
-        // Add mock data points
-        for (const auto &point : mockPoints) {
-            m_service->addDataPoint(point);
-        }
-        
-        // Start service
-        if (m_service->startService()) {
-            qDebug() << "Mock SCADA service started successfully";
-            m_testRunning = true;
-            
-            // Generate mock data
-            startMockDataGeneration();
-            
-            // Start monitoring
-            QTimer::singleShot(5000, this, &ScadaServiceTest::printStatus);
-            
-            // Schedule completion
-            QTimer::singleShot(30000, this, &ScadaServiceTest::completeTest); // Run for 30 seconds in mock mode
-        } else {
-            qWarning() << "Failed to start mock SCADA service";
-            QTimer::singleShot(1000, this, &ScadaServiceTest::completeTest);
-        }
-    }
+
     
-    QVector<DataAcquisitionPoint> createMockDataPoints()
-    {
-        QVector<DataAcquisitionPoint> points;
-        
-        // Create mock data points for testing - using simulation mode
-        DataAcquisitionPoint point1;
-        point1.name = "MOCK_TEMP_001";
-        point1.host = "SIMULATION";
-        point1.port = 0;
-        point1.unitId = 1;
-        point1.address = 1001;
-        point1.dataType = ModbusDataType::HoldingRegister;
-        point1.pollInterval = 2000;
-        point1.enabled = true;
-        point1.measurement = "temperature";
-        point1.tags["device_name"] = "MockDevice1";
-        point1.tags["description"] = "Mock temperature sensor";
-        point1.tags["simulation_mode"] = "true";
-        points.append(point1);
-        
-        DataAcquisitionPoint point2;
-        point2.name = "MOCK_PRESSURE_001";
-        point2.host = "SIMULATION";
-        point2.port = 0;
-        point2.unitId = 1;
-        point2.address = 1002;
-        point2.dataType = ModbusDataType::Float32;
-        point2.pollInterval = 3000;
-        point2.enabled = true;
-        point2.measurement = "pressure";
-        point2.tags["device_name"] = "MockDevice1";
-        point2.tags["description"] = "Mock pressure sensor";
-        point2.tags["simulation_mode"] = "true";
-        points.append(point2);
-        
-        DataAcquisitionPoint point3;
-        point3.name = "MOCK_STATUS_001";
-        point3.host = "SIMULATION";
-        point3.port = 0;
-        point3.unitId = 2;
-        point3.address = 2001;
-        point3.dataType = ModbusDataType::BOOL;
-        point3.pollInterval = 1000;
-        point3.enabled = true;
-        point3.measurement = "status";
-        point3.tags["device_name"] = "MockDevice2";
-        point3.tags["description"] = "Mock status indicator";
-        point3.tags["simulation_mode"] = "true";
-        points.append(point3);
-        
-        return points;
-    }
+
     
-    void startMockDataGeneration()
-    {
-        // This would simulate data acquisition in a real implementation
-        // For now, we rely on the existing polling mechanism
-        qDebug() << "Mock data generation started (simulated by polling mechanism)";
-    }
+
     
-    void printStatus()
-    {
-        if (!m_testRunning) return;
-        
-        qDebug() << "\n=== Status Report ===";
-        qDebug() << "Timestamp:" << QDateTime::currentDateTime().toString();
-        qDebug() << "Mode:" << (m_mockMode ? "Mock" : "Real");
-        
-        if (m_service) {
-            auto stats = m_service->getStatistics();
-            qDebug() << "Total Requests:" << stats.totalReadOperations;
-            qDebug() << "Successful Requests:" << stats.successfulReads;
-            qDebug() << "Failed Requests:" << stats.failedReads;
-            qDebug() << "Average Response Time:" << stats.averageResponseTime << "ms";
-            
-            auto perfMetrics = m_service->getPerformanceMetrics();
-            qDebug() << "Single-threaded Operations:" << perfMetrics.singleThreadedOperations;
-            qDebug() << "Multi-threaded Operations:" << perfMetrics.multiThreadedOperations;
-        }
-        
-        // Schedule next status report
-        if (m_testRunning) {
-            QTimer::singleShot(10000, this, &ScadaServiceTest::printStatus);
-        }
-    }
+
     
-    void completeTest()
-    {
-        qDebug() << "\n=== Test Completion ===";
-        m_testRunning = false;
-        
-        if (m_service) {
-            auto finalStats = m_service->getStatistics();
-            qDebug() << "Final Statistics:";
-            qDebug() << "  Total Requests:" << finalStats.totalReadOperations;
-            qDebug() << "  Successful:" << finalStats.successfulReads;
-            qDebug() << "  Failed:" << finalStats.failedReads;
-            qDebug() << "  Success Rate:" << (finalStats.totalReadOperations > 0 ?
-                        (double)finalStats.successfulReads / finalStats.totalReadOperations * 100 : 0) << "%";
-            qDebug() << "  Average Response Time:" << finalStats.averageResponseTime << "ms";
-            
-            auto perfReport = m_service->getPerformanceReport();
-            qDebug() << "Performance Report:" << perfReport;
-        }
-        
-        qDebug() << "Test completed at" << QDateTime::currentDateTime().toString();
-        
-        // Cleanup and exit
-        QTimer::singleShot(1000, this, &ScadaServiceTest::cleanup);
-    }
+
     
-    void cleanup()
-    {
-        if (m_service) {
-            m_service->stopService();
-            m_service->deleteLater();
-            m_service = nullptr;
-        }
-        
-        if (m_dbManager) {
-            m_dbManager->disconnectFromDatabase();
-            m_dbManager->deleteLater();
-            m_dbManager = nullptr;
-        }
-        
-        qDebug() << "Cleanup completed";
-        QCoreApplication::quit();
-    }
+
 
 private slots:
     void onDatabaseConnected() {
@@ -663,41 +507,7 @@ private slots:
         }
     }
     
-    void testWriteOperationsFromDatabase() {
-        qDebug();
-        qDebug() << "=== Starting Database-Driven Modbus Write & Read Test Operations ===";
-        
-        // Get first device from database for testing
-        QVector<ModbusDeviceConfig> devices = m_dbManager->loadModbusDevices();
-        if (devices.isEmpty()) {
-            qDebug() << "❌ No devices available for write testing";
-            return;
-        }
-        
-        const ModbusDeviceConfig &device = devices.first();
-        const QString host = device.ipAddress;
-        const int port = device.port;
-        
-        qDebug() << "🎯 Using device:" << device.deviceName << "(" << host << ":" << port << ")" 
-                 << "Unit ID:" << device.unitId;
-        
-        // // Test write operations using database configuration
-        // qDebug() << "🔧 Test 1: Writing holding register (address 500, value 1234)";
-        // m_service->writeHoldingRegister(host, port, 500, 1234);
-        
-        // QTimer::singleShot(2000, [this, host, port, device]() {
-        //     qDebug() << "🔧 Test 2: Writing Float32 (address 502, value 25.75)";
-        //     m_service->writeHoldingRegisterFloat32(host, port, 502, 25.75f);
-        // });
-        
-        // QTimer::singleShot(4000, [this, host, port, device]() {
-        //     qDebug() << "🔧 Test 3: Writing coil (address 10, value true)";
-        //     m_service->writeCoil(host, port, 10, true);
-        // });
-        
-        // qDebug() << "Write operations test scheduled using database configuration.";
-        // qDebug();
-    }
+
     
     // New worker event handlers
     void onWorkerCreated(const QString &deviceKey) {
@@ -836,108 +646,7 @@ private:
     QString m_executionMode;
 };
 
-/**
- * Enhanced unit test methods for comprehensive multithreading validation
- */
-class MultithreadedScadaTests : public QObject
-{
-    Q_OBJECT
-    
-public:
-    explicit MultithreadedScadaTests(QObject *parent = nullptr) : QObject(parent) {}
-    
-private slots:
-    void initTestCase() {
-        qDebug() << "🧪 Initializing multithreaded SCADA tests...";
-    }
-    
-    void testConcurrentWorkerCreation() {
-        qDebug() << "🧪 Testing concurrent worker creation...";
-        
-        ModbusWorkerManager manager;
-        QList<QFuture<ModbusWorker*>> futures;
-        
-        // Create multiple workers concurrently
-        for (int i = 0; i < 5; ++i) {
-            QFuture<ModbusWorker*> future = QtConcurrent::run([&manager, i]() {
-                return manager.getOrCreateWorker("127.0.0.1", 502 + i, i + 1);
-            });
-            futures.append(future);
-        }
-        
-        // Wait for all workers to be created
-        QList<ModbusWorker*> workers;
-        for (auto &future : futures) {
-            workers.append(future.result());
-        }
-        
-        Q_ASSERT(workers.size() == 5);
-        Q_ASSERT(manager.getWorkerCount() == 5);
-        
-        qDebug() << "✅ Concurrent worker creation test passed";
-    }
-    
-    void testThreadSafeStatistics() {
-        qDebug() << "🧪 Testing thread-safe statistics...";
-        
-        ModbusWorkerManager manager;
-        ModbusWorker* worker = manager.getOrCreateWorker("127.0.0.1", 502, 1);
-        
-        QList<QFuture<void>> futures;
-        QAtomicInteger<int> operationCount{0};
-        
-        // Perform concurrent statistics updates
-        for (int i = 0; i < 10; ++i) {
-            QFuture<void> future = QtConcurrent::run([worker, &operationCount]() {
-                for (int j = 0; j < 100; ++j) {
-                    // Simulate statistics updates
-                    operationCount.fetchAndAddOrdered(1);
-                    QThread::msleep(1);
-                }
-            });
-            futures.append(future);
-        }
-        
-        // Wait for all operations to complete
-        for (auto &future : futures) {
-            future.waitForFinished();
-        }
-        
-        Q_ASSERT(operationCount.loadAcquire() == 1000);
-        
-        qDebug() << "✅ Thread-safe statistics test passed";
-    }
-    
-    void testWorkerLifecycle() {
-        qDebug() << "🧪 Testing worker lifecycle management...";
-        
-        ModbusWorkerManager manager;
-        QString deviceKey = "127.0.0.1:502:1";
-        
-        // Create worker
-        ModbusWorker* worker = manager.getOrCreateWorker("127.0.0.1", 502, 1);
-        Q_ASSERT(worker != nullptr);
-        Q_ASSERT(manager.getWorkerCount() == 1);
-        
-        // Start worker
-        worker->startWorker();
-        QThread::msleep(100); // Allow worker to start
-        
-        // Stop worker
-        worker->stopWorker();
-        QThread::msleep(100); // Allow worker to stop
-        
-        // Remove worker
-        manager.removeWorker(deviceKey);
-        Q_ASSERT(manager.getWorkerCount() == 0);
-        
-        qDebug() << "✅ Worker lifecycle test passed";
-    }
-    
-    void cleanupTestCase() {
-        qDebug() << "🧪 Cleaning up multithreaded SCADA tests...";
-    }
-};
+
 
 int main(int argc, char *argv[])
 {
@@ -1036,63 +745,6 @@ int main(int argc, char *argv[])
     return app.exec();
 }
 
-/**
- * Enhanced main function to run both traditional and multithreaded SCADA tests
- * Supports command-line arguments for test configuration
- */
-int runEnhancedTests(int argc, char *argv[])
-{
-    QCoreApplication app(argc, argv);
-    
-    qDebug() << "🚀 Starting Enhanced SCADA Service Tests with Multithreading Support";
-    qDebug() << "📊 Test Configuration:";
-    qDebug() << "   - Qt Version:" << QT_VERSION_STR;
-    qDebug() << "   - Thread Pool Max Count:" << QThreadPool::globalInstance()->maxThreadCount();
-    qDebug() << "   - Ideal Thread Count:" << QThread::idealThreadCount();
-    
-    int result = 0;
-    
-    // Parse command line arguments
-    QStringList args = app.arguments();
-    bool runMultithreadedTests = args.contains("--multithreaded") || args.contains("-m");
-    bool runPerformanceTests = args.contains("--performance") || args.contains("-p");
-    bool runAllTests = args.contains("--all") || args.contains("-a");
-    
-    if (runAllTests) {
-        runMultithreadedTests = true;
-        runPerformanceTests = true;
-    }
-    
-    // Run traditional SCADA service test
-    qDebug() << "\n📋 Running Traditional SCADA Service Test...";
-    ScadaServiceTest traditionalTest(false); // Disable multithreading for traditional test
-    traditionalTest.runTest();
-    
-    // Run multithreaded unit tests if requested
-    if (runMultithreadedTests) {
-        qDebug() << "\n🧪 Running Multithreaded Unit Tests...";
-        MultithreadedScadaTests multithreadedTests;
-        result += QTest::qExec(&multithreadedTests, argc, argv);
-    }
-    
-    // Run performance benchmarks if requested
-    if (runPerformanceTests) {
-        qDebug() << "\n⚡ Running Performance Benchmarks...";
-        ScadaServiceTest performanceTest(true); // Enable multithreading
-        performanceTest.runTest();
-    }
-    
-    qDebug() << "\n✅ All SCADA Service Tests Completed";
-    qDebug() << "📈 Test Results Summary:";
-    qDebug() << "   - Traditional Test: Completed";
-    if (runMultithreadedTests) {
-        qDebug() << "   - Multithreaded Tests:" << (result == 0 ? "PASSED" : "FAILED");
-    }
-    if (runPerformanceTests) {
-        qDebug() << "   - Performance Tests: Completed";
-    }
-    
-    return result;
-}
+
 
 #include "scada_service_test.moc"
