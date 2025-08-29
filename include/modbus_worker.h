@@ -12,6 +12,9 @@
 #include <QSemaphore>
 #include "modbusmanager.h"
 
+// Forward declaration
+struct DataAcquisitionPoint;
+
 // Error classification for enhanced error handling
 enum class ModbusErrorType {
     Unknown,
@@ -120,6 +123,10 @@ public:
     void setHeartbeatInterval(int intervalMs);
     int getHeartbeatInterval() const;
     
+    // Data point management methods (getters)
+    QVector<DataAcquisitionPoint> getDataPoints() const;
+    bool isAutomaticPollingEnabled() const;
+    
 public slots:
     // Worker lifecycle (called from worker thread)
     void startWorker();
@@ -139,6 +146,15 @@ public slots:
     // Polling control (thread-safe)
     void setPollInterval(int intervalMs);
     void setPollingEnabled(bool enabled);
+    
+    // Data point management methods (setters - must be slots for cross-thread calls)
+    void setDataPointCount(int count);
+    void addDataPointByName(const QString &pointName, const QString &host, int port, int unitId, int address, int dataType, int pollInterval, const QString &measurement, bool enabled);
+    void removeDataPoint(const QString &pointName);
+    void clearDataPoints();
+    
+    // Data point polling control
+    void enableAutomaticPolling(bool enabled);
     
 signals:
     // Request completion signals (emitted from worker thread)
@@ -242,6 +258,12 @@ private:
     QTimer *m_heartbeatTimer;        // Timer for periodic heartbeats
     qint64 m_lastHeartbeatTime;      // Last heartbeat timestamp
     static const int DEFAULT_HEARTBEAT_INTERVAL = 30000;  // 30 seconds
+    
+    // Data point management for automatic polling
+    mutable QMutex m_dataPointsMutex;
+    QVector<DataAcquisitionPoint> m_dataPoints;
+    QMap<QString, qint64> m_lastPollTimes;  // Track last poll time for each data point
+    bool m_automaticPollingEnabled;         // Enable/disable automatic data point polling
     
     // Connection coordination
     static QSemaphore s_connectionSemaphore;                 // Limit simultaneous connections

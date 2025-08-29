@@ -38,8 +38,9 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     qRegisterMetaType<ModbusReadResult>("ModbusReadResult");
     qRegisterMetaType<ModbusWriteResult>("ModbusWriteResult");
     qRegisterMetaType<ModbusWorker::WorkerStatistics>("ModbusWorker::WorkerStatistics");
-    qRegisterMetaType<ModbusWorkerManager::GlobalStatistics>("ModbusWorkerManager::GlobalStatistics");
     qRegisterMetaType<DataAcquisitionPoint>("DataAcquisitionPoint");
+    qRegisterMetaType<QVector<DataAcquisitionPoint>>("QVector<DataAcquisitionPoint>");
+    qRegisterMetaType<ModbusWorkerManager::GlobalStatistics>("ModbusWorkerManager::GlobalStatistics");
     qRegisterMetaType<AcquiredDataPoint>("AcquiredDataPoint");
     qRegisterMetaType<RequestPriority>("RequestPriority");
     
@@ -143,6 +144,17 @@ bool ScadaCoreService::startService()
             uniqueDevices.insert(deviceKey);
         }
         
+        // Create workers and assign data points to each
+        QMap<QString, QVector<DataAcquisitionPoint>> deviceDataPoints;
+        
+        // Group data points by device
+        for (const auto &point : m_dataPoints) {
+            QString unitIdStr = point.tags.value("unit_id", "1");
+            int unitId = unitIdStr.toInt();
+            QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitId);
+            deviceDataPoints[deviceKey].append(point);
+        }
+        
         for (const QString &deviceKey : uniqueDevices) {
             QStringList parts = deviceKey.split(":");
             if (parts.size() >= 3) {
@@ -153,6 +165,35 @@ bool ScadaCoreService::startService()
                 ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, unitId);
                 if (worker) {
                     connectWorkerSignals(worker);
+                    
+                    // Assign data points to this worker
+                    if (deviceDataPoints.contains(deviceKey)) {
+                        const QVector<DataAcquisitionPoint> &points = deviceDataPoints[deviceKey];
+                        
+                        // Set data point count first
+                        QMetaObject::invokeMethod(worker, "setDataPointCount", Qt::QueuedConnection,
+                                                  Q_ARG(int, points.size()));
+                        
+                        // Add each data point individually
+                        for (const auto &point : points) {
+                            QMetaObject::invokeMethod(worker, "addDataPointByName", Qt::QueuedConnection,
+                                                      Q_ARG(QString, point.name),
+                                                      Q_ARG(QString, point.host),
+                                                      Q_ARG(int, point.port),
+                                                      Q_ARG(int, point.unitId),
+                                                      Q_ARG(int, point.address),
+                                                      Q_ARG(int, static_cast<int>(point.dataType)),
+                                                      Q_ARG(int, point.pollInterval),
+                                                      Q_ARG(QString, point.measurement),
+                                                      Q_ARG(bool, point.enabled));
+                        }
+                        
+                        // Enable automatic polling for this worker
+                        QMetaObject::invokeMethod(worker, "enableAutomaticPolling", Qt::QueuedConnection,
+                                                  Q_ARG(bool, true));
+                        
+                        qDebug() << "Assigned" << points.size() << "data points to worker" << deviceKey;
+                    }
                 }
             }
         }
@@ -173,18 +214,19 @@ bool ScadaCoreService::startService()
     // Allow time for connections to establish before starting polling
     qDebug() << "Allowing 2 seconds for worker connections to establish...";
     QTimer::singleShot(2000, this, [this]() {
-        // Optimize and start polling timer based on threading mode
-        optimizePollInterval();
-        
-        // Add debug output for timer interval
-        qDebug() << "Poll timer interval before start:" << m_pollTimer->interval() << "ms";
-        m_pollTimer->start();
-        qDebug() << "Poll timer started. Active:" << m_pollTimer->isActive() << "Interval:" << m_pollTimer->interval() << "ms";
-        
         if (m_useSingleThreadedMode) {
+            // Single-threaded mode: use ScadaCoreService poll timer
+            optimizePollInterval();
+            
+            // Add debug output for timer interval
+            qDebug() << "Poll timer interval before start:" << m_pollTimer->interval() << "ms";
+            m_pollTimer->start();
+            qDebug() << "Poll timer started. Active:" << m_pollTimer->isActive() << "Interval:" << m_pollTimer->interval() << "ms";
             qDebug() << "Started optimized single-threaded polling timer";
         } else {
-            qDebug() << "Started polling timer with" << m_workerManager->getActiveDevices().size() << "active workers";
+            // Multi-threaded mode: workers handle their own polling, don't start ScadaCoreService poll timer
+            qDebug() << "Multi-threaded mode: Workers handle polling independently. ScadaCoreService poll timer disabled.";
+            qDebug() << "Active workers:" << m_workerManager->getActiveDevices().size();
             
             // Add service-level polling backup mechanism for multi-device mode
             QTimer::singleShot(5000, this, [this]() {
@@ -1581,38 +1623,56 @@ bool ScadaCoreService::writeToInfluxEnhanced(const AcquiredDataPoint &dataPoint)
         return false;
     }
     
-    // Sanitize tag values by removing spaces
+    // Sanitize measurement name by removing spaces
     QString sanitizedMeasurement = dataPoint.measurement;
     sanitizedMeasurement.replace(" ", "_");
     
-    QString deviceName = dataPoint.tags.value("device_name", "STATION_TEST");
-    deviceName.replace(" ", "_");
+    // Helper function to sanitize tag values
+    auto sanitizeTagValue = [](const QString &value) -> QString {
+        QString sanitized = value;
+        sanitized.replace(" ", "_");
+        sanitized.replace(",", "_");
+        sanitized.replace("=", "_");
+        return sanitized;
+    };
     
-    QString dataType = dataPoint.tags.value("data_type", "Int16");
-    dataType.replace(" ", "_");
-    
-    QString readMode = dataPoint.tags.value("read_mode", "single_register");
-    readMode.replace(" ", "_");
-    
+    // Extract and sanitize ONLY the 8 mandatory tags for InfluxDB
     QString address = dataPoint.tags.value("address", "0");
+    QString dataType = sanitizeTagValue(dataPoint.tags.value("data_type", "UNKNOWN"));
+    QString dataTypePriority = dataPoint.tags.value("data_type_priority", "5");
+    QString description = sanitizeTagValue(dataPoint.tags.value("description", QString("SCADA_point_%1").arg(address)));
+    QString deviceName = sanitizeTagValue(dataPoint.tags.value("device_name", "UNKNOWN_DEVICE"));
+    QString originalAddress = dataPoint.tags.value("original_address", address);
+    QString tagName = sanitizeTagValue(dataPoint.tags.value("tag_name", dataPoint.pointName));
+    QString unitId = dataPoint.tags.value("unit_id", "1");
     
-    QString description = dataPoint.tags.value("description", QString("CURRENT_RTU_%1").arg(address));
-    description.replace(" ", "_");
+    // Create InfluxDB line protocol with ONLY the 8 mandatory tags (filtered)
+    // Format: measurement,tag1=value1,tag2=value2,... field=value timestamp
+    QString line = QString("%1,address=%2,data_type=%3,data_type_priority=%4,description=%5,device_name=%6,original_address=%7,tag_name=%8,unit_id=%9 value=%10")
+                   .arg(sanitizedMeasurement)
+                   .arg(address)
+                   .arg(dataType)
+                   .arg(dataTypePriority)
+                   .arg(description)
+                   .arg(deviceName)
+                   .arg(originalAddress)
+                   .arg(tagName)
+                   .arg(unitId)
+                   .arg(dataPoint.value.toString());
     
-    // Create enhanced InfluxDB line protocol with all required tags
-    QString line = QString("%1,device_name=%2,data_type=%3,read_mode=%4,address=%5,description=%6 value=%7")
-                   .arg(sanitizedMeasurement, deviceName, dataType, readMode, address, description, dataPoint.value.toString());
+    // Only send the 8 mandatory tags to InfluxDB - no additional tags
+    // This ensures optimal performance and prevents metadata pollution
     
     line += "\n";
     
     bool success = writeToTelegrafSocket(m_telegrafSocketPath, line.toUtf8());
-    qDebug() << "Enhanced InfluxDB line:" << line;
+    qDebug() << "Optimized InfluxDB line with mandatory tags:" << line.trimmed();
     
     if (!success) {
-        qDebug() << "Failed to write enhanced data to InfluxDB for" << dataPoint.pointName;
+        qDebug() << "Failed to write optimized data to InfluxDB for" << dataPoint.pointName;
         m_statistics.socketErrors++;
     } else {
-        qDebug() << "Successfully wrote enhanced data to InfluxDB:" << line;
+        qDebug() << "Successfully wrote optimized data to InfluxDB:" << line.trimmed();
         m_statistics.totalDataPointsSent++;
     }
     
@@ -2081,61 +2141,103 @@ bool ScadaCoreService::isPointCoveredByBlock(const DataAcquisitionPoint &point)
 
 void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, const DataAcquisitionPoint &sourcePoint)
 {
-    // Ensure address tag is always set (critical for InfluxDB mapping)
+    // Helper function to get data type priority based on ModbusDataType
+    auto getDataTypePriority = [](ModbusDataType dataType) -> int {
+        switch (dataType) {
+            case ModbusDataType::Float32:
+            case ModbusDataType::Double64:
+                return 1; // Highest priority for floating point data
+            case ModbusDataType::Long32:
+            case ModbusDataType::Long64:
+                return 2; // High priority for 32/64-bit integers
+            case ModbusDataType::HoldingRegister:
+            case ModbusDataType::InputRegister:
+                return 3; // Medium priority for 16-bit registers
+            case ModbusDataType::BOOL:
+            case ModbusDataType::Coil:
+            case ModbusDataType::DiscreteInput:
+                return 4; // Lower priority for boolean/discrete data
+            default:
+                return 5; // Lowest priority for unknown types
+        }
+    };
+    
+    // Helper function to get standardized data type string
+    auto getDataTypeString = [](ModbusDataType dataType) -> QString {
+        switch (dataType) {
+            case ModbusDataType::HoldingRegister:
+                return "INT16";
+            case ModbusDataType::InputRegister:
+                return "INPUT_REGISTER";
+            case ModbusDataType::Coil:
+                return "COIL";
+            case ModbusDataType::DiscreteInput:
+                return "DISCRETE_INPUT";
+            case ModbusDataType::BOOL:
+                return "BOOL";
+            case ModbusDataType::Float32:
+                return "FLOAT32";
+            case ModbusDataType::Double64:
+                return "DOUBLE64";
+            case ModbusDataType::Long32:
+                return "INT32";
+            case ModbusDataType::Long64:
+                return "INT64";
+            default:
+                return "UNKNOWN";
+        }
+    };
+    
+    // MANDATORY TAG 1: address - Ensure address tag is always set (critical for InfluxDB mapping)
     if (!dataPoint.tags.contains("address") || dataPoint.tags["address"].isEmpty()) {
         dataPoint.tags["address"] = QString::number(sourcePoint.address);
         qDebug() << "WARNING: Missing address tag detected and fixed for point:" << dataPoint.pointName;
     }
     
-    // Ensure device_name tag is set
+    // MANDATORY TAG 2: data_type - Ensure data_type tag is set
+    if (!dataPoint.tags.contains("data_type") || dataPoint.tags["data_type"].isEmpty()) {
+        dataPoint.tags["data_type"] = getDataTypeString(sourcePoint.dataType);
+        qDebug() << "WARNING: Missing data_type tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // MANDATORY TAG 3: data_type_priority - Set priority based on data type
+    if (!dataPoint.tags.contains("data_type_priority") || dataPoint.tags["data_type_priority"].isEmpty()) {
+        dataPoint.tags["data_type_priority"] = QString::number(getDataTypePriority(sourcePoint.dataType));
+        qDebug() << "WARNING: Missing data_type_priority tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // MANDATORY TAG 4: description - Ensure description tag is set (use point name as fallback)
+    if (!dataPoint.tags.contains("description") || dataPoint.tags["description"].isEmpty()) {
+        dataPoint.tags["description"] = sourcePoint.name.isEmpty() ? dataPoint.pointName : sourcePoint.name;
+        qDebug() << "WARNING: Missing description tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // MANDATORY TAG 5: device_name - Ensure device_name tag is set
     if (!dataPoint.tags.contains("device_name") || dataPoint.tags["device_name"].isEmpty()) {
         dataPoint.tags["device_name"] = sourcePoint.host;
         qDebug() << "WARNING: Missing device_name tag detected and fixed for point:" << dataPoint.pointName;
     }
     
-    // Ensure data_type tag is set
-    if (!dataPoint.tags.contains("data_type") || dataPoint.tags["data_type"].isEmpty()) {
-        QString dataTypeStr;
-        switch (sourcePoint.dataType) {
-            case ModbusDataType::HoldingRegister:
-                dataTypeStr = "INT16";
-                break;
-            case ModbusDataType::InputRegister:
-                dataTypeStr = "INPUT_REGISTER";
-                break;
-            case ModbusDataType::Coil:
-                dataTypeStr = "COIL";
-                break;
-            case ModbusDataType::DiscreteInput:
-                dataTypeStr = "DISCRETE_INPUT";
-                break;
-            case ModbusDataType::BOOL:
-                dataTypeStr = "BOOL";
-                break;
-            case ModbusDataType::Float32:
-                dataTypeStr = "FLOAT32";
-                break;
-            case ModbusDataType::Double64:
-                dataTypeStr = "DOUBLE64";
-                break;
-            case ModbusDataType::Long32:
-                dataTypeStr = "INT32";
-                break;
-            case ModbusDataType::Long64:
-                dataTypeStr = "INT64";
-                break;
-            default:
-                dataTypeStr = "UNKNOWN";
-                break;
-        }
-        dataPoint.tags["data_type"] = dataTypeStr;
-        qDebug() << "WARNING: Missing data_type tag detected and fixed for point:" << dataPoint.pointName;
+    // MANDATORY TAG 6: original_address - Store the original address before any transformations
+    if (!dataPoint.tags.contains("original_address") || dataPoint.tags["original_address"].isEmpty()) {
+        // If we have the original address in source tags, use it; otherwise use current address + 1 (convert back to 1-based)
+        QString originalAddr = sourcePoint.tags.value("original_address", QString::number(sourcePoint.address + 1));
+        dataPoint.tags["original_address"] = originalAddr;
+        qDebug() << "WARNING: Missing original_address tag detected and fixed for point:" << dataPoint.pointName;
     }
     
-    // Ensure description tag is set (use point name as fallback)
-    if (!dataPoint.tags.contains("description") || dataPoint.tags["description"].isEmpty()) {
-        dataPoint.tags["description"] = sourcePoint.name.isEmpty() ? dataPoint.pointName : sourcePoint.name;
-        qDebug() << "WARNING: Missing description tag detected and fixed for point:" << dataPoint.pointName;
+    // MANDATORY TAG 7: tag_name - Ensure tag_name is set
+    if (!dataPoint.tags.contains("tag_name") || dataPoint.tags["tag_name"].isEmpty()) {
+        // Extract tag name from point name or use the point name itself
+        QString tagName = sourcePoint.tags.value("tag_name", dataPoint.pointName);
+        dataPoint.tags["tag_name"] = tagName;
+        qDebug() << "WARNING: Missing tag_name tag detected and fixed for point:" << dataPoint.pointName;
+    }
+    
+    // MANDATORY TAG 8: unit_id - Ensure unit_id tag is set
+    if (!dataPoint.tags.contains("unit_id") || dataPoint.tags["unit_id"].isEmpty()) {
+        dataPoint.tags["unit_id"] = QString::number(sourcePoint.unitId);
+        qDebug() << "WARNING: Missing unit_id tag detected and fixed for point:" << dataPoint.pointName;
     }
     
     // Copy any additional tags from source point
@@ -2145,11 +2247,12 @@ void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, co
         }
     }
     
-    // Validate that critical tags are not empty after setting
-    QStringList criticalTags = {"address", "device_name", "data_type", "description"};
-    for (const QString &tag : criticalTags) {
+    // Validate that all mandatory tags are not empty after setting
+    QStringList mandatoryTags = {"address", "data_type", "data_type_priority", "description", 
+                                "device_name", "original_address", "tag_name", "unit_id"};
+    for (const QString &tag : mandatoryTags) {
         if (!dataPoint.tags.contains(tag) || dataPoint.tags[tag].isEmpty()) {
-            qWarning() << "CRITICAL: Tag validation failed for" << tag << "in point:" << dataPoint.pointName;
+            qWarning() << "CRITICAL: Mandatory tag validation failed for" << tag << "in point:" << dataPoint.pointName;
         }
     }
 }
@@ -2277,23 +2380,10 @@ void ScadaCoreService::onWorkerCreated(const QString &deviceKey)
 {
     qDebug() << "🔧 Worker created for device:" << deviceKey;
     
-    // Start and connect the newly created worker
+    // Worker is already started and connected by ModbusWorkerManager
+    // No need to call startWorker() or connectToDevice() again
+    
     if (m_workerManager) {
-        // Get the worker and start it
-        QStringList parts = deviceKey.split(":");
-        if (parts.size() >= 3) {
-            QString host = parts[0];
-            int port = parts[1].toInt();
-            int unitId = parts[2].toInt();
-            
-            ModbusWorker* worker = m_workerManager->getOrCreateWorker(host, port, unitId);
-            if (worker) {
-                worker->startWorker();
-                worker->connectToDevice();
-                qDebug() << "   Started and connected worker for device:" << deviceKey;
-            }
-        }
-        
         auto stats = m_workerManager->getGlobalStatistics();
         qDebug() << "   Total active workers:" << stats.activeWorkers;
         qDebug() << "   Total successful requests:" << stats.totalSuccessfulRequests;

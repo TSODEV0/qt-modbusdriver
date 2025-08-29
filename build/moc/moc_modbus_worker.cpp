@@ -72,6 +72,20 @@ constexpr auto qt_meta_stringdata_CLASSModbusWorkerENDCLASS = QtMocHelpers::stri
     "intervalMs",
     "setPollingEnabled",
     "enabled",
+    "setDataPointCount",
+    "count",
+    "addDataPointByName",
+    "pointName",
+    "host",
+    "port",
+    "unitId",
+    "address",
+    "dataType",
+    "pollInterval",
+    "measurement",
+    "removeDataPoint",
+    "clearDataPoints",
+    "enableAutomaticPolling",
     "onRequestTimeout",
     "processRequestQueue",
     "onPollTimer",
@@ -85,7 +99,7 @@ constexpr auto qt_meta_stringdata_CLASSModbusWorkerENDCLASS = QtMocHelpers::stri
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSModbusWorkerENDCLASS_t {
-    uint offsetsAndSizes[88];
+    uint offsetsAndSizes[116];
     char stringdata0[13];
     char stringdata1[14];
     char stringdata2[1];
@@ -120,16 +134,30 @@ struct qt_meta_stringdata_CLASSModbusWorkerENDCLASS_t {
     char stringdata31[11];
     char stringdata32[18];
     char stringdata33[8];
-    char stringdata34[17];
-    char stringdata35[20];
-    char stringdata36[12];
-    char stringdata37[22];
-    char stringdata38[23];
-    char stringdata39[31];
-    char stringdata40[14];
-    char stringdata41[15];
-    char stringdata42[19];
-    char stringdata43[17];
+    char stringdata34[18];
+    char stringdata35[6];
+    char stringdata36[19];
+    char stringdata37[10];
+    char stringdata38[5];
+    char stringdata39[5];
+    char stringdata40[7];
+    char stringdata41[8];
+    char stringdata42[9];
+    char stringdata43[13];
+    char stringdata44[12];
+    char stringdata45[16];
+    char stringdata46[16];
+    char stringdata47[23];
+    char stringdata48[17];
+    char stringdata49[20];
+    char stringdata50[12];
+    char stringdata51[22];
+    char stringdata52[23];
+    char stringdata53[31];
+    char stringdata54[14];
+    char stringdata55[15];
+    char stringdata56[19];
+    char stringdata57[17];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSModbusWorkerENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -169,16 +197,30 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusWorkerENDCLASS_t qt_meta_
         QT_MOC_LITERAL(438, 10),  // "intervalMs"
         QT_MOC_LITERAL(449, 17),  // "setPollingEnabled"
         QT_MOC_LITERAL(467, 7),  // "enabled"
-        QT_MOC_LITERAL(475, 16),  // "onRequestTimeout"
-        QT_MOC_LITERAL(492, 19),  // "processRequestQueue"
-        QT_MOC_LITERAL(512, 11),  // "onPollTimer"
-        QT_MOC_LITERAL(524, 21),  // "onModbusReadCompleted"
-        QT_MOC_LITERAL(546, 22),  // "onModbusWriteCompleted"
-        QT_MOC_LITERAL(569, 30),  // "onModbusConnectionStateChanged"
-        QT_MOC_LITERAL(600, 13),  // "onModbusError"
-        QT_MOC_LITERAL(614, 14),  // "onBatchTimeout"
-        QT_MOC_LITERAL(629, 18),  // "onHealthCheckTimer"
-        QT_MOC_LITERAL(648, 16)   // "onHeartbeatTimer"
+        QT_MOC_LITERAL(475, 17),  // "setDataPointCount"
+        QT_MOC_LITERAL(493, 5),  // "count"
+        QT_MOC_LITERAL(499, 18),  // "addDataPointByName"
+        QT_MOC_LITERAL(518, 9),  // "pointName"
+        QT_MOC_LITERAL(528, 4),  // "host"
+        QT_MOC_LITERAL(533, 4),  // "port"
+        QT_MOC_LITERAL(538, 6),  // "unitId"
+        QT_MOC_LITERAL(545, 7),  // "address"
+        QT_MOC_LITERAL(553, 8),  // "dataType"
+        QT_MOC_LITERAL(562, 12),  // "pollInterval"
+        QT_MOC_LITERAL(575, 11),  // "measurement"
+        QT_MOC_LITERAL(587, 15),  // "removeDataPoint"
+        QT_MOC_LITERAL(603, 15),  // "clearDataPoints"
+        QT_MOC_LITERAL(619, 22),  // "enableAutomaticPolling"
+        QT_MOC_LITERAL(642, 16),  // "onRequestTimeout"
+        QT_MOC_LITERAL(659, 19),  // "processRequestQueue"
+        QT_MOC_LITERAL(679, 11),  // "onPollTimer"
+        QT_MOC_LITERAL(691, 21),  // "onModbusReadCompleted"
+        QT_MOC_LITERAL(713, 22),  // "onModbusWriteCompleted"
+        QT_MOC_LITERAL(736, 30),  // "onModbusConnectionStateChanged"
+        QT_MOC_LITERAL(767, 13),  // "onModbusError"
+        QT_MOC_LITERAL(781, 14),  // "onBatchTimeout"
+        QT_MOC_LITERAL(796, 18),  // "onHealthCheckTimer"
+        QT_MOC_LITERAL(815, 16)   // "onHeartbeatTimer"
     },
     "ModbusWorker",
     "readCompleted",
@@ -214,6 +256,20 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusWorkerENDCLASS_t qt_meta_
     "intervalMs",
     "setPollingEnabled",
     "enabled",
+    "setDataPointCount",
+    "count",
+    "addDataPointByName",
+    "pointName",
+    "host",
+    "port",
+    "unitId",
+    "address",
+    "dataType",
+    "pollInterval",
+    "measurement",
+    "removeDataPoint",
+    "clearDataPoints",
+    "enableAutomaticPolling",
     "onRequestTimeout",
     "processRequestQueue",
     "onPollTimer",
@@ -235,7 +291,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerENDCLASS[] = {
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      29,   14, // methods
+      34,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -243,37 +299,42 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerENDCLASS[] = {
        9,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    2,  188,    2, 0x06,    1 /* Public */,
-       6,    2,  193,    2, 0x06,    4 /* Public */,
-       8,    2,  198,    2, 0x06,    7 /* Public */,
-      11,    2,  203,    2, 0x06,   10 /* Public */,
-      13,    3,  208,    2, 0x06,   13 /* Public */,
-      16,    2,  215,    2, 0x06,   17 /* Public */,
-      18,    2,  220,    2, 0x06,   20 /* Public */,
-      21,    1,  225,    2, 0x06,   23 /* Public */,
-      22,    1,  228,    2, 0x06,   25 /* Public */,
+       1,    2,  218,    2, 0x06,    1 /* Public */,
+       6,    2,  223,    2, 0x06,    4 /* Public */,
+       8,    2,  228,    2, 0x06,    7 /* Public */,
+      11,    2,  233,    2, 0x06,   10 /* Public */,
+      13,    3,  238,    2, 0x06,   13 /* Public */,
+      16,    2,  245,    2, 0x06,   17 /* Public */,
+      18,    2,  250,    2, 0x06,   20 /* Public */,
+      21,    1,  255,    2, 0x06,   23 /* Public */,
+      22,    1,  258,    2, 0x06,   25 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      23,    0,  231,    2, 0x0a,   27 /* Public */,
-      24,    0,  232,    2, 0x0a,   28 /* Public */,
-      25,    0,  233,    2, 0x0a,   29 /* Public */,
-      26,    0,  234,    2, 0x0a,   30 /* Public */,
-      27,    0,  235,    2, 0x0a,   31 /* Public */,
-      28,    1,  236,    2, 0x0a,   32 /* Public */,
-      28,    0,  239,    2, 0x2a,   34 /* Public | MethodCloned */,
-      29,    0,  240,    2, 0x0a,   35 /* Public */,
-      30,    1,  241,    2, 0x0a,   36 /* Public */,
-      32,    1,  244,    2, 0x0a,   38 /* Public */,
-      34,    0,  247,    2, 0x08,   40 /* Private */,
-      35,    0,  248,    2, 0x08,   41 /* Private */,
-      36,    0,  249,    2, 0x08,   42 /* Private */,
-      37,    1,  250,    2, 0x08,   43 /* Private */,
-      38,    1,  253,    2, 0x08,   45 /* Private */,
-      39,    1,  256,    2, 0x08,   47 /* Private */,
-      40,    1,  259,    2, 0x08,   49 /* Private */,
-      41,    0,  262,    2, 0x08,   51 /* Private */,
-      42,    0,  263,    2, 0x08,   52 /* Private */,
-      43,    0,  264,    2, 0x08,   53 /* Private */,
+      23,    0,  261,    2, 0x0a,   27 /* Public */,
+      24,    0,  262,    2, 0x0a,   28 /* Public */,
+      25,    0,  263,    2, 0x0a,   29 /* Public */,
+      26,    0,  264,    2, 0x0a,   30 /* Public */,
+      27,    0,  265,    2, 0x0a,   31 /* Public */,
+      28,    1,  266,    2, 0x0a,   32 /* Public */,
+      28,    0,  269,    2, 0x2a,   34 /* Public | MethodCloned */,
+      29,    0,  270,    2, 0x0a,   35 /* Public */,
+      30,    1,  271,    2, 0x0a,   36 /* Public */,
+      32,    1,  274,    2, 0x0a,   38 /* Public */,
+      34,    1,  277,    2, 0x0a,   40 /* Public */,
+      36,    9,  280,    2, 0x0a,   42 /* Public */,
+      45,    1,  299,    2, 0x0a,   52 /* Public */,
+      46,    0,  302,    2, 0x0a,   54 /* Public */,
+      47,    1,  303,    2, 0x0a,   55 /* Public */,
+      48,    0,  306,    2, 0x08,   57 /* Private */,
+      49,    0,  307,    2, 0x08,   58 /* Private */,
+      50,    0,  308,    2, 0x08,   59 /* Private */,
+      51,    1,  309,    2, 0x08,   60 /* Private */,
+      52,    1,  312,    2, 0x08,   62 /* Private */,
+      53,    1,  315,    2, 0x08,   64 /* Private */,
+      54,    1,  318,    2, 0x08,   66 /* Private */,
+      55,    0,  321,    2, 0x08,   68 /* Private */,
+      56,    0,  322,    2, 0x08,   69 /* Private */,
+      57,    0,  323,    2, 0x08,   70 /* Private */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::LongLong, 0x80000000 | 4,    3,    5,
@@ -296,6 +357,11 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::Int,   31,
+    QMetaType::Void, QMetaType::Bool,   33,
+    QMetaType::Void, QMetaType::Int,   35,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::Int, QMetaType::QString, QMetaType::Bool,   37,   38,   39,   40,   41,   42,   43,   44,   33,
+    QMetaType::Void, QMetaType::QString,   37,
+    QMetaType::Void,
     QMetaType::Void, QMetaType::Bool,   33,
     QMetaType::Void,
     QMetaType::Void,
@@ -378,6 +444,28 @@ Q_CONSTINIT const QMetaObject ModbusWorker::staticMetaObject = { {
         // method 'setPollingEnabled'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'setDataPointCount'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        // method 'addDataPointByName'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<int, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'removeDataPoint'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'clearDataPoints'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'enableAutomaticPolling'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         // method 'onRequestTimeout'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'processRequestQueue'
@@ -431,16 +519,21 @@ void ModbusWorker::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id
         case 16: _t->clearRequestQueue(); break;
         case 17: _t->setPollInterval((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
         case 18: _t->setPollingEnabled((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 19: _t->onRequestTimeout(); break;
-        case 20: _t->processRequestQueue(); break;
-        case 21: _t->onPollTimer(); break;
-        case 22: _t->onModbusReadCompleted((*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[1]))); break;
-        case 23: _t->onModbusWriteCompleted((*reinterpret_cast< std::add_pointer_t<ModbusWriteResult>>(_a[1]))); break;
-        case 24: _t->onModbusConnectionStateChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 25: _t->onModbusError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 26: _t->onBatchTimeout(); break;
-        case 27: _t->onHealthCheckTimer(); break;
-        case 28: _t->onHeartbeatTimer(); break;
+        case 19: _t->setDataPointCount((*reinterpret_cast< std::add_pointer_t<int>>(_a[1]))); break;
+        case 20: _t->addDataPointByName((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[5])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[6])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[7])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[8])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[9]))); break;
+        case 21: _t->removeDataPoint((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 22: _t->clearDataPoints(); break;
+        case 23: _t->enableAutomaticPolling((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 24: _t->onRequestTimeout(); break;
+        case 25: _t->processRequestQueue(); break;
+        case 26: _t->onPollTimer(); break;
+        case 27: _t->onModbusReadCompleted((*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[1]))); break;
+        case 28: _t->onModbusWriteCompleted((*reinterpret_cast< std::add_pointer_t<ModbusWriteResult>>(_a[1]))); break;
+        case 29: _t->onModbusConnectionStateChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 30: _t->onModbusError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 31: _t->onBatchTimeout(); break;
+        case 32: _t->onHealthCheckTimer(); break;
+        case 33: _t->onHeartbeatTimer(); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -541,13 +634,13 @@ int ModbusWorker::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 29)
+        if (_id < 34)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 29;
+        _id -= 34;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 29)
+        if (_id < 34)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 29;
+        _id -= 34;
     }
     return _id;
 }

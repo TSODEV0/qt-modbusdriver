@@ -425,6 +425,17 @@ void ScadaCoreService::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int
         case 23: _t->onSingleThreadReadCompleted((*reinterpret_cast< std::add_pointer_t<ModbusReadResult>>(_a[1]))); break;
         default: ;
         }
+    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
+        switch (_id) {
+        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+        case 2:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< AcquiredDataPoint >(); break;
+            }
+            break;
+        }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
         {
@@ -538,7 +549,7 @@ int ScadaCoreService::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
         _id -= 24;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         if (_id < 24)
-            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
+            qt_static_metacall(this, _c, _id, _a);
         _id -= 24;
     }
     return _id;

@@ -38,6 +38,7 @@ struct DataAcquisitionPoint {
     DataAcquisitionPoint() : port(502), address(0), unitId(1), dataType(ModbusDataType::HoldingRegister), 
                            pollInterval(1000), enabled(true) {}
 };
+Q_DECLARE_METATYPE(DataAcquisitionPoint)
 
 // Data point with timestamp and value
 struct AcquiredDataPoint {
@@ -51,6 +52,7 @@ struct AcquiredDataPoint {
     
     AcquiredDataPoint() : timestamp(0), isValid(false) {}
 };
+Q_DECLARE_METATYPE(AcquiredDataPoint)
 
 class ScadaCoreService : public QObject
 {

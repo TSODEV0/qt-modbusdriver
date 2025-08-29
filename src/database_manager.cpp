@@ -205,16 +205,33 @@ QVector<DataAcquisitionPoint> DatabaseManager::loadDataPoints()
                 point.dataType = ModbusDataType::HoldingRegister; // Default
             }
             
-            // Set tags
-            point.tags["device_name"] = deviceName;
-            point.tags["tag_name"] = tagName;
-            point.tags["description"] = description;
+            // Set all mandatory InfluxDB tags from database fields
+            point.tags["address"] = QString::number(point.address);  // MANDATORY: Current address (0-based)
+            point.tags["data_type"] = dataTypeStr;  // MANDATORY: Data type from database
+            
+            // Calculate data_type_priority based on data type
+            int dataTypePriority = 5; // Default to lowest priority
+            if (dataTypeStr == "FLOAT32" || dataTypeStr == "Float32" || dataTypeStr == "DOUBLE" || dataTypeStr == "Double64") {
+                dataTypePriority = 1; // Highest priority for floating point
+            } else if (dataTypeStr == "INT32" || dataTypeStr == "Int32" || dataTypeStr == "INT64" || dataTypeStr == "Int64") {
+                dataTypePriority = 2; // High priority for 32/64-bit integers
+            } else if (dataTypeStr == "INT16" || dataTypeStr == "Int16") {
+                dataTypePriority = 3; // Medium priority for 16-bit registers
+            } else if (dataTypeStr == "BOOL" || dataTypeStr == "Bool" || dataTypeStr == "COIL" || dataTypeStr == "Coil" || dataTypeStr == "DISCRETE_INPUT" || dataTypeStr == "DiscreteInput") {
+                dataTypePriority = 4; // Lower priority for boolean/discrete
+            }
+            point.tags["data_type_priority"] = QString::number(dataTypePriority);  // MANDATORY: Priority based on data type
+            
+            point.tags["description"] = description.isEmpty() ? tagName : description;  // MANDATORY: Description with fallback
+            point.tags["device_name"] = deviceName;  // MANDATORY: Device name from database
+            point.tags["original_address"] = QString::number(query.value("register_address").toInt());  // MANDATORY: Original 1-based address from database
+            point.tags["tag_name"] = tagName;  // MANDATORY: Tag name from database
+            point.tags["unit_id"] = query.value("unit_id").toString();  // MANDATORY: Unit ID from database
+            
+            // Additional non-mandatory tags for compatibility and extended functionality
             point.tags["register_type"] = registerType;
-            point.tags["data_type"] = dataTypeStr;  // Add data_type tag for combined conditions
-            point.tags["unit_id"] = query.value("unit_id").toString();
             point.tags["protocol_type"] = query.value("protocol_type").toString();
             point.tags["station_name"] = "field_site";
-            point.tags["address"] = QString::number(point.address);  // Add address tag to prevent default "0" in InfluxDB
             
             dataPoints.append(point);
         }

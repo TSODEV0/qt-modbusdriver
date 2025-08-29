@@ -89,7 +89,7 @@ ModbusWorker* ModbusWorkerManager::getOrCreateWorker(const QString& host, int po
         // Stagger worker startup to prevent resource contention
         // Each new worker gets a slightly delayed start with proper synchronization
         int workerCount = m_workers.size();
-        int startupDelay = qMax(500, workerCount * 300); // Minimum 500ms, 300ms delay per existing worker
+        int startupDelay = qMax(200, workerCount * 100); // Minimum 200ms, 100ms delay per existing worker
         
         QTimer::singleShot(startupDelay, this, [this, worker, deviceKey]() {
             QMutexLocker locker(&m_workersMutex);

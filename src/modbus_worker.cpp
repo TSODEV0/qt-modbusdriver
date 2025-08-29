@@ -1,4 +1,5 @@
 #include "modbus_worker.h"
+#include "scada_core_service.h"  // For DataAcquisitionPoint
 #include <QThread>
 #include <QTimer>
 #include <QDebug>
@@ -8,8 +9,8 @@
 #include <QDateTime>
 #include <QMutexLocker>
 
-// Initialize static semaphore to allow max 2 simultaneous connections
-QSemaphore ModbusWorker::s_connectionSemaphore(2);
+// Initialize static semaphore to allow max 8 simultaneous connections for multi-device SCADA
+QSemaphore ModbusWorker::s_connectionSemaphore(8);
 
 // ModbusWorker Implementation
 ModbusWorker::ModbusWorker(const QString& host, int port, int unitId, QObject* parent)
@@ -49,6 +50,7 @@ ModbusWorker::ModbusWorker(const QString& host, int port, int unitId, QObject* p
     , m_heartbeatInterval(DEFAULT_HEARTBEAT_INTERVAL)
     , m_heartbeatTimer(nullptr)
     , m_lastHeartbeatTime(0)
+    , m_automaticPollingEnabled(false)
 {
     // Initialize statistics
     m_statistics.totalRequests = 0;
@@ -72,18 +74,7 @@ void ModbusWorker::initializeTimers()
     if (!m_requestTimeoutTimer) {
         m_requestTimeoutTimer = new QTimer(this);
         m_requestTimeoutTimer->setSingleShot(true);
-        connect(m_requestTimeoutTimer, &QTimer::timeout, this, [this]() {
-            if (m_requestInProgress) {
-                completeCurrentRequest(false, "Request timeout");
-                
-                if (m_statistics.isConnected) {
-                    disconnectFromDevice();
-                    QTimer::singleShot(1000, this, [this]() {
-                        connectToDevice();
-                    });
-                }
-            }
-        });
+        connect(m_requestTimeoutTimer, &QTimer::timeout, this, &ModbusWorker::onRequestTimeout);
         // Request timeout timer created
     }
     
@@ -156,6 +147,8 @@ void ModbusWorker::connectToDevice()
     // Attempt connection with proper error handling
     bool connectionResult = m_modbusManager->connectToServer(m_host, m_port);
     if (!connectionResult) {
+        // Release semaphore on immediate connection failure
+        s_connectionSemaphore.release();
         handleConnectionFailure("Failed to initiate connection");
         return;
     }
@@ -490,10 +483,7 @@ void ModbusWorker::onModbusConnectionStateChanged(bool connected)
         qDebug() << "ModbusWorker - Connection successful, reset backoff strategy for:" << m_deviceKey;
         // No need to manually manage polling timer here - setPollingEnabled() handles it properly
         // Connection established, normal polling operations will resume automatically
-        
-        // Release connection semaphore on successful connection
-        s_connectionSemaphore.release();
-        qDebug() << "ModbusWorker - Released connection semaphore for connected device:" << m_deviceKey;
+        // Note: Semaphore is NOT released on successful connection - it stays acquired while connected
     }
     
     emit connectionStateChanged(m_deviceKey, connected);
@@ -660,6 +650,11 @@ void ModbusWorker::onPollTimer()
     // Reset reconnection delay when connected
     if (isConnected()) {
         m_reconnectionDelay = 1000;
+    }
+    
+    // Generate automatic polling requests if enabled
+    if (m_automaticPollingEnabled) {
+        generateAutomaticPollingRequests();
     }
     
     // Process any queued requests only when properly connected
@@ -920,9 +915,8 @@ void ModbusWorker::handleConnectionFailure(const QString& errorMessage)
     qDebug() << "ModbusWorker::handleConnectionFailure() - Connection attempt" << m_connectionAttempts
              << "failed for device:" << m_deviceKey << "- Error:" << errorMessage;
     
-    // Release connection semaphore immediately on any connection failure
-    s_connectionSemaphore.release();
-    qDebug() << "ModbusWorker - Released connection semaphore after connection failure for device:" << m_deviceKey;
+    // Note: Connection semaphore is already released in connectToDevice() for immediate failures
+    // or will be released in onModbusConnectionStateChanged() for connection state changes
     
     // Use health monitoring to determine reconnection strategy
     if (m_healthMonitoringEnabled && shouldAttemptReconnection()) {
@@ -1015,17 +1009,72 @@ bool ModbusWorker::hasHigherPriorityRequest(RequestPriority currentPriority) con
 
 void ModbusWorker::generateAutomaticPollingRequests()
 {
-    // This method can be extended to automatically generate polling requests
-    // based on configured data points for this specific device
-    // For now, it serves as a placeholder for future enhancement
+    if (!m_automaticPollingEnabled || !isConnected()) {
+        return;
+    }
     
-    // Example implementation would:
-    // 1. Check if there are configured data points for this device
-    // 2. Generate read requests based on poll intervals
-    // 3. Queue the requests with appropriate priority
+    QMutexLocker locker(&m_dataPointsMutex);
     
-    // This functionality is currently handled by ScadaCoreService
-    // but could be moved here for better encapsulation
+    if (m_dataPoints.isEmpty()) {
+        return;
+    }
+    
+    qint64 currentTime = QDateTime::currentMSecsSinceEpoch();
+    
+    // Process each data point for polling
+    for (const auto &point : m_dataPoints) {
+        if (!point.enabled) {
+            continue;
+        }
+        
+        // Check if it's time to poll this data point
+        qint64 lastPollTime = m_lastPollTimes.value(point.name, 0);
+        if (currentTime - lastPollTime < point.pollInterval) {
+            continue;
+        }
+        
+        // Create ModbusRequest for this data point
+        ModbusRequest request;
+        request.startAddress = point.address;
+        request.count = 1;
+        request.unitId = point.unitId;
+        request.dataType = point.dataType;
+        
+        // Determine Modbus function based on data type
+        switch (point.dataType) {
+        case ModbusDataType::HoldingRegister:
+        case ModbusDataType::Float32:
+        case ModbusDataType::Double64:
+        case ModbusDataType::Long32:
+        case ModbusDataType::Long64:
+            request.type = ModbusRequest::ReadHoldingRegisters;
+            if (point.dataType == ModbusDataType::Float32) {
+                request.count = 2; // Float32 requires 2 registers
+            } else if (point.dataType == ModbusDataType::Double64 || point.dataType == ModbusDataType::Long64) {
+                request.count = 4; // Double64/Long64 requires 4 registers
+            }
+            break;
+        case ModbusDataType::InputRegister:
+            request.type = ModbusRequest::ReadInputRegisters;
+            break;
+        case ModbusDataType::Coil:
+            request.type = ModbusRequest::ReadCoils;
+            break;
+        case ModbusDataType::DiscreteInput:
+        case ModbusDataType::BOOL:
+            request.type = ModbusRequest::ReadDiscreteInputs;
+            break;
+        }
+        
+        // Queue the request with normal priority
+        qint64 requestId = queueReadRequest(request, RequestPriority::Normal);
+        
+        // Update last poll time
+        m_lastPollTimes[point.name] = currentTime;
+        
+        qDebug() << "ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point:" 
+                 << point.name << "address:" << point.address << "requestId:" << requestId;
+    }
 }
 
 void ModbusWorker::adjustAdaptivePollInterval(bool success)
@@ -1251,6 +1300,21 @@ void ModbusWorker::onRequestTimeout()
         
         // Emit classified error for request timeout
         emitClassifiedError(timeoutReason);
+        
+        // Enhanced timeout recovery: disconnect and reconnect if connection appears stale
+        if (m_statistics.isConnected && m_workerRunning && !m_stopRequested) {
+            qDebug() << "ModbusWorker::onRequestTimeout() - Initiating connection recovery for device:" << m_deviceKey;
+            disconnectFromDevice();
+            
+            // Schedule reconnection with progressive delay based on consecutive failures
+            int recoveryDelay = qMin(1000 + (m_consecutiveFailures * 500), 5000); // 1s to 5s max
+            QTimer::singleShot(recoveryDelay, this, [this]() {
+                if (m_workerRunning && !m_stopRequested && !m_statistics.isConnected) {
+                    qDebug() << "ModbusWorker::onRequestTimeout() - Executing recovery reconnection for device:" << m_deviceKey;
+                    connectToDevice();
+                }
+            });
+        }
     }
 }
 
@@ -1296,6 +1360,13 @@ ModbusErrorType ModbusWorker::classifyError(const QString &errorMessage) const
     }
     if (lowerError.contains("request timeout")) {
         return ModbusErrorType::RequestTimeout;
+    }
+    
+    // Connection initiation failures
+    if (lowerError.contains("failed to initiate connection") || 
+        lowerError.contains("initiate connection") ||
+        lowerError.contains("connection failed")) {
+        return ModbusErrorType::ConnectionRefused;
     }
     
     return ModbusErrorType::Unknown;
@@ -1394,4 +1465,85 @@ void ModbusWorker::emitClassifiedError(const QString &errorMessage)
     
     qDebug() << "ModbusWorker::emitClassifiedError() - Device:" << m_deviceKey 
              << "Error Type:" << errorTypeName << "Message:" << errorMessage;
+}
+
+// Data point management methods
+void ModbusWorker::setDataPointCount(int count)
+{
+    QMutexLocker locker(&m_dataPointsMutex);
+    m_dataPoints.clear();
+    m_dataPoints.reserve(count);
+    m_lastPollTimes.clear();
+    
+    qDebug() << "ModbusWorker::setDataPointCount() - Reserved space for" << count << "data points for worker" << m_deviceKey;
+}
+
+void ModbusWorker::addDataPointByName(const QString &name, const QString &host, int port, int unitId, 
+                                      int address, int dataType, int pollInterval, 
+                                      const QString &measurement, bool enabled)
+{
+    QMutexLocker locker(&m_dataPointsMutex);
+    
+    DataAcquisitionPoint dataPoint;
+    dataPoint.name = name;
+    dataPoint.host = host;
+    dataPoint.port = port;
+    dataPoint.unitId = unitId;
+    dataPoint.address = address;
+    dataPoint.dataType = static_cast<ModbusDataType>(dataType);
+    dataPoint.pollInterval = pollInterval;
+    dataPoint.measurement = measurement;
+    dataPoint.enabled = enabled;
+    
+    // Check if point already exists
+    for (int i = 0; i < m_dataPoints.size(); ++i) {
+        if (m_dataPoints[i].name == name) {
+            m_dataPoints[i] = dataPoint;
+            qDebug() << "ModbusWorker::addDataPointByName() - Updated existing data point:" << name << "for worker" << m_deviceKey;
+            return;
+        }
+    }
+    
+    m_dataPoints.append(dataPoint);
+    m_lastPollTimes[name] = 0;
+    qDebug() << "ModbusWorker::addDataPointByName() - Added new data point:" << name << "for worker" << m_deviceKey;
+}
+
+void ModbusWorker::removeDataPoint(const QString &pointName)
+{
+    QMutexLocker locker(&m_dataPointsMutex);
+    
+    for (int i = 0; i < m_dataPoints.size(); ++i) {
+        if (m_dataPoints[i].name == pointName) {
+            m_dataPoints.removeAt(i);
+            m_lastPollTimes.remove(pointName);
+            qDebug() << "ModbusWorker::removeDataPoint() - Removed data point:" << pointName << "from worker" << m_deviceKey;
+            return;
+        }
+    }
+}
+
+QVector<DataAcquisitionPoint> ModbusWorker::getDataPoints() const
+{
+    QMutexLocker locker(&m_dataPointsMutex);
+    return m_dataPoints;
+}
+
+void ModbusWorker::clearDataPoints()
+{
+    QMutexLocker locker(&m_dataPointsMutex);
+    m_dataPoints.clear();
+    m_lastPollTimes.clear();
+    qDebug() << "ModbusWorker::clearDataPoints() - Cleared all data points for worker" << m_deviceKey;
+}
+
+void ModbusWorker::enableAutomaticPolling(bool enabled)
+{
+    m_automaticPollingEnabled = enabled;
+    qDebug() << "ModbusWorker::enableAutomaticPolling() - Automatic polling" << (enabled ? "enabled" : "disabled") << "for worker" << m_deviceKey;
+}
+
+bool ModbusWorker::isAutomaticPollingEnabled() const
+{
+    return m_automaticPollingEnabled;
 }
