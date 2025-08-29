@@ -149,7 +149,7 @@ public slots:
     
     // Data point management methods (setters - must be slots for cross-thread calls)
     void setDataPointCount(int count);
-    void addDataPointByName(const QString &pointName, const QString &host, int port, int unitId, int address, int dataType, int pollInterval, const QString &measurement, bool enabled);
+    void addDataPointByName(const QString &pointName, const QString &host, int port, int unitId, int address, int dataType, int pollInterval, const QString &measurement, bool enabled, const QVariantMap &tags = QVariantMap());
     void removeDataPoint(const QString &pointName);
     void clearDataPoints();
     

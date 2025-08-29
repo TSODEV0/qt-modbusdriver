@@ -56,11 +56,12 @@ constexpr auto qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS = QtMocHelper
     "connected",
     "onWorkerStatisticsUpdated",
     "ModbusWorkerTypes::WorkerStatistics",
-    "updateGlobalStatistics"
+    "updateGlobalStatistics",
+    "handleDelayedStartup"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS_t {
-    uint offsetsAndSizes[38];
+    uint offsetsAndSizes[40];
     char stringdata0[20];
     char stringdata1[14];
     char stringdata2[1];
@@ -80,6 +81,7 @@ struct qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS_t {
     char stringdata16[26];
     char stringdata17[36];
     char stringdata18[23];
+    char stringdata19[21];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -103,7 +105,8 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS_t q
         QT_MOC_LITERAL(239, 9),  // "connected"
         QT_MOC_LITERAL(249, 25),  // "onWorkerStatisticsUpdated"
         QT_MOC_LITERAL(275, 35),  // "ModbusWorkerTypes::WorkerStat..."
-        QT_MOC_LITERAL(311, 22)   // "updateGlobalStatistics"
+        QT_MOC_LITERAL(311, 22),  // "updateGlobalStatistics"
+        QT_MOC_LITERAL(334, 20)   // "handleDelayedStartup"
     },
     "ModbusWorkerManager",
     "workerCreated",
@@ -123,7 +126,8 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSModbusWorkerManagerENDCLASS_t q
     "connected",
     "onWorkerStatisticsUpdated",
     "ModbusWorkerTypes::WorkerStatistics",
-    "updateGlobalStatistics"
+    "updateGlobalStatistics",
+    "handleDelayedStartup"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -135,7 +139,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerManagerENDCLASS[] = 
       12,       // revision
        0,       // classname
        0,    0, // classinfo
-      12,   14, // methods
+      13,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -143,20 +147,21 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerManagerENDCLASS[] = 
        3,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   86,    2, 0x06,    1 /* Public */,
-       4,    1,   89,    2, 0x06,    3 /* Public */,
-       5,    1,   92,    2, 0x06,    5 /* Public */,
+       1,    1,   92,    2, 0x06,    1 /* Public */,
+       4,    1,   95,    2, 0x06,    3 /* Public */,
+       5,    1,   98,    2, 0x06,    5 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-       8,    0,   95,    2, 0x0a,    7 /* Public */,
-       9,    0,   96,    2, 0x0a,    8 /* Public */,
-      10,    0,   97,    2, 0x0a,    9 /* Public */,
-      11,    0,   98,    2, 0x0a,   10 /* Public */,
-      12,    1,   99,    2, 0x08,   11 /* Private */,
-      13,    1,  102,    2, 0x08,   13 /* Private */,
-      14,    2,  105,    2, 0x08,   15 /* Private */,
-      16,    2,  110,    2, 0x08,   18 /* Private */,
-      18,    0,  115,    2, 0x08,   21 /* Private */,
+       8,    0,  101,    2, 0x0a,    7 /* Public */,
+       9,    0,  102,    2, 0x0a,    8 /* Public */,
+      10,    0,  103,    2, 0x0a,    9 /* Public */,
+      11,    0,  104,    2, 0x0a,   10 /* Public */,
+      12,    1,  105,    2, 0x08,   11 /* Private */,
+      13,    1,  108,    2, 0x08,   13 /* Private */,
+      14,    2,  111,    2, 0x08,   15 /* Private */,
+      16,    2,  116,    2, 0x08,   18 /* Private */,
+      18,    0,  121,    2, 0x08,   21 /* Private */,
+      19,    1,  122,    2, 0x08,   22 /* Private */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::QString,    3,
@@ -173,6 +178,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSModbusWorkerManagerENDCLASS[] = 
     QMetaType::Void, QMetaType::QString, QMetaType::Bool,    3,   15,
     QMetaType::Void, QMetaType::QString, 0x80000000 | 17,    3,    7,
     QMetaType::Void,
+    QMetaType::Void, QMetaType::QString,    3,
 
        0        // eod
 };
@@ -218,7 +224,10 @@ Q_CONSTINIT const QMetaObject ModbusWorkerManager::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         QtPrivate::TypeAndForceComplete<const ModbusWorkerTypes::WorkerStatistics &, std::false_type>,
         // method 'updateGlobalStatistics'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'handleDelayedStartup'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
     >,
     nullptr
 } };
@@ -241,6 +250,7 @@ void ModbusWorkerManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, 
         case 9: _t->onWorkerConnectionStateChanged((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<bool>>(_a[2]))); break;
         case 10: _t->onWorkerStatisticsUpdated((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<ModbusWorkerTypes::WorkerStatistics>>(_a[2]))); break;
         case 11: _t->updateGlobalStatistics(); break;
+        case 12: _t->handleDelayedStartup((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -288,13 +298,13 @@ int ModbusWorkerManager::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 12)
+        if (_id < 13)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 12;
+        _id -= 13;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 12)
+        if (_id < 13)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 12;
+        _id -= 13;
     }
     return _id;
 }

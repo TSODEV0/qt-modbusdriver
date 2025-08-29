@@ -20,38 +20,9 @@
 #include "modbusmanager.h"
 #include "modbus_worker.h"
 #include "modbus_worker_manager.h"
+#include "data_processing_task.h"
 
-// Configuration structure for data acquisition points
-struct DataAcquisitionPoint {
-    QString id;                      // Unique point identifier
-    QString name;                    // Point name/identifier
-    QString host;                    // Modbus server host
-    int port;                        // Modbus server port
-    int address;                     // Register address
-    int unitId;                      // Modbus unit ID
-    ModbusDataType dataType;         // Data type
-    int pollInterval;                // Polling interval in milliseconds
-    QString measurement;             // InfluxDB measurement name
-    QMap<QString, QString> tags;     // InfluxDB tags
-    bool enabled;                    // Enable/disable this point
-    
-    DataAcquisitionPoint() : port(502), address(0), unitId(1), dataType(ModbusDataType::HoldingRegister), 
-                           pollInterval(1000), enabled(true) {}
-};
 Q_DECLARE_METATYPE(DataAcquisitionPoint)
-
-// Data point with timestamp and value
-struct AcquiredDataPoint {
-    QString pointName;
-    QVariant value;
-    qint64 timestamp;
-    QString measurement;
-    QMap<QString, QString> tags;
-    bool isValid;
-    QString errorMessage;
-    
-    AcquiredDataPoint() : timestamp(0), isValid(false) {}
-};
 Q_DECLARE_METATYPE(AcquiredDataPoint)
 
 class ScadaCoreService : public QObject
@@ -184,6 +155,13 @@ public:
     void enablePerformanceMonitoring(bool enabled);
     bool isPerformanceMonitoringEnabled() const;
     
+    // Parallel data processing control
+    void enableParallelProcessing(bool enabled);
+    bool isParallelProcessingEnabled() const;
+    void setParallelProcessingThreads(int maxThreads);
+    int getParallelProcessingThreads() const;
+    int getActiveProcessingTasks() const;
+    
     // Modbus write operations with priority support
     qint64 writeHoldingRegister(const QString &host, int port, int address, quint16 value, RequestPriority priority = RequestPriority::Normal);
     qint64 writeHoldingRegisterFloat32(const QString &host, int port, int address, float value, RequestPriority priority = RequestPriority::Normal);
@@ -229,6 +207,10 @@ private slots:
     void onWorkerRemoved(const QString &deviceKey);
     void onGlobalStatisticsUpdated(const ModbusWorkerManager::GlobalStatistics &stats);
     
+    // Parallel data processing slots
+    void onParallelProcessingCompleted(qint64 requestId, const AcquiredDataPoint &dataPoint, const QString &deviceKey);
+    void onParallelProcessingFailed(qint64 requestId, const QString &errorMessage, const QString &deviceKey);
+    
     // Single-threaded mode handlers
     void onSingleThreadReadCompleted(const ModbusReadResult &result);
     // Socket connection methods removed (using direct Unix socket calls)
@@ -269,6 +251,10 @@ private:
     mutable QMutex m_dataPointsMutex;        // Protects m_dataPoints and related data
     mutable QMutex m_statisticsMutex;        // Protects m_statistics and m_responseTimers
     mutable QMutex m_requestTrackingMutex;   // Protects request tracking maps
+    
+    // Parallel data processing
+    ParallelDataProcessor *m_dataProcessor;  // Parallel data processing coordinator
+    bool m_parallelProcessingEnabled;        // Enable/disable parallel processing
     
     // Threading configuration
     ThreadingMode m_threadingMode;

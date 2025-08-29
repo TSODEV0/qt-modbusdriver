@@ -421,6 +421,8 @@ void ModbusWorker::onModbusReadCompleted(const ModbusReadResult& result)
             handleHeartbeatResponse(true);
         } else {
             // Normal read request
+            qDebug() << "🔧 ModbusWorker emitting readCompleted signal - Request ID:" << m_currentRequest.requestId 
+                     << "Device:" << m_deviceKey << "Address:" << result.startAddress << "Priority:" << (int)m_currentRequest.priority;
             emit readCompleted(m_currentRequest.requestId, result);
         }
         
@@ -688,6 +690,10 @@ void ModbusWorker::executeRequest(const PriorityModbusRequest &request)
     }
     
     const ModbusRequest &req = request.request;
+    
+    // Debug: Log the actual request count being executed
+    qDebug() << "[ModbusWorker::executeRequest] Executing request with count:" << req.count 
+             << "address:" << req.startAddress << "type:" << static_cast<int>(req.type);
     
     switch (req.type) {
         case ModbusRequest::ReadHoldingRegisters:
@@ -1036,9 +1042,42 @@ void ModbusWorker::generateAutomaticPollingRequests()
         // Create ModbusRequest for this data point
         ModbusRequest request;
         request.startAddress = point.address;
-        request.count = 1;
+        request.count = 1; // Default to single register
         request.unitId = point.unitId;
         request.dataType = point.dataType;
+        
+        // Check if this is an optimized block read
+        bool isBlockRead = point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read";
+        
+        if (isBlockRead) {
+            // Extract block size from tags
+            int blockSize = point.tags["block_size"].toInt();
+            
+            qDebug() << "=== WORKER BLOCK DEBUG ===";
+            qDebug() << "Block point name:" << point.name;
+            qDebug() << "Block size tag exists:" << point.tags.contains("block_size");
+            qDebug() << "Block size raw value:" << point.tags["block_size"];
+            qDebug() << "Block size converted:" << blockSize;
+            qDebug() << "==============================";
+            
+            // Limit block size to maximum of 125 registers as per Modbus specification
+            if (blockSize > 125) {
+                qWarning() << "Block size" << blockSize << "exceeds maximum limit of 125 registers for point" << point.name
+                          << "- limiting to 125 registers";
+                blockSize = 125;
+            }
+            
+            if (blockSize > 0) {
+                request.count = blockSize;
+                qDebug() << "🔧 Worker block read:" << point.name << "Address:" << point.address 
+                         << "Block Size:" << blockSize << "Unit ID:" << point.unitId;
+                qDebug() << "✅ BLOCK REQUEST COUNT SET TO:" << request.count;
+            } else {
+                qWarning() << "Invalid block size" << blockSize << "for point" << point.name << "- using single register read";
+                request.count = 1;
+                qDebug() << "❌ BLOCK REQUEST COUNT SET TO:" << request.count << "(fallback)";
+            }
+        }
         
         // Determine Modbus function based on data type
         switch (point.dataType) {
@@ -1048,10 +1087,13 @@ void ModbusWorker::generateAutomaticPollingRequests()
         case ModbusDataType::Long32:
         case ModbusDataType::Long64:
             request.type = ModbusRequest::ReadHoldingRegisters;
-            if (point.dataType == ModbusDataType::Float32) {
-                request.count = 2; // Float32 requires 2 registers
-            } else if (point.dataType == ModbusDataType::Double64 || point.dataType == ModbusDataType::Long64) {
-                request.count = 4; // Double64/Long64 requires 4 registers
+            // Only override count for individual data type requirements if not a block read
+            if (!isBlockRead) {
+                if (point.dataType == ModbusDataType::Float32) {
+                    request.count = 2; // Float32 requires 2 registers
+                } else if (point.dataType == ModbusDataType::Double64 || point.dataType == ModbusDataType::Long64) {
+                    request.count = 4; // Double64/Long64 requires 4 registers
+                }
             }
             break;
         case ModbusDataType::InputRegister:
@@ -1065,6 +1107,9 @@ void ModbusWorker::generateAutomaticPollingRequests()
             request.type = ModbusRequest::ReadDiscreteInputs;
             break;
         }
+        
+        // Debug: Show final request count before queuing
+        qDebug() << "📤 FINAL REQUEST COUNT BEFORE QUEUE:" << request.count << "for point:" << point.name;
         
         // Queue the request with normal priority
         qint64 requestId = queueReadRequest(request, RequestPriority::Normal);
@@ -1480,7 +1525,7 @@ void ModbusWorker::setDataPointCount(int count)
 
 void ModbusWorker::addDataPointByName(const QString &name, const QString &host, int port, int unitId, 
                                       int address, int dataType, int pollInterval, 
-                                      const QString &measurement, bool enabled)
+                                      const QString &measurement, bool enabled, const QVariantMap &tags)
 {
     QMutexLocker locker(&m_dataPointsMutex);
     
@@ -1494,6 +1539,11 @@ void ModbusWorker::addDataPointByName(const QString &name, const QString &host, 
     dataPoint.pollInterval = pollInterval;
     dataPoint.measurement = measurement;
     dataPoint.enabled = enabled;
+    
+    // Convert QVariantMap back to QMap<QString, QString>
+    for (auto it = tags.constBegin(); it != tags.constEnd(); ++it) {
+        dataPoint.tags[it.key()] = it.value().toString();
+    }
     
     // Check if point already exists
     for (int i = 0; i < m_dataPoints.size(); ++i) {

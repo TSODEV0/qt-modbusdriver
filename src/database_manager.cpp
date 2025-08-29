@@ -403,6 +403,13 @@ QVector<DataAcquisitionPoint> DatabaseManager::optimizeModbusReadBlocks(const QV
                 optimizedBlock.tags["original_descriptions"] = originalDescriptions.join(",");
                 optimizedBlock.tags["original_measurements"] = originalMeasurements.join(",");
                 
+                qDebug() << "=== BLOCK CREATION DEBUG ===";
+                qDebug() << "Created optimized block:" << optimizedBlock.name;
+                qDebug() << "Start address:" << startAddress << "End address:" << endAddress;
+                qDebug() << "Block size:" << blockSize << "Original points:" << (j-i);
+                qDebug() << "Block tags:" << optimizedBlock.tags;
+                qDebug() << "==============================";
+                
                 optimizedPoints.append(optimizedBlock);
                 
                 // Optimized block created

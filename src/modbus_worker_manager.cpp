@@ -53,10 +53,13 @@ ModbusWorker* ModbusWorkerManager::getOrCreateWorker(const QString& host, int po
         
         auto it = m_workers.find(deviceKey);
         if (it != m_workers.end()) {
+            qDebug() << "🔄 ModbusWorkerManager::getOrCreateWorker() - Reusing existing worker for device:" << deviceKey;
             return it.value().worker;
         }
         
-        // Create new worker
+        qDebug() << "🆕 ModbusWorkerManager::getOrCreateWorker() - Creating new worker for device:" << deviceKey;
+        
+        // Create new worker but defer initialization until delayed startup
         worker = new ModbusWorker(host, port, unitId);
         
         QThread* thread = new QThread(this);
@@ -66,42 +69,32 @@ ModbusWorker* ModbusWorkerManager::getOrCreateWorker(const QString& host, int po
         info.thread = thread;
         info.isConnected = false;
         
-        // Move worker to thread
-        worker->moveToThread(thread);
-        
-        // Connect signals
-        connectWorkerSignals(worker);
-        
-        // Store worker info
+        // Store worker info but don't initialize yet
         m_workers[deviceKey] = info;
         
-        // Start thread
-        thread->start();
-        
-        // Initialize timers in the worker thread (must be done after moveToThread)
-        // Use BlockingQueuedConnection to ensure proper initialization sequence
-        QMetaObject::invokeMethod(worker, "initializeTimers", Qt::BlockingQueuedConnection);
-        
-        // Set default poll interval for new worker
-        QMetaObject::invokeMethod(worker, "setPollInterval", Qt::BlockingQueuedConnection,
-                                  Q_ARG(int, m_defaultPollInterval));
+        qDebug() << "🆕 ModbusWorkerManager::getOrCreateWorker() - Worker created but not initialized for device:" << deviceKey;
         
         // Stagger worker startup to prevent resource contention
         // Each new worker gets a slightly delayed start with proper synchronization
         int workerCount = m_workers.size();
         int startupDelay = qMax(200, workerCount * 100); // Minimum 200ms, 100ms delay per existing worker
         
-        QTimer::singleShot(startupDelay, this, [this, worker, deviceKey]() {
-            QMutexLocker locker(&m_workersMutex);
-            if (m_workers.contains(deviceKey) && m_workers[deviceKey].worker == worker) {
-                QMetaObject::invokeMethod(worker, "startWorker", Qt::BlockingQueuedConnection);
-            }
+        qDebug() << "⏰ ModbusWorkerManager setting up delayed startup timer for device:" << deviceKey << "delay:" << startupDelay << "ms";
+        
+        // Store pending startup info
+        m_pendingStartups[deviceKey] = {worker, deviceKey};
+        
+        // Use QTimer::singleShot with slot method instead of lambda
+        QTimer::singleShot(startupDelay, this, [this, deviceKey]() {
+            qDebug() << "🚀 TIMER SLOT - ModbusWorkerManager executing delayed startup for device:" << deviceKey;
+            handleDelayedStartup(deviceKey);
         });
     }
     
-    // Emit signals and update statistics outside the mutex lock to avoid deadlock
-    emit workerCreated(deviceKey);
-    updateGlobalStatistics();
+    // Update statistics for existing workers
+    if (worker != nullptr) {
+        updateGlobalStatistics();
+    }
     
     return worker;
 }
@@ -542,5 +535,56 @@ void ModbusWorkerManager::rebalanceWorkerLoads()
         if (newInterval < 500) newInterval = 500; // Minimum interval
         setWorkerPollInterval(deviceKey, newInterval);
         qDebug() << "Decreased poll interval for underloaded worker:" << deviceKey;
+    }
+}
+
+void ModbusWorkerManager::handleDelayedStartup(const QString &deviceKey)
+{
+    qDebug() << "🚀 ModbusWorkerManager executing delayed startup for device:" << deviceKey;
+    
+    QMutexLocker pendingLocker(&m_pendingStartupsMutex);
+    if (!m_pendingStartups.contains(deviceKey)) {
+        qDebug() << "⚠️ No pending startup found for device:" << deviceKey;
+        return;
+    }
+    
+    PendingStartup startup = m_pendingStartups.take(deviceKey);
+    pendingLocker.unlock();
+    
+    QMutexLocker locker(&m_workersMutex);
+    if (m_workers.contains(deviceKey) && m_workers[deviceKey].worker == startup.worker) {
+        ModbusWorker* worker = startup.worker;
+        QThread* thread = m_workers[deviceKey].thread;
+        
+        // Now perform the actual worker initialization that was deferred
+        qDebug() << "🔧 ModbusWorkerManager initializing worker for device:" << deviceKey;
+        
+        // Move worker to thread
+        worker->moveToThread(thread);
+        
+        // Connect signals
+        connectWorkerSignals(worker);
+        
+        // Start thread
+        thread->start();
+        
+        // Initialize timers in the worker thread (must be done after moveToThread)
+        // Use BlockingQueuedConnection to ensure proper initialization sequence
+        QMetaObject::invokeMethod(worker, "initializeTimers", Qt::BlockingQueuedConnection);
+        
+        // Set default poll interval for new worker
+        QMetaObject::invokeMethod(worker, "setPollInterval", Qt::BlockingQueuedConnection,
+                                  Q_ARG(int, m_defaultPollInterval));
+        
+        // Now start the worker
+        QMetaObject::invokeMethod(worker, "startWorker", Qt::QueuedConnection);
+        
+        // Emit workerCreated signal after worker is actually started
+        locker.unlock();
+        qDebug() << "📡 ModbusWorkerManager emitting workerCreated signal for device:" << deviceKey;
+        emit workerCreated(deviceKey);
+        updateGlobalStatistics();
+    } else {
+        qDebug() << "⚠️ Worker validation failed for device:" << deviceKey;
     }
 }

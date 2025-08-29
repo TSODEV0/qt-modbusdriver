@@ -95,6 +95,7 @@ private slots:
     void onWorkerConnectionStateChanged(const QString &deviceKey, bool connected);
     void onWorkerStatisticsUpdated(const QString &deviceKey, const ModbusWorkerTypes::WorkerStatistics &stats);
     void updateGlobalStatistics();
+    void handleDelayedStartup(const QString &deviceKey);
 
 private:
     // Helper methods
@@ -114,6 +115,14 @@ private:
     bool m_loadBalancingEnabled;
     QTimer* m_loadBalancingTimer;
     mutable QMutex m_loadBalancingMutex;
+    
+    // Pending startup tracking
+    struct PendingStartup {
+        ModbusWorker* worker;
+        QString deviceKey;
+    };
+    QHash<QString, PendingStartup> m_pendingStartups;
+    mutable QMutex m_pendingStartupsMutex;
 };
 
 #endif // MODBUS_WORKER_MANAGER_H

@@ -633,6 +633,10 @@ void ModbusManager::executeRequest(const ModbusRequest &request)
     m_requestInProgress = true;
     m_currentRequestTime = QDateTime::currentMSecsSinceEpoch();
     
+    // Debug: Log the request details being executed
+    qDebug() << "[ModbusManager::executeRequest] Creating QModbusDataUnit with count:" << request.count 
+             << "address:" << request.startAddress << "type:" << static_cast<int>(request.type);
+    
     QModbusDataUnit readUnit;
     
     switch (request.type) {

@@ -15,7 +15,8 @@ SOURCES += \
     src/modbus_worker.cpp \
     src/modbus_worker_manager.cpp \
     src/connection_resilience_manager.cpp \
-    src/database_manager.cpp
+    src/database_manager.cpp \
+    src/data_processing_task.cpp
 
 # Header files
 HEADERS += \
@@ -24,7 +25,8 @@ HEADERS += \
     include/modbus_worker.h \
     include/modbus_worker_manager.h \
     include/connection_resilience_manager.h \
-    include/database_manager.h
+    include/database_manager.h \
+    include/data_processing_task.h
 
 # Compiler flags for multithreading support
 QMAKE_CXXFLAGS += -pthread

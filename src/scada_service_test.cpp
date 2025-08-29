@@ -17,6 +17,7 @@
 #include "../include/modbus_worker.h"
 #include "../include/modbus_worker_manager.h"
 #include "../include/connection_resilience_manager.h"
+#include "../include/data_processing_task.h"
 
 /**
  * Enhanced ScadaServiceTest with Multithreading Support
@@ -170,8 +171,8 @@ public:
             }
         }
         
-        // Start all workers
-        m_workerManager->startAllWorkers();
+        // Workers will start automatically via delayed startup mechanism in getOrCreateWorker()
+        // Connect all devices after workers are created
         m_workerManager->connectAllDevices();
         
         qDebug() << "✅ Concurrent data acquisition test started with" 
@@ -327,6 +328,7 @@ private slots:
     }
     
     void onDatabaseError(const QString &error) {
+        Q_UNUSED(error)
         // Database error occurred
     }
     
@@ -350,11 +352,7 @@ private slots:
     void onServiceStopped() {
         // Service stopped - calculate final statistics
         auto stats = m_service->getStatistics();
-        qint64 runtime = QDateTime::currentMSecsSinceEpoch() - stats.serviceStartTime;
-        
-        if (stats.totalReadOperations > 0) {
-            double successRate = (double)stats.successfulReads / stats.totalReadOperations * 100.0;
-        }
+        Q_UNUSED(stats)
         
         QCoreApplication::quit();
     }
@@ -368,10 +366,13 @@ private slots:
     }
     
     void onDataPointSentToInflux(const QString &pointName, bool success) {
+        Q_UNUSED(pointName)
+        Q_UNUSED(success)
         // Data point sent to InfluxDB
     }
     
     void onErrorOccurred(const QString &error) {
+        Q_UNUSED(error)
         // Service error occurred
     }
     
@@ -417,14 +418,17 @@ private slots:
     
     // New worker event handlers
     void onWorkerCreated(const QString &deviceKey) {
+        Q_UNUSED(deviceKey)
         // Worker created for device
     }
     
     void onWorkerRemoved(const QString &deviceKey) {
+        Q_UNUSED(deviceKey)
         // Worker removed for device
     }
     
     void onGlobalStatisticsUpdated(const ModbusWorkerManager::GlobalStatistics &stats) {
+        Q_UNUSED(stats)
         static int globalUpdateCount = 0;
         globalUpdateCount++;
         
@@ -432,18 +436,22 @@ private slots:
     }
     
     void onWorkerReadCompleted(qint64 requestId, const ModbusReadResult &result) {
+        Q_UNUSED(requestId)
         updatePerformanceMetrics(result.success, 0); // Response time handled by worker
         
         // Worker read operation completed
     }
     
     void onWorkerWriteCompleted(qint64 requestId, const ModbusWriteResult &result) {
+        Q_UNUSED(requestId)
         updatePerformanceMetrics(result.success, 0); // Response time handled by worker
         
         // Worker write operation completed
     }
     
     void onWorkerError(const QString &deviceKey, const QString &error) {
+        Q_UNUSED(deviceKey)
+        Q_UNUSED(error)
         // Worker error occurred
         updatePerformanceMetrics(false, 0);
     }

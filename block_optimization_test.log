@@ -1,0 +1,1222 @@
+[ParallelDataProcessor] Initialized with 8 threads
+ScadaCoreService initialized with multithreaded worker architecture
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "AAA_BLOCK_300_304"
+Start address: 300 End address: 304
+Block size: 5 Original points: 5
+Block tags: QMap(("address", "300")("block_data_type", "INT16")("block_end_address", "304")("block_size", "5")("block_start_address", "300")("block_type", "optimized_read")("data_type", "INT16")("data_type_priority", "01")("description", "CURRENT RTU YEAR")("device_name", "AAA")("original_address", "301")("original_addresses", "300,301,302,303,304")("original_data_types", "INT16,INT16,INT16,INT16,INT16")("original_descriptions", "CURRENT RTU YEAR,CURRENT RTU MONTH,CURRENT RTU DAY,CURRENT RTU HOUR,CURRENT RTU MINUTE")("original_measurements", "NSA4909-YEAR-001,NSA4909-MON-001,NSA4909-DAY-001,NSA4909-HOUR-001,NSA4909-MIN-001")("original_names", "AAA_NSA4909-YEAR-001,AAA_NSA4909-MON-001,AAA_NSA4909-DAY-001,AAA_NSA4909-HOUR-001,AAA_NSA4909-MIN-001")("original_points", "5")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "NSA4909-YEAR-001")("unit_id", "45"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1064_1127"
+Start address: 1064 End address: 1127
+Block size: 64 Original points: 16
+Block tags: QMap(("address", "1064")("block_data_type", "DOUBLE64")("block_end_address", "1127")("block_size", "64")("block_start_address", "1064")("block_type", "optimized_read")("data_type", "DOUBLE")("data_type_priority", "03")("description", "CUMU SAT STD VOLUME TOTAL")("device_name", "NPMR_N")("original_address", "1065")("original_addresses", "1064,1068,1072,1076,1080,1084,1088,1092,1096,1100,1104,1108,1112,1116,1120,1124")("original_data_types", "DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE")("original_descriptions", "CUMU SAT STD VOLUME TOTAL,CUMU STANDARD VOLUME TOTAL,CUMU ACTUAL VOLUME TOTAL,CUMULATIVE MASS TOTAL,CUMULATIVE ENERGY TOTAL,PREV HR SAT STD VOL TOTAL,PREV HOUR STD VOL TOTAL,PREV HOUR ACTUAL VOL TOTAL,CURR DAY SAT STD VOL TOTAL,CURR DAY STD VOL TOTAL,CURR DAY ACTUAL VOL TOTAL,CURRENT DAILY MASS TOTAL,CURRENT DAILY ENERGY TOTAL,PREV DAY SAT STD VOL TOTAL,PREV DAY STD VOL TOTAL,PREV DAY ACTUAL VOL TOTAL")("original_measurements", "SA1020-NTS-001A,SA1020-NT-001A,SA1020-AT-001A,SA1020-MT-001A,SA1020-ET-001A,SA1020HNTS001AP,SA1020-HNT001AP,SA1020-HAT001AP,SA1020-DNTS001A,SA1020-DNT-001A,SA1020-DAT-001A,SA1020-DMT-001A,SA1020-DET-001A,SA1020DNTS001AP,SA1020-DNT001AP,SA1020-DAT001AP")("original_names", "NPMR_N_SA1020-NTS-001A,NPMR_N_SA1020-NT-001A,NPMR_N_SA1020-AT-001A,NPMR_N_SA1020-MT-001A,NPMR_N_SA1020-ET-001A,NPMR_N_SA1020HNTS001AP,NPMR_N_SA1020-HNT001AP,NPMR_N_SA1020-HAT001AP,NPMR_N_SA1020-DNTS001A,NPMR_N_SA1020-DNT-001A,NPMR_N_SA1020-DAT-001A,NPMR_N_SA1020-DMT-001A,NPMR_N_SA1020-DET-001A,NPMR_N_SA1020DNTS001AP,NPMR_N_SA1020-DNT001AP,NPMR_N_SA1020-DAT001AP")("original_points", "16")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-NTS-001A")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1192_1255"
+Start address: 1192 End address: 1255
+Block size: 64 Original points: 16
+Block tags: QMap(("address", "1192")("block_data_type", "DOUBLE64")("block_end_address", "1255")("block_size", "64")("block_start_address", "1192")("block_type", "optimized_read")("data_type", "DOUBLE")("data_type_priority", "03")("description", "CUMU SAT STD VOLUME TOTAL,")("device_name", "NPMR_N")("original_address", "1193")("original_addresses", "1192,1196,1200,1204,1208,1212,1216,1220,1224,1228,1232,1236,1240,1244,1248,1252")("original_data_types", "DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE")("original_descriptions", "CUMU SAT STD VOLUME TOTAL,,CUMU STANDARD VOLUME TOTAL,,CUMU ACTUAL VOLUME TOTAL,,CUMULATIVE MASS TOTAL,,CUMULATIVE ENERGY TOTAL,,PREV HR SAT STD VOL TOTAL,,PREV HOUR STD VOL TOTAL,,PREV HOUR ACTUAL VOL TOTAL,,CURR DAY SAT STD VOL TOTAL,,CURR DAY STD VOL TOTAL,,CURR DAY ACTUAL VOL TOTAL,,CURRENT DAILY MASS TOTAL,,CURRENT DAILY ENERGY TOTAL,,PREV DAY SAT STD VOL TOTAL,,PREV DAY STD VOL TOTAL,,PREV DAY ACTUAL VOL TOTAL,")("original_measurements", "SA1020-NTS-001C,SA1020-NT-001C,SA1020-AT-001C,SA1020-MT-001C,SA1020-ET-001C,SA1020HNTS001CP,SA1020-HNT001CP,SA1020-HAT001CP,SA1020-DNTS001C,SA1020-DNT-001C,SA1020-DAT-001C,SA1020-DMT-001C,SA1020-DET-001C,SA1020DNTS001CP,SA1020-DNT001CP,SA1020-DAT001CP")("original_names", "NPMR_N_SA1020-NTS-001C,NPMR_N_SA1020-NT-001C,NPMR_N_SA1020-AT-001C,NPMR_N_SA1020-MT-001C,NPMR_N_SA1020-ET-001C,NPMR_N_SA1020HNTS001CP,NPMR_N_SA1020-HNT001CP,NPMR_N_SA1020-HAT001CP,NPMR_N_SA1020-DNTS001C,NPMR_N_SA1020-DNT-001C,NPMR_N_SA1020-DAT-001C,NPMR_N_SA1020-DMT-001C,NPMR_N_SA1020-DET-001C,NPMR_N_SA1020DNTS001CP,NPMR_N_SA1020-DNT001CP,NPMR_N_SA1020-DAT001CP")("original_points", "16")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-NTS-001C")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1320_1351"
+Start address: 1320 End address: 1351
+Block size: 32 Original points: 8
+Block tags: QMap(("address", "1320")("block_data_type", "DOUBLE64")("block_end_address", "1351")("block_size", "32")("block_start_address", "1320")("block_type", "optimized_read")("data_type", "DOUBLE")("data_type_priority", "03")("description", "CUMU SAT STD VOLUME TOTAL")("device_name", "NPMR_N")("original_address", "1321")("original_addresses", "1320,1324,1328,1332,1336,1340,1344,1348")("original_data_types", "DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE")("original_descriptions", "CUMU SAT STD VOLUME TOTAL,CUMU STANDARD VOLUME TOTAL,CUMU ACTUAL VOLUME TOTAL,CUMULATIVE MASS TOTAL,CUMULATIVE ENERGY TOTAL,PREV HR SAT STD VOL TOTAL,PREV HOUR STD VOL TOTAL,PREV HOUR ACTUAL VOL TOTAL")("original_measurements", "SA1020-NTS-001B,SA1020-NT-001B,SA1020-AT-001B,SA1020-MT-001B,SA1020-ET-001B,SA1020HNTS001BP,SA1020-HNT001BP,SA1020-HAT001BP")("original_names", "NPMR_N_SA1020-NTS-001B,NPMR_N_SA1020-NT-001B,NPMR_N_SA1020-AT-001B,NPMR_N_SA1020-MT-001B,NPMR_N_SA1020-ET-001B,NPMR_N_SA1020HNTS001BP,NPMR_N_SA1020-HNT001BP,NPMR_N_SA1020-HAT001BP")("original_points", "8")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-NTS-001B")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1360_1391"
+Start address: 1360 End address: 1391
+Block size: 32 Original points: 8
+Block tags: QMap(("address", "1360")("block_data_type", "DOUBLE64")("block_end_address", "1391")("block_size", "32")("block_start_address", "1360")("block_type", "optimized_read")("data_type", "DOUBLE")("data_type_priority", "03")("description", "CURR DAY SAT STD VOL TOTAL")("device_name", "NPMR_N")("original_address", "1361")("original_addresses", "1360,1364,1368,1372,1376,1380,1384,1388")("original_data_types", "DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE,DOUBLE")("original_descriptions", "CURR DAY SAT STD VOL TOTAL,CURR DAY STD VOL TOTAL,CURR DAY ACTUAL VOL TOTAL,CURRENT DAILY MASS TOTAL,CURRENT DAILY ENERGY TOTAL,PREV DAY SAT STD VOL TOTAL,PREV DAY STD VOL TOTAL,PREV DAY ACTUAL VOL TOTAL")("original_measurements", "SA1020-DNTS001B,SA1020-DNT-001B,SA1020-DAT-001B,SA1020-DMT-001B,SA1020-DET-001B,SA1020DNTS001BP,SA1020-DNT001BP,SA1020-DAT001BP")("original_names", "NPMR_N_SA1020-DNTS001B,NPMR_N_SA1020-DNT-001B,NPMR_N_SA1020-DAT-001B,NPMR_N_SA1020-DMT-001B,NPMR_N_SA1020-DET-001B,NPMR_N_SA1020DNTS001BP,NPMR_N_SA1020-DNT001BP,NPMR_N_SA1020-DAT001BP")("original_points", "8")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-DNTS001B")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1144_1161"
+Start address: 1144 End address: 1161
+Block size: 18 Original points: 9
+Block tags: QMap(("address", "1144")("block_data_type", "FLOAT32")("block_end_address", "1161")("block_size", "18")("block_start_address", "1144")("block_type", "optimized_read")("data_type", "FLOAT32")("data_type_priority", "02")("description", "SAT STANDARD VOLUME FLOWRATE")("device_name", "NPMR_N")("original_address", "1145")("original_addresses", "1144,1146,1148,1150,1152,1154,1156,1158,1160")("original_data_types", "FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32")("original_descriptions", "SAT STANDARD VOLUME FLOWRATE,STANDARD VOLUME FLOWRATE,ACTUAL VOLUME FLOWRATE,MASS FLOWRATE,ENERGY FLOWRATE,IN USE PRESSURE,IN USE TEMP,IN USE SG,IN USE WATER CONTENT")("original_measurements", "SA1020-FRS-001A,SA1020-FR-001A,SA1020-XIR-001A,SA1020-MFR-001A,SA1020-EFR-001A,SA1020-PR-001A,SA1020-TR-001A,SA1020-SG-001A,SA1020-WCT-001A")("original_names", "NPMR_N_SA1020-FRS-001A,NPMR_N_SA1020-FR-001A,NPMR_N_SA1020-XIR-001A,NPMR_N_SA1020-MFR-001A,NPMR_N_SA1020-EFR-001A,NPMR_N_SA1020-PR-001A,NPMR_N_SA1020-TR-001A,NPMR_N_SA1020-SG-001A,NPMR_N_SA1020-WCT-001A")("original_points", "9")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-FRS-001A")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1272_1289"
+Start address: 1272 End address: 1289
+Block size: 18 Original points: 9
+Block tags: QMap(("address", "1272")("block_data_type", "FLOAT32")("block_end_address", "1289")("block_size", "18")("block_start_address", "1272")("block_type", "optimized_read")("data_type", "FLOAT32")("data_type_priority", "02")("description", "SAT STANDARD VOLUME FLOWRATE,")("device_name", "NPMR_N")("original_address", "1273")("original_addresses", "1272,1274,1276,1278,1280,1282,1284,1286,1288")("original_data_types", "FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32")("original_descriptions", "SAT STANDARD VOLUME FLOWRATE,,STANDARD VOLUME FLOWRATE,,ACTUAL VOLUME FLOWRATE,,MASS FLOWRATE,,ENERGY FLOWRATE,,IN USE PRESSURE,,IN USE TEMP,,IN USE SG,,IN USE WATER CONTENT,")("original_measurements", "SA1020-FRS-001C,SA1020-FR-001C,SA1020-XIR-001C,SA1020-MFR-001C,SA1020-EFR-001C,SA1020-PR-001C,SA1020-TR-001C,SA1020-SG-001C,SA1020-WCT-001C")("original_names", "NPMR_N_SA1020-FRS-001C,NPMR_N_SA1020-FR-001C,NPMR_N_SA1020-XIR-001C,NPMR_N_SA1020-MFR-001C,NPMR_N_SA1020-EFR-001C,NPMR_N_SA1020-PR-001C,NPMR_N_SA1020-TR-001C,NPMR_N_SA1020-SG-001C,NPMR_N_SA1020-WCT-001C")("original_points", "9")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-FRS-001C")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1400_1417"
+Start address: 1400 End address: 1417
+Block size: 18 Original points: 9
+Block tags: QMap(("address", "1400")("block_data_type", "FLOAT32")("block_end_address", "1417")("block_size", "18")("block_start_address", "1400")("block_type", "optimized_read")("data_type", "FLOAT32")("data_type_priority", "02")("description", "SAT STANDARD VOLUME FLOWRATE")("device_name", "NPMR_N")("original_address", "1401")("original_addresses", "1400,1402,1404,1406,1408,1410,1412,1414,1416")("original_data_types", "FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32")("original_descriptions", "SAT STANDARD VOLUME FLOWRATE,STANDARD VOLUME FLOWRATE,ACTUAL VOLUME FLOWRATE,MASS FLOWRATE,ENERGY FLOWRATE,IN USE PRESSURE,IN USE TEMP,IN USE SG,IN USE WATER CONTENT")("original_measurements", "SA1020-FRS-001B,SA1020-FR-001B,SA1020-XIR-001B,SA1020-MFR-001B,SA1020-EFR-001B,SA1020-PR-001B,SA1020-TR-001B,SA1020-SG-001B,SA1020-WCT-001B")("original_names", "NPMR_N_SA1020-FRS-001B,NPMR_N_SA1020-FR-001B,NPMR_N_SA1020-XIR-001B,NPMR_N_SA1020-MFR-001B,NPMR_N_SA1020-EFR-001B,NPMR_N_SA1020-PR-001B,NPMR_N_SA1020-TR-001B,NPMR_N_SA1020-SG-001B,NPMR_N_SA1020-WCT-001B")("original_points", "9")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-FRS-001B")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1700_1801"
+Start address: 1700 End address: 1801
+Block size: 102 Original points: 51
+Block tags: QMap(("address", "1700")("block_data_type", "FLOAT32")("block_end_address", "1801")("block_size", "102")("block_start_address", "1700")("block_type", "optimized_read")("data_type", "FLOAT32")("data_type_priority", "02")("description", "N-HEXANE (C6+)")("device_name", "NPMR_N")("original_address", "1701")("original_addresses", "1700,1702,1704,1706,1708,1710,1712,1714,1716,1718,1720,1722,1724,1726,1728,1730,1732,1734,1736,1738,1740,1742,1744,1746,1748,1750,1752,1754,1756,1758,1760,1762,1764,1766,1768,1770,1772,1774,1776,1778,1780,1782,1784,1786,1788,1790,1792,1794,1796,1798,1800")("original_data_types", "FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32,FLOAT32")("original_descriptions", "N-HEXANE (C6+),PROPANE (C3),I-BUTANE (IC4),N-BUTANE (NC4),WOBBE INDEX,I-PENTANE (IC5),N-PENTANE (NC5),NITROGEN (N2),METHANE (C1),CARBON DIOXIDE (CO2),ETHANE (C2),HYDROGENSULF,HV GROSS BTU SAT,HV NET BTU DRY,GPA REAL REL DEN GAS,HV GROSS BTU DRY,TOTAL UNNORMALIZED CONC,HOURLY N-HEXANE (C6+),HOURLY PROPANE (C3),HOURLY I-BUTANE (IC4),HOURLY N-BUTANE (NC4),HOURLY WOBBE INDEX,HOURLY I-PENTANE (IC5),HOURLY N-PENTANE (NC5),HOURLY NITROGEN (N2),HOURLY METHANE (C1),HOURLY CARBON DIOXIDE (CO2),HOURLY ETHANE (C2),HOURLY HYDROGENSULF,HOURLY HV GROSS BTU SAT,HOURLY HV NET BTU DRY,HOURLY GPA REAL REL DEN GAS,HOURLY HV GROSS BTU DRY,HOURLY TOTAL UNNORMALIZED CONC,DAILY N-HEXANE (C6+),DAILY PROPANE (C3),DAILY I-BUTANE (IC4),DAILY N-BUTANE (NC4),DAILY WOBBE INDEX,DAILY I-PENTANE (IC5),DAILY N-PENTANE (NC5),DAILY NITROGEN (N2),DAILY METHANE (C1),DAILY CARBON DIOXIDE (CO2),DAILY ETHANE (C2),DAILY HYDROGENSULF,DAILY HV GROSS BTU SAT,DAILY HV NET BTU DRY,DAILY GPA REAL REL DEN GAS,DAILY HV GROSS BTU DRY,DAILY TOTAL UNNORMALIZED CONC")("original_measurements", "SA1020-C6P-001,SA1020-C3-001,SA1020-IC4-001,SA1020-NC4-001,SA1020-WI-001,SA1020-IC5-001,SA1020-NC5-001,SA1020-N2-001,SA1020-C1-001,SA1020-CO2-001,SA1020-C2-001,SA1020-H2S-001,SA1020-GHS-001,SA1020-NHD-001,SA1020-SG-001,SA1020-GHD-001,SA1020-UN-001,SA1020-HC6P-001,SA1020-HC3-001,SA1020-HIC4-001,SA1020-HNC4-001,SA1020-HWI-001,SA1020-HIC5-001,SA1020-HNC5-001,SA1020-HN2-001,SA1020-HC1-001,SA1020-HCO2-001,SA1020-HC2-001,SA1020-HH2S-001,SA1020-HGHS-001,SA1020-HNHD-001,SA1020-HSG-001,SA1020-HGHD-001,SA1020-HUN-001,SA1020-DC6P-001,SA1020-DC3-001,SA1020-DIC4-001,SA1020-DNC4-001,SA1020-DWI-001,SA1020-DIC5-001,SA1020-DNC5-001,SA1020-DN2-001,SA1020-DC1-001,SA1020-DCO2-001,SA1020-DC2-001,SA1020-DH2S-001,SA1020-DGHS-001,SA1020-DNHD-001,SA1020-DSG-001,SA1020-DGHD-001,SA1020-DUN-001")("original_names", "NPMR_N_SA1020-C6P-001,NPMR_N_SA1020-C3-001,NPMR_N_SA1020-IC4-001,NPMR_N_SA1020-NC4-001,NPMR_N_SA1020-WI-001,NPMR_N_SA1020-IC5-001,NPMR_N_SA1020-NC5-001,NPMR_N_SA1020-N2-001,NPMR_N_SA1020-C1-001,NPMR_N_SA1020-CO2-001,NPMR_N_SA1020-C2-001,NPMR_N_SA1020-H2S-001,NPMR_N_SA1020-GHS-001,NPMR_N_SA1020-NHD-001,NPMR_N_SA1020-SG-001,NPMR_N_SA1020-GHD-001,NPMR_N_SA1020-UN-001,NPMR_N_SA1020-HC6P-001,NPMR_N_SA1020-HC3-001,NPMR_N_SA1020-HIC4-001,NPMR_N_SA1020-HNC4-001,NPMR_N_SA1020-HWI-001,NPMR_N_SA1020-HIC5-001,NPMR_N_SA1020-HNC5-001,NPMR_N_SA1020-HN2-001,NPMR_N_SA1020-HC1-001,NPMR_N_SA1020-HCO2-001,NPMR_N_SA1020-HC2-001,NPMR_N_SA1020-HH2S-001,NPMR_N_SA1020-HGHS-001,NPMR_N_SA1020-HNHD-001,NPMR_N_SA1020-HSG-001,NPMR_N_SA1020-HGHD-001,NPMR_N_SA1020-HUN-001,NPMR_N_SA1020-DC6P-001,NPMR_N_SA1020-DC3-001,NPMR_N_SA1020-DIC4-001,NPMR_N_SA1020-DNC4-001,NPMR_N_SA1020-DWI-001,NPMR_N_SA1020-DIC5-001,NPMR_N_SA1020-DNC5-001,NPMR_N_SA1020-DN2-001,NPMR_N_SA1020-DC1-001,NPMR_N_SA1020-DCO2-001,NPMR_N_SA1020-DC2-001,NPMR_N_SA1020-DH2S-001,NPMR_N_SA1020-DGHS-001,NPMR_N_SA1020-DNHD-001,NPMR_N_SA1020-DSG-001,NPMR_N_SA1020-DGHD-001,NPMR_N_SA1020-DUN-001")("original_points", "51")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-C6P-001")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1180_1184"
+Start address: 1180 End address: 1184
+Block size: 5 Original points: 5
+Block tags: QMap(("address", "1180")("block_data_type", "INT16")("block_end_address", "1184")("block_size", "5")("block_start_address", "1180")("block_type", "optimized_read")("data_type", "INT16")("data_type_priority", "01")("description", "CURRENT YEAR")("device_name", "NPMR_N")("original_address", "1181")("original_addresses", "1180,1181,1182,1183,1184")("original_data_types", "INT16,INT16,INT16,INT16,INT16")("original_descriptions", "CURRENT YEAR,CURRENT MONTH,CURRENT DAY,CURRENT HOUR,CURRENT MINUTE")("original_measurements", "SA1020-YEAR001A,SA1020-MON-001A,SA1020-DAY-001A,SA1020-HOUR001A,SA1020-MIN-001A")("original_names", "NPMR_N_SA1020-YEAR001A,NPMR_N_SA1020-MON-001A,NPMR_N_SA1020-DAY-001A,NPMR_N_SA1020-HOUR001A,NPMR_N_SA1020-MIN-001A")("original_points", "5")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-YEAR001A")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1436_1440"
+Start address: 1436 End address: 1440
+Block size: 5 Original points: 5
+Block tags: QMap(("address", "1436")("block_data_type", "INT16")("block_end_address", "1440")("block_size", "5")("block_start_address", "1436")("block_type", "optimized_read")("data_type", "INT16")("data_type_priority", "01")("description", "CURRENT YEAR")("device_name", "NPMR_N")("original_address", "1437")("original_addresses", "1436,1437,1438,1439,1440")("original_data_types", "INT16,INT16,INT16,INT16,INT16")("original_descriptions", "CURRENT YEAR,CURRENT MONTH,CURRENT DAY,CURRENT HOUR,CURRENT MINUTE")("original_measurements", "SA1020-YEAR001B,SA1020-MON-001B,SA1020-DAY-001B,SA1020-HOUR001B,SA1020-MIN-001B")("original_names", "NPMR_N_SA1020-YEAR001B,NPMR_N_SA1020-MON-001B,NPMR_N_SA1020-DAY-001B,NPMR_N_SA1020-HOUR001B,NPMR_N_SA1020-MIN-001B")("original_points", "5")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-YEAR001B")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_1810_1814"
+Start address: 1810 End address: 1814
+Block size: 5 Original points: 5
+Block tags: QMap(("address", "1810")("block_data_type", "INT16")("block_end_address", "1814")("block_size", "5")("block_start_address", "1810")("block_type", "optimized_read")("data_type", "INT16")("data_type_priority", "01")("description", "GC CURRENT MONTH")("device_name", "NPMR_N")("original_address", "1811")("original_addresses", "1810,1811,1812,1813,1814")("original_data_types", "INT16,INT16,INT16,INT16,INT16")("original_descriptions", "GC CURRENT MONTH,GC CURRENT DAY,GC CURRENT YEAR,GC CURRENT HOUR,GC CURRENT MINUTE")("original_measurements", "SA1020-MON-GC,SA1020-DAY-GC,SA1020-YEAR-GC,SA1020-HOUR-GC,SA1020-MIN-GC")("original_names", "NPMR_N_SA1020-MON-GC,NPMR_N_SA1020-DAY-GC,NPMR_N_SA1020-YEAR-GC,NPMR_N_SA1020-HOUR-GC,NPMR_N_SA1020-MIN-GC")("original_points", "5")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-MON-GC")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_2900_2909"
+Start address: 2900 End address: 2909
+Block size: 10 Original points: 10
+Block tags: QMap(("address", "2900")("block_data_type", "INT16")("block_end_address", "2909")("block_size", "10")("block_start_address", "2900")("block_type", "optimized_read")("data_type", "INT16")("data_type_priority", "01")("description", "CURRENT YEAR,")("device_name", "NPMR_N")("original_address", "2901")("original_addresses", "2900,2901,2902,2903,2904,2905,2906,2907,2908,2909")("original_data_types", "INT16,INT16,INT16,INT16,INT16,INT16,INT16,INT16,INT16,INT16")("original_descriptions", "CURRENT YEAR,,CURRENT MONTH,,CURRENT DAY,,CURRENT HOUR,,CURRENT MINUTE,,CURRENT RTU YEAR,CURRENT RTU MONTH,CURRENT RTU DAY,CURRENT RTU HOUR,CURRENT RTU MINUTE")("original_measurements", "SA1020-YEAR001C,SA1020-MON-001C,SA1020-DAY-001C,SA1020-HOUR001C,SA1020-MIN-001C,NSA1020-YEAR-001,NSA1020-MON-001,NSA1020-DAY-001,NSA1020-HOUR-001,NSA1020-MIN-001")("original_names", "NPMR_N_SA1020-YEAR001C,NPMR_N_SA1020-MON-001C,NPMR_N_SA1020-DAY-001C,NPMR_N_SA1020-HOUR001C,NPMR_N_SA1020-MIN-001C,NPMR_N_NSA1020-YEAR-001,NPMR_N_NSA1020-MON-001,NPMR_N_NSA1020-DAY-001,NPMR_N_NSA1020-HOUR-001,NPMR_N_NSA1020-MIN-001")("original_points", "10")("protocol_type", "TCP")("register_type", "HOLDING_REGISTER")("station_name", "field_site")("tag_name", "SA1020-YEAR001C")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_128_132"
+Start address: 128 End address: 132
+Block size: 5 Original points: 5
+Block tags: QMap(("address", "128")("block_data_type", "")("block_end_address", "132")("block_size", "5")("block_start_address", "128")("block_type", "optimized_read")("data_type", "BOOL")("data_type_priority", "00")("description", "LOW FREQUENCY RUN A")("device_name", "NPMR_N")("original_address", "129")("original_addresses", "128,129,130,131,132")("original_data_types", "BOOL,BOOL,BOOL,BOOL,BOOL")("original_descriptions", "LOW FREQUENCY RUN A,LOW FREQUENCY RUN C,LOW FREQUENCY RUN B,FIRE ALARM STATUS,FIRE ALARM TROUBLE")("original_measurements", "D1020-FQI-001A,D1020-FQI-001C,D1020-FQI-001B,D12020-AL-0101,D1020-FU-0101")("original_names", "NPMR_N_D1020-FQI-001A,NPMR_N_D1020-FQI-001C,NPMR_N_D1020-FQI-001B,NPMR_N_D12020-AL-0101,NPMR_N_D1020-FU-0101")("original_points", "5")("protocol_type", "TCP")("register_type", "STATUS")("station_name", "field_site")("tag_name", "D1020-FQI-001A")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_368_369"
+Start address: 368 End address: 369
+Block size: 2 Original points: 2
+Block tags: QMap(("address", "368")("block_data_type", "")("block_end_address", "369")("block_size", "2")("block_start_address", "368")("block_type", "optimized_read")("data_type", "BOOL")("data_type_priority", "00")("description", "OGC-001_ALARM")("device_name", "NPMR_N")("original_address", "369")("original_addresses", "368,369")("original_data_types", "BOOL,BOOL")("original_descriptions", "OGC-001_ALARM,OGC-002_ALARM")("original_measurements", "SD1020-OGC-001,SD1020-OGC-002")("original_names", "NPMR_N_SD1020-OGC-001,NPMR_N_SD1020-OGC-002")("original_points", "2")("protocol_type", "TCP")("register_type", "STATUS")("station_name", "field_site")("tag_name", "SD1020-OGC-001")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_2960_2965"
+Start address: 2960 End address: 2965
+Block size: 6 Original points: 4
+Block tags: QMap(("address", "2960")("block_data_type", "")("block_end_address", "2965")("block_size", "6")("block_start_address", "2960")("block_type", "optimized_read")("data_type", "BOOL")("data_type_priority", "00")("description", "RTU FC001A REPLY POLLING STATUS")("device_name", "NPMR_N")("original_address", "2961")("original_addresses", "2960,2961,2962,2965")("original_data_types", "BOOL,BOOL,BOOL,BOOL")("original_descriptions", "RTU FC001A REPLY POLLING STATUS,RTU FC001C REPLY POLLING STATUS,RTU FC001B REPLY POLLING STATUS,RTU GC001 REPLY POLLING STATUS")("original_measurements", "SD1020-FC-001A,SD1020-FC-001C,SD1020-FC-001B,SD1020-POLL-001")("original_names", "NPMR_N_SD1020-FC-001A,NPMR_N_SD1020-FC-001C,NPMR_N_SD1020-FC-001B,NPMR_N_SD1020-POLL-001")("original_points", "4")("protocol_type", "TCP")("register_type", "STATUS")("station_name", "field_site")("tag_name", "SD1020-FC-001A")("unit_id", "119"))
+==============================
+=== BLOCK CREATION DEBUG ===
+Created optimized block: "NPMR_N_BLOCK_2976_2991"
+Start address: 2976 End address: 2991
+Block size: 16 Original points: 12
+Block tags: QMap(("address", "2976")("block_data_type", "")("block_end_address", "2991")("block_size", "16")("block_start_address", "2976")("block_type", "optimized_read")("data_type", "BOOL")("data_type_priority", "00")("description", "RTU PS SLOT 1 MODULE STATUS")("device_name", "NPMR_N")("original_address", "2977")("original_addresses", "2976,2977,2978,2979,2980,2981,2982,2983,2984,2985,2990,2991")("original_data_types", "BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL,BOOL")("original_descriptions", "RTU PS SLOT 1 MODULE STATUS,RTU PS SLOT 2 MODULE STATUS,RTU CP SLOT 3 MODULE STATUS,RTU CP SLOT 4 MODULE STATUS,RTU MC SLOT 5 MODULE STATUS,RTU MC SLOT 6 MODULE STATUS,RTU MC SLOT 7 MODULE STATUS,RTU DO SLOT 8 MODULE STATUS,RTU DI SLOT 9 MODULE STATUS,RTU AI SLOT 10 MODULE STATUS,RTU CP SLOT 3 OPERATE STATUS,RTU CP SLOT 4 OPERATE STATUS")("original_measurements", "SD1020-PS1-001,SD1020-PS2-001,SD1020-CP3-001,SD1020-CP4-001,SD1020-MC5-001,SD1020-MC6-001,SD1020-MC7-001,SD1020-DO11-001,SD1020-DI17-001,SD1020-DI18-001,SD1020-CPO3-001,SD1020-CPO4-001")("original_names", "NPMR_N_SD1020-PS1-001,NPMR_N_SD1020-PS2-001,NPMR_N_SD1020-CP3-001,NPMR_N_SD1020-CP4-001,NPMR_N_SD1020-MC5-001,NPMR_N_SD1020-MC6-001,NPMR_N_SD1020-MC7-001,NPMR_N_SD1020-DO11-001,NPMR_N_SD1020-DI17-001,NPMR_N_SD1020-DI18-001,NPMR_N_SD1020-CPO3-001,NPMR_N_SD1020-CPO4-001")("original_points", "12")("protocol_type", "TCP")("register_type", "STATUS")("station_name", "field_site")("tag_name", "SD1020-PS1-001")("unit_id", "119"))
+==============================
+Added new data point: "AAA_BLOCK_300_304" at "10.72.2.215" : 502
+Added new data point: "NPMR_N_BLOCK_1064_1127" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1192_1255" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1320_1351" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1360_1391" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1144_1161" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1272_1289" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1400_1417" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1700_1801" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_A1020-OMA-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_A1020-TI-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1180_1184" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1436_1440" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_1810_1814" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2900_2909" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_128_132" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_368_369" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2960_2965" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_BLOCK_2976_2991" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_SD1020-OMA-001" at "10.72.2.4" : 502
+Added new data point: "NPMR_N_SD1020-TI-001" at "10.72.2.4" : 502
+Telegraf socket path set to: "/tmp/telegraf.sock"
+🆕 ModbusWorkerManager::getOrCreateWorker() - Creating new worker for device: "10.72.2.215:502:45"
+🆕 ModbusWorkerManager::getOrCreateWorker() - Worker created but not initialized for device: "10.72.2.215:502:45"
+⏰ ModbusWorkerManager setting up delayed startup timer for device: "10.72.2.215:502:45" delay: 200 ms
+Assigned 1 data points to worker "10.72.2.215:502:45"
+🆕 ModbusWorkerManager::getOrCreateWorker() - Creating new worker for device: "10.72.2.4:502:119"
+🆕 ModbusWorkerManager::getOrCreateWorker() - Worker created but not initialized for device: "10.72.2.4:502:119"
+⏰ ModbusWorkerManager setting up delayed startup timer for device: "10.72.2.4:502:119" delay: 200 ms
+Assigned 20 data points to worker "10.72.2.4:502:119"
+✅ All workers created and will start via delayed startup mechanism
+🔄 Load balancing enabled for 2 devices
+Allowing 2 seconds for worker connections to establish...
+SCADA Core Service started successfully with 2 workers
+ModbusWorker::setDataPointCount() - Reserved space for 1 data points for worker "10.72.2.215:502:45"
+ModbusWorker::addDataPointByName() - Added new data point: "AAA_BLOCK_300_304" for worker "10.72.2.215:502:45"
+ModbusWorker::enableAutomaticPolling() - Automatic polling enabled for worker "10.72.2.215:502:45"
+ModbusWorker::setDataPointCount() - Reserved space for 20 data points for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1064_1127" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1192_1255" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1320_1351" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1360_1391" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1144_1161" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1272_1289" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1400_1417" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1700_1801" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_A1020-OMA-001" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_A1020-TI-001" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1180_1184" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1436_1440" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_1810_1814" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_2900_2909" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_128_132" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_368_369" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_2960_2965" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_BLOCK_2976_2991" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_SD1020-OMA-001" for worker "10.72.2.4:502:119"
+ModbusWorker::addDataPointByName() - Added new data point: "NPMR_N_SD1020-TI-001" for worker "10.72.2.4:502:119"
+ModbusWorker::enableAutomaticPolling() - Automatic polling enabled for worker "10.72.2.4:502:119"
+🚀 TIMER SLOT - ModbusWorkerManager executing delayed startup for device: "10.72.2.215:502:45"
+🚀 ModbusWorkerManager executing delayed startup for device: "10.72.2.215:502:45"
+🔧 ModbusWorkerManager initializing worker for device: "10.72.2.215:502:45"
+ModbusWorker::setPollInterval() - Set base and adaptive poll interval to 2000 ms for device: "10.72.2.215:502:45"
+📡 ModbusWorkerManager emitting workerCreated signal for device: "10.72.2.215:502:45"
+ModbusWorker::startWorker() - Starting worker for device: "10.72.2.215:502:45"
+🚀 TIMER SLOT - ModbusWorkerManager executing delayed startup for device: "10.72.2.4:502:119"
+🚀 ModbusWorkerManager executing delayed startup for device: "10.72.2.4:502:119"
+🔧 ModbusWorkerManager initializing worker for device: "10.72.2.4:502:119"
+ModbusWorker::setPollInterval() - Set base and adaptive poll interval to 2000 ms for device: "10.72.2.4:502:119"
+📡 ModbusWorkerManager emitting workerCreated signal for device: "10.72.2.4:502:119"
+ModbusWorker::startWorker() - Starting worker for device: "10.72.2.4:502:119"
+🔧 Worker created for device: "10.72.2.215:502:45"
+🔧 Connected signals for worker: "10.72.2.215:502:45"
+   Total active workers: 2
+   Total successful requests: 0
+   Total failed requests: 0
+🔧 Worker created for device: "10.72.2.4:502:119"
+🔧 Connected signals for worker: "10.72.2.4:502:119"
+   Total active workers: 2
+   Total successful requests: 0
+   Total failed requests: 0
+ModbusWorker::startWorker() - ModbusManager initialized successfully for device: "10.72.2.215:502:45"
+ModbusWorker::startWorker() - ModbusManager initialized successfully for device: "10.72.2.4:502:119"
+ModbusWorker::startWorker() - Starting poll timer with adaptive interval 2000 ms for device: "10.72.2.215:502:45"
+ModbusWorker::startWorker() - Worker started successfully for device: "10.72.2.215:502:45"
+Worker started: "10.72.2.215:502:45"
+ModbusWorker::startWorker() - Starting poll timer with adaptive interval 2000 ms for device: "10.72.2.4:502:119"
+ModbusWorker::startWorker() - Worker started successfully for device: "10.72.2.4:502:119"
+Worker started: "10.72.2.4:502:119"
+qt.modbus: (TCP client) Connected to QHostAddress("10.72.2.215") on port 502
+ModbusWorker::onModbusConnectionStateChanged() - Device: "10.72.2.215:502:45" Connected: true
+ModbusWorker - Device connected, polling will resume normal operation for: "10.72.2.215:502:45"
+ModbusWorker - Connection successful, reset backoff strategy for: "10.72.2.215:502:45"
+Connected to Modbus server (connection 1 )
+qt.modbus: (TCP client) Connected to QHostAddress("10.72.2.4") on port 502
+ModbusWorker::onModbusConnectionStateChanged() - Device: "10.72.2.4:502:119" Connected: true
+ModbusWorker - Device connected, polling will resume normal operation for: "10.72.2.4:502:119"
+ModbusWorker - Connection successful, reset backoff strategy for: "10.72.2.4:502:119"
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 1
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0000000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 0
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 1
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 2
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 3
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 4
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 5
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 6
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 7
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 8
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 9
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 10
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 11
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 12
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 13
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 14
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 15
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 16
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 17
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 18
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 19
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 20
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000000000006010304280040"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0304280040 with tId: 0
+qt.modbus.lowlevel: (TCP client) Response buffer: "00000000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 0 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 1 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+qt.modbus.lowlevel: (TCP client) Response buffer: "000000000006018304280040"
+qt.modbus: (TCP client) tid: 0 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+ModbusWorker::updateConnectionHealth - Health score updated to 0.9 for device: "10.72.2.4:502:119" (success: false )
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000100000006010304a80040"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0304a80040 with tId: 1
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 21
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 22
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 23
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 24
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 25
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 26
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 27
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 28
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 29
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 30
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 31
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 32
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 33
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 34
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 35
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 36
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 37
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 38
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 39
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 40
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 2
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0001000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 1
+qt.modbus.lowlevel: (TCP client) Response buffer: "00010000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 1 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 2 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+qt.modbus.lowlevel: (TCP client) Response buffer: "000100000006018304a80040"
+qt.modbus: (TCP client) tid: 1 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+ModbusWorker::updateConnectionHealth - Health score updated to 0.81 for device: "10.72.2.4:502:119" (success: false )
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000200000006010305280020"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0305280020 with tId: 2
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 41
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 42
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 43
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 44
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 45
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 46
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 47
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 48
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 49
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 50
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size converted: 5
+==============================
+Block size tag exists: true
+Block size raw value: "5"
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 51
+=== WORKER BLOCK DEBUG ===
+Block size converted: 5
+==============================
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+Block size raw value: "5"
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 3
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 52
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0002000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 2
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 53
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 54
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 55
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 56
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 57
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 58
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 59
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 60
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Response buffer: "00020000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 2 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 3 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+qt.modbus.lowlevel: (TCP client) Response buffer: "000200000006018304280020"
+qt.modbus: (TCP client) tid: 2 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+ModbusWorker::updateConnectionHealth - Health score updated to 0.729 for device: "10.72.2.4:502:119" (success: false )
+ModbusWorker::adjustAdaptivePollInterval - Increased interval to 3000 ms for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000300000006010305500020"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0305500020 with tId: 3
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 4
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0003000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 3
+qt.modbus.lowlevel: (TCP client) Response buffer: "00030000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 3 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 4 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 61
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 62
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 63
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 64
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 65
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 66
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 67
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 68
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 69
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 70
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 71
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 72
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 73
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 74
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 75
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 76
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 77
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 78
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 79
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 80
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Response buffer: "000300000006018304500020"
+qt.modbus: (TCP client) tid: 3 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+ModbusWorker::updateConnectionHealth - Health score updated to 0.6561 for device: "10.72.2.4:502:119" (success: false )
+ModbusWorker::adjustAdaptivePollInterval - Increased interval to 4500 ms for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000400000006010304780012"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0304780012 with tId: 4
+qt.modbus.lowlevel: (TCP client) Response buffer: "000400000006018304780012"
+qt.modbus: (TCP client) tid: 4 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 5
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0004000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 4
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000500000006010304f80012"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0304f80012 with tId: 5
+qt.modbus.lowlevel: (TCP client) Response buffer: "00040000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 4 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 5 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+ModbusWorker::adjustAdaptivePollInterval - Decreased interval to 1800 ms for device: "10.72.2.215:502:45"
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 81
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 82
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 83
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 84
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 85
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 86
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 87
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 88
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 89
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 90
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 91
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 92
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 93
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 94
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 95
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 96
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 97
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 98
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 99
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 100
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Response buffer: "000500000006018304f80012"
+qt.modbus: (TCP client) tid: 5 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+ModbusWorker::updateConnectionHealth - Health score updated to 0.59049 for device: "10.72.2.4:502:119" (success: false )
+ModbusWorker::adjustAdaptivePollInterval - Increased interval to 6750 ms for device: "10.72.2.4:502:119"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000600000006010305780012"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0305780012 with tId: 6
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 6
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0005000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 5
+qt.modbus.lowlevel: (TCP client) Response buffer: "00050000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 5 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 6 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+ModbusWorker::adjustAdaptivePollInterval - Decreased interval to 1620 ms for device: "10.72.2.215:502:45"
+qt.modbus.lowlevel: (TCP client) Response buffer: "000600000006018304780012"
+qt.modbus: (TCP client) tid: 6 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000700000006010306a40066"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0306a40066 with tId: 7
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 7
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0006000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 6
+qt.modbus.lowlevel: (TCP client) Response buffer: "00060000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 6 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 7 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+ModbusWorker::adjustAdaptivePollInterval - Decreased interval to 1458 ms for device: "10.72.2.215:502:45"
+qt.modbus.lowlevel: (TCP client) Response buffer: "000700000006018304a40066"
+qt.modbus: (TCP client) tid: 7 size: 6 server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "04"
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "000800000006010300480001"
+qt.modbus: (TCP client) Sent TCP PDU: 0x0300480001 with tId: 8
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1064_1127"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1064_1127" Address: 1064 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1064_1127" address: 1064 requestId: 101
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1192_1255"
+Block size tag exists: true
+Block size raw value: "64"
+Block size converted: 64
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1192_1255" Address: 1192 Block Size: 64 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1192_1255" address: 1192 requestId: 102
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1320_1351"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1320_1351" Address: 1320 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1320_1351" address: 1320 requestId: 103
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1360_1391"
+Block size tag exists: true
+Block size raw value: "32"
+Block size converted: 32
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1360_1391" Address: 1360 Block Size: 32 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1360_1391" address: 1360 requestId: 104
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1144_1161"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1144_1161" Address: 1144 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1144_1161" address: 1144 requestId: 105
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1272_1289"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1272_1289" Address: 1272 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1272_1289" address: 1272 requestId: 106
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1400_1417"
+Block size tag exists: true
+Block size raw value: "18"
+Block size converted: 18
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1400_1417" Address: 1400 Block Size: 18 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1400_1417" address: 1400 requestId: 107
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1700_1801"
+Block size tag exists: true
+Block size raw value: "102"
+Block size converted: 102
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1700_1801" Address: 1700 Block Size: 102 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1700_1801" address: 1700 requestId: 108
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-OMA-001" address: 72 requestId: 109
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_A1020-TI-001" address: 79 requestId: 110
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1180_1184"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1180_1184" Address: 1180 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1180_1184" address: 1180 requestId: 111
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1436_1440"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1436_1440" Address: 1436 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1436_1440" address: 1436 requestId: 112
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_1810_1814"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_1810_1814" Address: 1810 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_1810_1814" address: 1810 requestId: 113
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2900_2909"
+Block size tag exists: true
+Block size raw value: "10"
+Block size converted: 10
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2900_2909" Address: 2900 Block Size: 10 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2900_2909" address: 2900 requestId: 114
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_128_132"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_128_132" Address: 128 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_128_132" address: 128 requestId: 115
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_368_369"
+Block size tag exists: true
+Block size raw value: "2"
+Block size converted: 2
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_368_369" Address: 368 Block Size: 2 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_368_369" address: 368 requestId: 116
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2960_2965"
+Block size tag exists: true
+Block size raw value: "6"
+Block size converted: 6
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2960_2965" Address: 2960 Block Size: 6 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2960_2965" address: 2960 requestId: 117
+=== WORKER BLOCK DEBUG ===
+Block point name: "NPMR_N_BLOCK_2976_2991"
+Block size tag exists: true
+Block size raw value: "16"
+Block size converted: 16
+==============================
+🔧 Worker block read: "NPMR_N_BLOCK_2976_2991" Address: 2976 Block Size: 16 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_BLOCK_2976_2991" address: 2976 requestId: 118
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-OMA-001" address: 3008 requestId: 119
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "NPMR_N_SD1020-TI-001" address: 3015 requestId: 120
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 3 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 1 requests for device: "10.72.2.4:502:119"
+ModbusWorker::executeBatchedRequests - Processing batch of 5 requests for device: "10.72.2.4:502:119"
+=== WORKER BLOCK DEBUG ===
+Block point name: "AAA_BLOCK_300_304"
+Block size tag exists: true
+Block size raw value: "5"
+Block size converted: 5
+==============================
+🔧 Worker block read: "AAA_BLOCK_300_304" Address: 300 Block Size: 5 Unit ID: 1
+ModbusWorker::generateAutomaticPollingRequests() - Queued polling request for data point: "AAA_BLOCK_300_304" address: 300 requestId: 8
+qt.modbus.lowlevel: (TCP client) Sent TCP ADU: "0007000000060103012c0005"
+qt.modbus: (TCP client) Sent TCP PDU: 0x03012c0005 with tId: 7
+qt.modbus.lowlevel: (TCP client) Response buffer: "00070000000d01030a045708ae0d05115c15b3"
+qt.modbus: (TCP client) tid: 7 size: d server address: 1
+qt.modbus: (TCP client) Received PDU: 3 "0a045708ae0d05115c15b3"
+🔧 ModbusWorker emitting readCompleted signal - Request ID: 8 Device: "10.72.2.215:502:45" Address: 300 Priority: 1
+ModbusWorker::updateConnectionHealth - Health score updated to 1 for device: "10.72.2.215:502:45" (success: true )
+ModbusWorker::adjustAdaptivePollInterval - Decreased interval to 1312 ms for device: "10.72.2.215:502:45"

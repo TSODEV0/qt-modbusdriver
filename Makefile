@@ -58,12 +58,14 @@ SOURCES       = src/scada_service_test.cpp \
 		src/modbus_worker.cpp \
 		src/modbus_worker_manager.cpp \
 		src/connection_resilience_manager.cpp \
-		src/database_manager.cpp build/moc/moc_modbusmanager.cpp \
+		src/database_manager.cpp \
+		src/data_processing_task.cpp build/moc/moc_modbusmanager.cpp \
 		build/moc/moc_scada_core_service.cpp \
 		build/moc/moc_modbus_worker.cpp \
 		build/moc/moc_modbus_worker_manager.cpp \
 		build/moc/moc_connection_resilience_manager.cpp \
-		build/moc/moc_database_manager.cpp
+		build/moc/moc_database_manager.cpp \
+		build/moc/moc_data_processing_task.cpp
 OBJECTS       = build/obj/scada_service_test.o \
 		build/obj/modbusmanager.o \
 		build/obj/scada_core_service.o \
@@ -71,12 +73,14 @@ OBJECTS       = build/obj/scada_service_test.o \
 		build/obj/modbus_worker_manager.o \
 		build/obj/connection_resilience_manager.o \
 		build/obj/database_manager.o \
+		build/obj/data_processing_task.o \
 		build/obj/moc_modbusmanager.o \
 		build/obj/moc_scada_core_service.o \
 		build/obj/moc_modbus_worker.o \
 		build/obj/moc_modbus_worker_manager.o \
 		build/obj/moc_connection_resilience_manager.o \
-		build/obj/moc_database_manager.o
+		build/obj/moc_database_manager.o \
+		build/obj/moc_data_processing_task.o
 DIST          = ../../../Qt/6.6.3/gcc_64/mkspecs/features/spec_pre.prf \
 		../../../Qt/6.6.3/gcc_64/mkspecs/common/unix.conf \
 		../../../Qt/6.6.3/gcc_64/mkspecs/common/linux.conf \
@@ -262,13 +266,15 @@ DIST          = ../../../Qt/6.6.3/gcc_64/mkspecs/features/spec_pre.prf \
 		include/modbus_worker.h \
 		include/modbus_worker_manager.h \
 		include/connection_resilience_manager.h \
-		include/database_manager.h src/scada_service_test.cpp \
+		include/database_manager.h \
+		include/data_processing_task.h src/scada_service_test.cpp \
 		src/modbusmanager.cpp \
 		src/scada_core_service.cpp \
 		src/modbus_worker.cpp \
 		src/modbus_worker_manager.cpp \
 		src/connection_resilience_manager.cpp \
-		src/database_manager.cpp
+		src/database_manager.cpp \
+		src/data_processing_task.cpp
 QMAKE_TARGET  = scada_service_test
 DESTDIR       = 
 TARGET        = scada_service_test
@@ -670,8 +676,8 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents ../../../Qt/6.6.3/gcc_64/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents include/modbusmanager.h include/scada_core_service.h include/modbus_worker.h include/modbus_worker_manager.h include/connection_resilience_manager.h include/database_manager.h $(DISTDIR)/
-	$(COPY_FILE) --parents src/scada_service_test.cpp src/modbusmanager.cpp src/scada_core_service.cpp src/modbus_worker.cpp src/modbus_worker_manager.cpp src/connection_resilience_manager.cpp src/database_manager.cpp $(DISTDIR)/
+	$(COPY_FILE) --parents include/modbusmanager.h include/scada_core_service.h include/modbus_worker.h include/modbus_worker_manager.h include/connection_resilience_manager.h include/database_manager.h include/data_processing_task.h $(DISTDIR)/
+	$(COPY_FILE) --parents src/scada_service_test.cpp src/modbusmanager.cpp src/scada_core_service.cpp src/modbus_worker.cpp src/modbus_worker_manager.cpp src/connection_resilience_manager.cpp src/database_manager.cpp src/data_processing_task.cpp $(DISTDIR)/
 
 
 clean: compiler_clean 
@@ -703,9 +709,9 @@ compiler_moc_predefs_clean:
 build/moc/moc_predefs.h: ../../../Qt/6.6.3/gcc_64/mkspecs/features/data/dummy.cpp
 	g++ -pipe -pthread -O2 -std=gnu++1z -Wall -Wextra -fPIC -dM -E -o build/moc/moc_predefs.h ../../../Qt/6.6.3/gcc_64/mkspecs/features/data/dummy.cpp
 
-compiler_moc_header_make_all: build/moc/moc_modbusmanager.cpp build/moc/moc_scada_core_service.cpp build/moc/moc_modbus_worker.cpp build/moc/moc_modbus_worker_manager.cpp build/moc/moc_connection_resilience_manager.cpp build/moc/moc_database_manager.cpp
+compiler_moc_header_make_all: build/moc/moc_modbusmanager.cpp build/moc/moc_scada_core_service.cpp build/moc/moc_modbus_worker.cpp build/moc/moc_modbus_worker_manager.cpp build/moc/moc_connection_resilience_manager.cpp build/moc/moc_database_manager.cpp build/moc/moc_data_processing_task.cpp
 compiler_moc_header_clean:
-	-$(DEL_FILE) build/moc/moc_modbusmanager.cpp build/moc/moc_scada_core_service.cpp build/moc/moc_modbus_worker.cpp build/moc/moc_modbus_worker_manager.cpp build/moc/moc_connection_resilience_manager.cpp build/moc/moc_database_manager.cpp
+	-$(DEL_FILE) build/moc/moc_modbusmanager.cpp build/moc/moc_scada_core_service.cpp build/moc/moc_modbus_worker.cpp build/moc/moc_modbus_worker_manager.cpp build/moc/moc_connection_resilience_manager.cpp build/moc/moc_database_manager.cpp build/moc/moc_data_processing_task.cpp
 build/moc/moc_modbusmanager.cpp: include/modbusmanager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QObject \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qobject.h \
@@ -1034,6 +1040,8 @@ build/moc/moc_scada_core_service.cpp: include/scada_core_service.h \
 		include/modbus_worker_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/include -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/src -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtConcurrent -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtTest -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/scada_core_service.h -o build/moc/moc_scada_core_service.cpp
@@ -1651,9 +1659,171 @@ build/moc/moc_database_manager.cpp: include/database_manager.h \
 		include/modbus_worker_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/include -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/src -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtConcurrent -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtTest -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/database_manager.h -o build/moc/moc_database_manager.cpp
+
+build/moc/moc_data_processing_task.cpp: include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrunnable.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompilerdetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsystemdetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qprocessordetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtconfiginclude.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qconfig.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtcore-config.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfunctionaltools_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtconfigmacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtclasshelpermacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtcoreexports.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtdeprecationmarkers.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtversionchecks.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobject.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobjectdefs.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qnamespace.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qglobal.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtpreprocessorsupport.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qassert.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtnoop.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtypes.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtversion.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtypeinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainerfwd.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsysinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlogging.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qflags.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompare_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasicatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qatomic_cxx11.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qgenericatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qconstructormacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdarwinhelpers.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qexceptionhandling.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qforeach.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qttypetraits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfunctionpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qglobalstatic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmalloc.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qminmax.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qnumeric.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qoverload.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qswap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtenvironmentvariables.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtresource.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qttranslation.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qversiontagging.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmetamacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstring.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qchar.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearray.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrefcount.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydata.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qpair.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydatapointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydataops.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainertools_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qxptype_traits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20functional.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20memory.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearrayalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearrayview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringfwd.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20type_traits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringliteral.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlatin1stringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qanystringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qutf8stringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringtokenizer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringbuilder.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qhashfunctions.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiterator.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearraylist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringlist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringmatcher.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreevent.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qscopedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetatype.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompare.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatastream.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiodevicebase.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfloat16.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmath.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiterable.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetacontainer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainerinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtaggedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qscopeguard.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobject_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbindingstorage.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutex \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmutex.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdeadlinetimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qelapsedtimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtsan_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QWaitCondition \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qwaitcondition.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDeadlineTimer \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QThreadPool \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthreadpool.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthread.h \
+		include/modbusmanager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusTcpClient \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbustcpclient.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusclient.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusdataunit.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qshareddata.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qshareddata_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusdevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiodevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbusglobal.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbus-config.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbusexports.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbuspdu.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusreply.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusDataUnit \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusReply \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QTimer \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasictimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMap \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVector \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvector.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvariant.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdebug.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtextstream.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringconverter_base.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontiguouscache.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsharedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qset.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qhash.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvarlengtharray.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q23utility.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariantMap \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvariantmap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QString \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlocale.h \
+		build/moc/moc_predefs.h \
+		../../../Qt/6.6.3/gcc_64/libexec/moc
+	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/include -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/src -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtConcurrent -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtTest -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include include/data_processing_task.h -o build/moc/moc_data_processing_task.cpp
 
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
@@ -1981,6 +2151,8 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		include/modbus_worker.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QSemaphore \
 		include/modbus_worker_manager.h \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		include/database_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlDatabase \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqldatabase.h \
@@ -1992,6 +2164,7 @@ build/moc/scada_service_test.moc: src/scada_service_test.cpp \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		include/connection_resilience_manager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h \
 		build/moc/moc_predefs.h \
 		../../../Qt/6.6.3/gcc_64/libexec/moc
 	/home/Pttaov1/Qt/6.6.3/gcc_64/libexec/moc $(DEFINES) --include /home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/build/moc/moc_predefs.h -I/home/Pttaov1/Qt/6.6.3/gcc_64/mkspecs/linux-g++ -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/include -I/home/Pttaov1/TSO_SCADA/qtworkplace/modbusdriver/src -I/home/Pttaov1/Qt/6.6.3/gcc_64/include -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSerialBus -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtNetwork -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtSql -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtConcurrent -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtTest -I/home/Pttaov1/Qt/6.6.3/gcc_64/include/QtCore -I/usr/local/include -I. -I/usr/include/c++/11 -I/usr/include/x86_64-linux-gnu/c++/11 -I/usr/include/c++/11/backward -I/usr/lib/gcc/x86_64-linux-gnu/11/include -I/usr/include/x86_64-linux-gnu -I/usr/include src/scada_service_test.cpp -o build/moc/scada_service_test.moc
@@ -2326,6 +2499,8 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		include/modbus_worker.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QSemaphore \
 		include/modbus_worker_manager.h \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		include/database_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlDatabase \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqldatabase.h \
@@ -2337,7 +2512,8 @@ build/obj/scada_service_test.o: src/scada_service_test.cpp ../../../Qt/6.6.3/gcc
 		../../../Qt/6.6.3/gcc_64/include/QtSql/QSqlError \
 		../../../Qt/6.6.3/gcc_64/include/QtSql/qsqlerror.h \
 		include/connection_resilience_manager.h \
-		build/moc/scada_service_test.moc
+		build/moc/scada_service_test.moc \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmochelpers.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/scada_service_test.o src/scada_service_test.cpp
 
 build/obj/modbusmanager.o: src/modbusmanager.cpp include/modbusmanager.h \
@@ -2674,12 +2850,15 @@ build/obj/scada_core_service.o: src/scada_core_service.cpp include/scada_core_se
 		include/modbus_worker_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonArray \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonarray.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonParseError \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QFile \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaType \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaObject \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCoreApplication \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qeventloop.h \
@@ -2854,10 +3033,36 @@ build/obj/modbus_worker.o: src/modbus_worker.cpp include/modbus_worker.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qlocale.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/QUuid \
+		include/scada_core_service.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonobject.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonvalue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcborvalue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcborcommon.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qregularexpression.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qurl.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/quuid.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qendian.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsondocument.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSet \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QFileInfo \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfileinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfile.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfiledevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimezone.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QReadWriteLock \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qreadwritelock.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QThreadPool \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthreadpool.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrunnable.h \
+		include/modbus_worker_manager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QUuid \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QMetaObject \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QCoreApplication \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreapplication.h \
@@ -2868,8 +3073,6 @@ build/obj/modbus_worker.o: src/modbus_worker.cpp include/modbus_worker.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qfutureinterface.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qresultstore.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qfuture_impl.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qthreadpool.h \
-		../../../Qt/6.6.3/gcc_64/include/QtCore/qrunnable.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qexception.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qpointer.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/qpromise.h \
@@ -3386,9 +3589,199 @@ build/obj/database_manager.o: src/database_manager.cpp include/database_manager.
 		include/modbus_worker_manager.h \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
 		../../../Qt/6.6.3/gcc_64/include/QtCore/QUuid
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/database_manager.o src/database_manager.cpp
+
+build/obj/data_processing_task.o: src/data_processing_task.cpp include/data_processing_task.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QRunnable \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrunnable.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompilerdetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsystemdetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qprocessordetection.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtconfiginclude.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qconfig.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtcore-config.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfunctionaltools_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtconfigmacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtclasshelpermacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtcoreexports.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtdeprecationmarkers.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtversionchecks.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobject.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobjectdefs.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qnamespace.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qglobal.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtpreprocessorsupport.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qassert.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtnoop.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtypes.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtversion.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtypeinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainerfwd.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsysinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlogging.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qflags.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompare_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasicatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qatomic_cxx11.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qgenericatomic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qconstructormacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdarwinhelpers.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qexceptionhandling.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qforeach.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qttypetraits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfunctionpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qglobalstatic.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmalloc.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qminmax.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qnumeric.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qoverload.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qswap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtenvironmentvariables.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtresource.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qttranslation.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qversiontagging.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtmetamacros.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobjectdefs_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstring.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qchar.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearray.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qrefcount.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydata.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qpair.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydatapointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qarraydataops.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainertools_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qxptype_traits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20functional.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20memory.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearrayalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearrayview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringfwd.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q20type_traits.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringliteral.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlatin1stringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qanystringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qutf8stringview.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringtokenizer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringbuilder.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qhashfunctions.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiterator.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbytearraylist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringlist.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qalgorithms.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringmatcher.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcoreevent.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qscopedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetatype.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcompare.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatastream.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiodevicebase.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfloat16.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmath.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiterable.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmetacontainer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontainerinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtaggedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qscopeguard.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qobject_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbindingstorage.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutex \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmutex.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdeadlinetimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qelapsedtimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtsan_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QWaitCondition \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qwaitcondition.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDeadlineTimer \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QThreadPool \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthreadpool.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qthread.h \
+		include/modbusmanager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusTcpClient \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbustcpclient.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusclient.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusdataunit.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qmap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qshareddata.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qshareddata_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusdevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qiodevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbusglobal.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbus-config.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qtserialbusexports.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbuspdu.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/qmodbusreply.h \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusDataUnit \
+		../../../Qt/6.6.3/gcc_64/include/QtSerialBus/QModbusReply \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QTimer \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qbasictimer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QQueue \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qqueue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMap \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVector \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvector.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariant \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvariant.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdebug.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtextstream.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qstringconverter_base.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcontiguouscache.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsharedpointer.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsharedpointer_impl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qset.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qhash.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvarlengtharray.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/q23utility.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QVariantMap \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qvariantmap.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QString \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSettings \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsettings.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDateTime \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qdatetime.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcalendar.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qlocale.h \
+		include/scada_core_service.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonObject \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonobject.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsonvalue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcborvalue.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qcborcommon.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qregularexpression.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qurl.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/quuid.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qendian.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QJsonDocument \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qjsondocument.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSet \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QFileInfo \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfileinfo.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfile.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qfiledevice.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qtimezone.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QReadWriteLock \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qreadwritelock.h \
+		include/modbus_worker.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QThread \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QAtomicInteger \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QSemaphore \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/qsemaphore.h \
+		include/modbus_worker_manager.h \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QHash \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QStringList \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QDebug \
+		../../../Qt/6.6.3/gcc_64/include/QtCore/QMutexLocker
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/data_processing_task.o src/data_processing_task.cpp
 
 build/obj/moc_modbusmanager.o: build/moc/moc_modbusmanager.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_modbusmanager.o build/moc/moc_modbusmanager.cpp
@@ -3407,6 +3800,9 @@ build/obj/moc_connection_resilience_manager.o: build/moc/moc_connection_resilien
 
 build/obj/moc_database_manager.o: build/moc/moc_database_manager.cpp 
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_database_manager.o build/moc/moc_database_manager.cpp
+
+build/obj/moc_data_processing_task.o: build/moc/moc_data_processing_task.cpp 
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o build/obj/moc_data_processing_task.o build/moc/moc_data_processing_task.cpp
 
 ####### Install
 

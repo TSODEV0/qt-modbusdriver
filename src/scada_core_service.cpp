@@ -7,6 +7,7 @@
 #include <QFile>
 #include <QThread>
 #include <QMetaType>
+#include <QMetaObject>
 #include <QCoreApplication>
 #include <QMutex>
 #include <QMutexLocker>
@@ -33,6 +34,8 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     , m_singleThreadModbusManager(nullptr)
     , m_performanceMonitoringEnabled(false)
     , m_deploymentConfig()
+    , m_dataProcessor(nullptr)
+    , m_parallelProcessingEnabled(true)
 {
     // Register metatypes for thread-safe signal/slot connections
     qRegisterMetaType<ModbusReadResult>("ModbusReadResult");
@@ -61,6 +64,13 @@ ScadaCoreService::ScadaCoreService(QObject *parent)
     
     // Set up thread pool for concurrent data processing
     QThreadPool::globalInstance()->setMaxThreadCount(qMax(4, QThread::idealThreadCount()));
+    
+    // Initialize parallel data processor
+    m_dataProcessor = new ParallelDataProcessor(this);
+    connect(m_dataProcessor, &ParallelDataProcessor::taskCompleted,
+            this, &ScadaCoreService::onParallelProcessingCompleted, Qt::QueuedConnection);
+    connect(m_dataProcessor, &ParallelDataProcessor::taskFailed,
+            this, &ScadaCoreService::onParallelProcessingFailed, Qt::QueuedConnection);
     
     // Initialize statistics
     resetStatistics();
@@ -176,6 +186,12 @@ bool ScadaCoreService::startService()
                         
                         // Add each data point individually
                         for (const auto &point : points) {
+                            // Convert QMap to QVariantMap for cross-thread invocation
+                            QVariantMap tagsVariant;
+                            for (auto it = point.tags.constBegin(); it != point.tags.constEnd(); ++it) {
+                                tagsVariant[it.key()] = it.value();
+                            }
+                            
                             QMetaObject::invokeMethod(worker, "addDataPointByName", Qt::QueuedConnection,
                                                       Q_ARG(QString, point.name),
                                                       Q_ARG(QString, point.host),
@@ -185,7 +201,8 @@ bool ScadaCoreService::startService()
                                                       Q_ARG(int, static_cast<int>(point.dataType)),
                                                       Q_ARG(int, point.pollInterval),
                                                       Q_ARG(QString, point.measurement),
-                                                      Q_ARG(bool, point.enabled));
+                                                      Q_ARG(bool, point.enabled),
+                                                      Q_ARG(QVariantMap, tagsVariant));
                         }
                         
                         // Enable automatic polling for this worker
@@ -197,9 +214,8 @@ bool ScadaCoreService::startService()
                 }
             }
         }
-        // Start all workers for configured devices
-        m_workerManager->startAllWorkers();
-        qDebug() << "✅ All workers started";
+        // Workers will be started automatically via delayed startup mechanism in getOrCreateWorker()
+        qDebug() << "✅ All workers created and will start via delayed startup mechanism";
         
         // Enable load balancing for multi-device scenarios
         if (uniqueDevices.size() > 1) {
@@ -490,6 +506,36 @@ bool ScadaCoreService::isPerformanceMonitoringEnabled() const
 {
     QMutexLocker locker(&m_performanceMetricsMutex);
     return m_performanceMonitoringEnabled;
+}
+
+void ScadaCoreService::enableParallelProcessing(bool enabled)
+{
+    m_parallelProcessingEnabled = enabled;
+    qDebug() << "Parallel data processing" << (enabled ? "enabled" : "disabled");
+}
+
+bool ScadaCoreService::isParallelProcessingEnabled() const
+{
+    return m_parallelProcessingEnabled;
+}
+
+void ScadaCoreService::setParallelProcessingThreads(int maxThreads)
+{
+    if (m_dataProcessor) {
+        m_dataProcessor->setMaxThreads(maxThreads);
+        qDebug() << "Parallel processing thread count set to" << maxThreads;
+    }
+}
+
+int ScadaCoreService::getParallelProcessingThreads() const
+{
+    // ParallelDataProcessor doesn't expose getter for max threads, return configured value
+    return m_deploymentConfig.maxWorkerThreads;
+}
+
+int ScadaCoreService::getActiveProcessingTasks() const
+{
+    return m_dataProcessor ? m_dataProcessor->getActiveTaskCount() : 0;
 }
 
 void ScadaCoreService::setDeploymentConfig(const DeploymentConfig &config)
@@ -1230,7 +1276,23 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
         // Check if this is an optimized block read
         if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
             // This is a block read - use block size
+            qDebug() << "=== SINGLE-THREAD BLOCK DEBUG ===";
+            qDebug() << "Block point name:" << point.name;
+            qDebug() << "All tags:" << point.tags;
+            qDebug() << "Block size tag exists:" << point.tags.contains("block_size");
+            qDebug() << "Block size raw value:" << point.tags["block_size"];
+            
             int blockSize = point.tags["block_size"].toInt();
+            qDebug() << "Block size converted:" << blockSize;
+            qDebug() << "================================";
+            
+            // Limit block size to maximum of 125 registers as per Modbus specification
+            if (blockSize > 125) {
+                qWarning() << "Block size" << blockSize << "exceeds maximum limit of 125 registers for point" << point.name
+                          << "- limiting to 125 registers";
+                blockSize = 125;
+            }
+            
             request.count = blockSize;
             if (singleThreadPollCount % 100 == 0) {
                 qDebug() << "🔧 Single-threaded block read:" << point.name << "Address:" << point.address 
@@ -1336,9 +1398,28 @@ void ScadaCoreService::processDataPoint(const DataAcquisitionPoint &point, qint6
     // Check if this is an optimized block read with combined conditions
     if (point.tags.contains("block_type") && point.tags["block_type"] == "optimized_read") {
         // This is a block read - use block methods with register_type and data_type validation
+        qDebug() << "=== BLOCK DEBUG INFO ===";
+        qDebug() << "Block point name:" << point.name;
+        qDebug() << "All tags:" << point.tags;
+        qDebug() << "Block size tag exists:" << point.tags.contains("block_size");
+        qDebug() << "Block size raw value:" << point.tags["block_size"];
+        
         int blockSize = point.tags["block_size"].toInt();
+        qDebug() << "Block size converted:" << blockSize;
+        
         QString registerType = point.tags.value("register_type", "");
         QString dataType = point.tags.value("data_type", "");
+        
+        qDebug() << "Register type:" << registerType;
+        qDebug() << "Data type:" << dataType;
+        qDebug() << "========================";
+        
+        // Limit block size to maximum of 125 registers as per Modbus specification
+        if (blockSize > 125) {
+            qWarning() << "Block size" << blockSize << "exceeds maximum limit of 125 registers for point" << point.name
+                      << "- limiting to 125 registers";
+            blockSize = 125;
+        }
         
         qDebug() << "Performing block read - Address:" << point.address << "Size:" << blockSize
                  << "Register Type:" << registerType << "Data Type:" << dataType << "Unit ID:" << unitId;
@@ -2261,7 +2342,9 @@ void ScadaCoreService::validateAndSetInfluxTags(AcquiredDataPoint &dataPoint, co
 void ScadaCoreService::onWorkerReadCompleted(qint64 requestId, const ModbusReadResult &result)
 {
     // Handle read completion from worker threads
-    qDebug() << "Worker read completed - Request ID:" << requestId << "success:" << result.success;
+    qDebug() << "🔧 Multi-threaded Worker read completed - Request ID:" << requestId 
+             << "success:" << result.success << "hasValidData:" << result.hasValidData
+             << "rawData size:" << result.rawData.size() << "processedData size:" << result.processedData.size();
     
     // Track performance metrics for multi-threaded operations
     if (m_performanceMonitoringEnabled) {
@@ -2294,36 +2377,84 @@ void ScadaCoreService::onWorkerReadCompleted(qint64 requestId, const ModbusReadR
     }
     
     if (!found) {
-        qWarning() << "Received read completion for unknown request ID:" << requestId;
-        return;
+        // Handle automatic polling requests that aren't tracked in pending requests
+        // Get the worker that sent this signal to determine the device key
+        ModbusWorker* senderWorker = qobject_cast<ModbusWorker*>(sender());
+        QString deviceKey = "unknown";
+        if (senderWorker) {
+            deviceKey = senderWorker->getDeviceKey();
+        }
+        
+        qDebug() << "🔧 Processing automatic polling request ID:" << requestId 
+                 << "- Device:" << deviceKey << "Address:" << result.startAddress << "Count:" << result.registerCount;
+        
+        // Parse device key to extract host and port (format: "host:port:unitId")
+        QStringList parts = deviceKey.split(':');
+        QString host = "unknown";
+        int port = 502;
+        if (parts.size() >= 2) {
+            host = parts[0];
+            port = parts[1].toInt();
+        }
+        
+        // Create a synthetic DataAcquisitionPoint for automatic polling results
+        point.address = result.startAddress;
+        point.dataType = result.dataType;
+        point.name = QString("AUTO_POLL_%1_%2").arg(result.startAddress).arg(result.registerCount);
+        point.measurement = "modbus_auto_poll";
+        point.host = host;
+        point.port = port;
+        point.tags["unit_id"] = "1";
+        point.tags["auto_generated"] = "true";
+        point.enabled = true;
+        
+        found = true; // Continue processing
     }
     
     if (result.success && result.hasValidData) {
         // Update statistics
         updateStatistics(true, 0); // Response time not available in this context
         
-        // Create acquired data point
-        AcquiredDataPoint acquiredPoint;
-        acquiredPoint.pointName = point.name;
-        acquiredPoint.timestamp = result.timestamp;
-        acquiredPoint.measurement = point.measurement;
-        acquiredPoint.tags = point.tags;
-        acquiredPoint.isValid = true;
+        // Determine device key for parallel processing
+        QString unitIdStr = point.tags.value("unit_id", "1");
+        QString deviceKey = QString("%1:%2:%3").arg(point.host).arg(point.port).arg(unitIdStr);
         
-        // Extract value from processed data
-        if (!result.processedData.isEmpty()) {
-            acquiredPoint.value = result.processedData.first();
-        } else if (!result.rawData.isEmpty()) {
-            acquiredPoint.value = result.rawData.first();
+        // Use parallel processing if enabled
+        if (m_parallelProcessingEnabled && m_dataProcessor) {
+            // Track operation start time for response time calculation
+            if (m_performanceMonitoringEnabled) {
+                QMutexLocker perfLocker(&m_performanceMetricsMutex);
+                m_operationStartTimes[requestId] = QDateTime::currentMSecsSinceEpoch();
+            }
+            
+            // Submit task to parallel processor
+            m_dataProcessor->submitProcessingTask(requestId, result, point, this);
+            qDebug() << "📤 Submitted parallel processing task for request ID:" << requestId 
+                     << "device:" << deviceKey << "point:" << point.name;
+        } else {
+            // Process synchronously (original behavior)
+            AcquiredDataPoint acquiredPoint;
+            acquiredPoint.pointName = point.name;
+            acquiredPoint.timestamp = result.timestamp;
+            acquiredPoint.measurement = point.measurement;
+            acquiredPoint.tags = point.tags;
+            acquiredPoint.isValid = true;
+            
+            // Extract value from processed data
+            if (!result.processedData.isEmpty()) {
+                acquiredPoint.value = result.processedData.first();
+            } else if (!result.rawData.isEmpty()) {
+                acquiredPoint.value = result.rawData.first();
+            }
+            
+            validateAndSetInfluxTags(acquiredPoint, point);
+            
+            // Send to InfluxDB
+            sendDataToInflux(acquiredPoint);
+            
+            // Emit signal
+            emit dataPointAcquired(acquiredPoint);
         }
-        
-        validateAndSetInfluxTags(acquiredPoint, point);
-        
-        // Send to InfluxDB
-        sendDataToInflux(acquiredPoint);
-        
-        // Emit signal
-        emit dataPointAcquired(acquiredPoint);
     } else {
         updateStatistics(false, 0);
         qWarning() << "Worker read failed - Request ID:" << requestId << "error:" << result.errorString;
@@ -2382,6 +2513,13 @@ void ScadaCoreService::onWorkerCreated(const QString &deviceKey)
     
     // Worker is already started and connected by ModbusWorkerManager
     // No need to call startWorker() or connectToDevice() again
+    
+    // CRITICAL: Connect worker signals for automatic polling to work properly
+    ModbusWorker* worker = m_workerManager->getWorker(deviceKey);
+    if (worker) {
+        connectWorkerSignals(worker);
+        qDebug() << "🔧 Connected signals for worker:" << deviceKey;
+    }
     
     if (m_workerManager) {
         auto stats = m_workerManager->getGlobalStatistics();
@@ -2514,4 +2652,101 @@ void ScadaCoreService::onSingleThreadReadCompleted(const ModbusReadResult &resul
         qWarning() << "Single-threaded read failed:" << result.errorString;
         updateStatistics(false, responseTime);
     }
+}
+
+void ScadaCoreService::onParallelProcessingCompleted(qint64 requestId, const AcquiredDataPoint &dataPoint, const QString &deviceKey)
+{
+    Q_UNUSED(deviceKey)
+    
+    // Calculate response time if available
+    qint64 responseTime = 0;
+    if (m_operationStartTimes.contains(requestId)) {
+        responseTime = QDateTime::currentMSecsSinceEpoch() - m_operationStartTimes[requestId];
+        m_operationStartTimes.remove(requestId);
+    }
+    
+    // Update statistics for successful parallel processing
+    QMutexLocker locker(&m_statisticsMutex);
+    m_statistics.totalReadOperations++;
+    m_statistics.successfulReads++;
+    
+    // Track performance metrics for multi-threaded operations
+    if (m_performanceMonitoringEnabled) {
+        QMutexLocker perfLocker(&m_performanceMetricsMutex);
+        m_performanceMetrics.multiThreadedOperations++;
+        m_performanceMetrics.multiThreadedTotalTime += responseTime;
+    }
+    
+    // Log detailed completion info (similar to single-threaded mode)
+    static int multiThreadCompletionCount = 0;
+    multiThreadCompletionCount++;
+    
+    if (multiThreadCompletionCount % 10 == 0 || responseTime > 1000) { // Log every 10th completion or slow responses
+        qDebug() << "🔧 Multi-threaded completion #" << multiThreadCompletionCount << ":" 
+                 << "Point:" << dataPoint.pointName
+                 << "Value:" << dataPoint.value.toString()
+                 << "Device:" << deviceKey
+                 << "Response time:" << responseTime << "ms"
+                 << "Request ID:" << requestId;
+    }
+    
+    // Send processed data to InfluxDB
+    bool influxSuccess = sendDataToInflux(dataPoint);
+    
+    // Log InfluxDB write result for debugging
+    if (!influxSuccess) {
+        qWarning() << "[Multi-threaded] InfluxDB write failed for point:" << dataPoint.pointName;
+    } else {
+        qDebug() << "[Multi-threaded] 📈 InfluxDB write successful for point:" << dataPoint.pointName;
+    }
+    
+    // Emit signal for UI updates
+    emit dataPointAcquired(dataPoint);
+    
+    qDebug() << "✅ Parallel processing completed for request" << requestId 
+             << "Point:" << dataPoint.pointName << "Device:" << deviceKey;
+}
+
+void ScadaCoreService::onParallelProcessingFailed(qint64 requestId, const QString &errorMessage, const QString &deviceKey)
+{
+    Q_UNUSED(deviceKey)
+    
+    // Calculate response time if available
+    qint64 responseTime = 0;
+    if (m_operationStartTimes.contains(requestId)) {
+        responseTime = QDateTime::currentMSecsSinceEpoch() - m_operationStartTimes[requestId];
+        m_operationStartTimes.remove(requestId);
+    }
+    
+    // Update statistics for failed parallel processing
+    QMutexLocker locker(&m_statisticsMutex);
+    m_statistics.totalReadOperations++;
+    m_statistics.failedReads++;
+    
+    // Track performance metrics for multi-threaded operations
+    if (m_performanceMonitoringEnabled) {
+        QMutexLocker perfLocker(&m_performanceMetricsMutex);
+        m_performanceMetrics.multiThreadedOperations++;
+        m_performanceMetrics.multiThreadedTotalTime += responseTime;
+        
+        // Update error rate
+        double totalOps = static_cast<double>(m_performanceMetrics.multiThreadedOperations);
+        double errorCount = m_performanceMetrics.multiThreadedErrorRate * (totalOps - 1) + 1;
+        m_performanceMetrics.multiThreadedErrorRate = errorCount / totalOps;
+    }
+    
+    // Log detailed failure info (similar to single-threaded mode)
+    static int multiThreadFailureCount = 0;
+    multiThreadFailureCount++;
+    
+    qWarning() << "❌ Multi-threaded failure #" << multiThreadFailureCount << ":" 
+               << "Request ID:" << requestId
+               << "Device:" << deviceKey
+               << "Error:" << errorMessage
+               << "Response time:" << responseTime << "ms";
+    
+    // Emit error signal
+    emit errorOccurred(QString("Parallel processing failed for request %1: %2").arg(requestId).arg(errorMessage));
+    
+    qWarning() << "❌ Parallel processing failed for request" << requestId << ":" << errorMessage;
 }
